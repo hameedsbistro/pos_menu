@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier POS - Hameeds Bistro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Library CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col justify-between">
+
+    <!-- হেডার সেকশন -->
+    <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center print:hidden">
+        <div class="flex items-center gap-3">
+            <img src="images/logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover">
+            <h1 class="text-xl font-bold uppercase tracking-wider">Cashier POS - Hameeds Bistro</h1>
+        </div>
+        <a href="index.html" class="bg-white text-blue-900 px-4 py-1 rounded font-bold text-sm">Customer View</a>
+    </header>
+
+    <!-- মূল ক্যাশিয়ার কন্টেন্ট -->
+    <main class="p-6 max-w-7xl mx-auto flex-grow w-full print:p-0">
+        <h2 class="text-2xl font-bold mb-6 print:hidden">Order Billing & Payment</h2>
+        
+        <!-- টেবিল ভিউ (যেখানে বিলগুলো দেখা যাবে) -->
+        <div class="overflow-x-auto bg-white rounded shadow border print:hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b bg-gray-100">
+                        <th class="p-3">Order ID</th>
+                        <th class="p-3">Table No.</th>
+                        <th class="p-3">Section</th>
+                        <th class="p-3">Total Amount</th>
+                        <th class="p-3">Kitchen Status</th>
+                        <th class="p-3">Payment Status</th>
+                        <th class="p-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="cashierTableBody">
+                    <!-- লাইভ অর্ডার ডেটা এখানে লোড হবে -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- প্রিন্টেবল ইনভয়েস (হিডেন থাকবে, শুধু প্রিন্ট করার সময় শো করবে) -->
+        <div id="invoiceSection" class="hidden bg-white p-6 rounded shadow border mx-auto max-w-md mt-6 print:block print:shadow-none print:border-none print:w-full">
+            <div class="text-center mb-6">
+                <img src="images/logo.png" alt="Logo" class="h-16 w-16 mx-auto rounded-full grayscale">
+                <h2 class="text-xl font-bold uppercase tracking-wider mt-2">Restoran Hameeds Bistro</h2>
+                <p class="text-sm text-gray-500">Receipt / Invoice</p>
+            </div>
+            
+            <div class="flex justify-between mb-4 pb-2 border-b text-sm">
+                <span id="invTableNo" class="font-bold">Table: --</span>
+                <span id="invDate">Date: --</span>
+            </div>
+
+            <ul id="invItemsList" class="mb-4 text-sm space-y-2 border-b pb-4">
+                <!-- আইটেম লিস্ট -->
+            </ul>
+
+            <div class="flex justify-between font-bold text-lg">
+                <span>Total:</span>
+                <span id="invTotalAmount">৳0.00</span>
+            </div>
+            
+            <p class="text-center text-xs text-gray-500 mt-6 italic">Thank you for dining with us!</p>
+        </div>
+    </main>
+
+    <!-- ফুটার সেকশন -->
+    <footer class="bg-gray-900 text-gray-300 text-center py-4 border-t border-gray-800 print:hidden">
+        <p class="text-sm font-medium tracking-wide">
+            Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
+        </p>
+    </footer>
+
+    <!-- স্ক্রিপ্ট লজিক -->
+    <script>
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function initCashier() {
+            await fetchAllOrders();
+
+            // রিয়েল-টাইম আপডেট (নতুন অর্ডার এলে অটো রিফ্রেশ হবে)
+            _supabase.channel('public:orders_cashier')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+                    fetchAllOrders();
+                })
+                .subscribe();
+        }
+
+        async function fetchAllOrders() {
+            const { data: orders, error } = await _supabase.from('orders')
+                .select(`
+                    id, table_id, section, total_amount, status, payment_status, created_at,
+                    order_items (
+                        quantity, price,
+                        menu_items ( name_en )
+                    )
+                `)
+                .order('created_at', { ascending: false });
+
+            const tbody = document.getElementById('cashierTableBody');
+            tbody.innerHTML = '';
+
+            if (error || !orders || orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">কোনো অর্ডার পাওয়া যায়নি।</td></tr>`;
+                return;
+            }
+
+            orders.forEach(order => {
+                let statusColor = order.status === 'ready' ? 'text-green-600' : 'text-orange-500';
+                let paymentColor = order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 text-sm text-gray-500">#${order.id}</td>
+                        <td class="p-3 font-bold text-blue-900">${order.table_id}</td>
+                        <td class="p-3 capitalize">${order.section.replace('_', ' ')}</td>
+                        <td class="p-3 font-bold">৳${order.total_amount}</td>
+                        <td class="p-3 capitalize font-semibold ${statusColor}">${order.status}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-bold uppercase ${paymentColor}">
+                                ${order.payment_status}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right">
+                            ${order.payment_status === 'unpaid' 
+                                ? `<button onclick="markAsPaid(${order.id})" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 mr-2">Pay</button>` 
+                                : ''}
+                            <button onclick='printInvoice(${JSON.stringify(order)})' class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Print</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function markAsPaid(orderId) {
+            if (!confirm('আপনি কি নিশ্চিত যে পেমেন্ট গ্রহণ করা হয়েছে?')) return;
+            const { error } = await _supabase.from('orders')
+                .update({ payment_status: 'paid', status: 'completed' })
+                .eq('id', orderId);
+            
+            if (error) alert('পেমেন্ট আপডেট করতে সমস্যা হয়েছে!');
+            else fetchAllOrders();
+        }
+
+        function printInvoice(order) {
+            // ইনভয়েস ডেটা সেট করা
+            document.getElementById('invTableNo').innerText = `Table: ${order.table_id}`;
+            document.getElementById('invDate').innerText = `Date: ${new Date(order.created_at).toLocaleDateString()}`;
+            document.getElementById('invTotalAmount').innerText = `৳${order.total_amount}`;
+
+            const itemsList = document.getElementById('invItemsList');
+            itemsList.innerHTML = '';
+            
+            order.order_items.forEach(item => {
+                let name = item.menu_items ? item.menu_items.name_en : 'Item';
+                itemsList.innerHTML += `
+                    <li class="flex justify-between">
+                        <span>${name} <span class="text-xs text-gray-500">x${item.quantity}</span></span>
+                        <span>৳${item.price * item.quantity}</span>
+                    </li>
+                `;
+            });
+
+            // প্রিন্ট ডায়ালগ কল করা
+            document.getElementById('invoiceSection').classList.remove('hidden');
+            window.print();
+            document.getElementById('invoiceSection').classList.add('hidden');
+        }
+
+        initCashier();
+    </script>
+
+    <style>
+        /* প্রিন্ট করার সময় শুধু ইনভয়েস শো করার জন্য স্পেশাল CSS */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #invoiceSection, #invoiceSection * {
+                visibility: visible;
+            }
+            #invoiceSection {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+            }
+        }
+    </style>
+</body>
+</html>
