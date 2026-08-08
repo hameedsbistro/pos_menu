@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restoran Hameeds Bistro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Library CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col justify-between">
+
+    <!-- হেডার সেকশন -->
+    <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <img src="logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400">
+            <h1 class="text-xl font-bold uppercase tracking-wider">Restoran Hameeds Bistro</h1>
+        </div>
+    </header>
+
+    <!-- মূল কন্টেন্ট -->
+    <main class="p-6 max-w-4xl mx-auto flex-grow w-full">
+        <h2 class="text-2xl font-bold mb-4">Customer Ordering System</h2>
+
+        <!-- সেকশন ও টেবিল সিলেকশন -->
+        <div class="grid grid-cols-2 gap-4 bg-white p-4 rounded shadow mb-6">
+            <div>
+                <label class="block font-semibold mb-1">Select Section</label>
+                <select id="sectionSelect" onchange="updateTables()" class="w-full border p-2 rounded">
+                    <option value="indoor">Indoor (A-Series)</option>
+                    <option value="outdoor">Outdoor (V-Series)</option>
+                    <option value="first_floor">First Floor (C-Series)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1">Select Table Number</label>
+                <select id="tableSelect" class="w-full border p-2 rounded">
+                    <!-- ডাইনামিক টেবিল অপশন জাভাস্ক্রিপ্ট দিয়ে আসবে -->
+                </select>
+            </div>
+        </div>
+
+        <!-- মেনু লিস্ট -->
+        <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-20">
+            <!-- মেনু আইটেমগুলো এখানে লোড হবে -->
+        </div>
+
+        <!-- কার্ট ও চেকআউট বার -->
+        <div id="cartBar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg flex justify-between items-center max-w-4xl mx-auto rounded-t-xl">
+            <span id="cartCount" class="font-bold">0 Items</span>
+            <button onclick="placeOrder()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">
+                Confirm Order (Pay at Counter)
+            </button>
+        </div>
+    </main>
+
+    <!-- ফুটার সেকশন (রুদ্রাংশী কপিরাইট) -->
+    <footer class="bg-gray-900 text-gray-300 text-center py-4 border-t border-gray-800">
+        <p class="text-sm font-medium tracking-wide">
+            Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
+        </p>
+    </footer>
+
+    <!-- স্ক্রিপ্ট লজিক -->
+    <script>
+        // এখানে আপনার Supabase URL এবং Anon Key বসাবেন
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let menuItems = [];
+        let cart = [];
+
+        // টেবিল নাম্বার আপডেট লজিক (আপনার দেওয়া নিয়ম অনুযায়ী)
+        function updateTables() {
+            const section = document.getElementById('sectionSelect').value;
+            const tableSelect = document.getElementById('tableSelect');
+            tableSelect.innerHTML = '';
+            
+            let tables = [];
+            if (section === 'indoor') tables = ['A1', 'A2', 'A3', 'A4', 'A5'];
+            if (section === 'outdoor') tables = ['V1', 'V2', 'V3', 'V4', 'V6'];
+            if (section === 'first_floor') tables = ['C1', 'C2', 'C3', 'C6'];
+
+            tables.forEach(t => {
+                let opt = document.createElement('option');
+                opt.value = t;
+                opt.innerText = t;
+                tableSelect.appendChild(opt);
+            });
+        }
+
+        // মেনু ফেচ করা
+        async function fetchMenu() {
+            const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
+            if (error) {
+                console.error('Error fetching menu:', error);
+                return;
+            }
+            menuItems = data || [];
+            renderMenu();
+        }
+
+        // মেনু রেন্ডার করা
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            container.innerHTML = '';
+            
+            if(menuItems.length === 0) {
+                container.innerHTML = `<p class="text-gray-500">কোনো মেনু আইটেম পাওয়া যায়নি। দয়া করে Supabase-এ মেনু যুক্ত করুন।</p>`;
+                return;
+            }
+
+            menuItems.forEach(item => {
+                container.innerHTML += `
+                    <div class="bg-white border p-4 rounded shadow flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-lg">${item.name_en}</h3>
+                            <p class="text-gray-600 mb-3">৳${item.price}</p>
+                        </div>
+                        <button onclick="addToCart(${item.id})" class="bg-green-600 text-white w-full py-1 rounded font-semibold hover:bg-green-700">
+                            Add to Cart
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // কার্টে যোগ করা
+        function addToCart(id) {
+            const item = menuItems.find(m => m.id === id);
+            const exist = cart.find(c => c.id === id);
+            if (exist) {
+                exist.quantity += 1;
+            } else {
+                cart.push({ ...item, quantity: 1 });
+            }
+            updateCartBar();
+        }
+
+        // কার্ট বার আপডেট
+        function updateCartBar() {
+            const bar = document.getElementById('cartBar');
+            const count = document.getElementById('cartCount');
+            const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
+            
+            if (totalQty > 0) {
+                bar.classList.remove('hidden');
+                count.innerText = `${totalQty} Items in Cart`;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
+
+        // অর্ডার প্লেস করা
+        async function placeOrder() {
+            const section = document.getElementById('sectionSelect').value;
+            const tableId = document.getElementById('tableSelect').value;
+            const totalAmount = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+
+            const { data: orderData, error: orderError } = await _supabase.from('orders').insert([{
+                order_type: 'dine_in',
+                section: section,
+                table_id: tableId,
+                total_amount: totalAmount,
+                status: 'pending',
+                payment_status: 'unpaid'
+            }]).select().single();
+
+            if (orderError) {
+                alert('Order failed to place!');
+                return;
+            }
+
+            const orderItems = cart.map(i => ({
+                order_id: orderData.id,
+                menu_item_id: i.id,
+                quantity: i.quantity,
+                price: i.price
+            }));
+
+            await _supabase.from('order_items').insert(orderItems);
+
+            alert('Order placed successfully! Please pay at the counter.');
+            cart = [];
+            updateCartBar();
+        }
+
+        updateTables();
+        fetchMenu();
+    </script>
+</body>
+</html>
