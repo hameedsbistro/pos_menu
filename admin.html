@@ -29,7 +29,7 @@
         <!-- CSV আপলোড সেকশন -->
         <div class="bg-white p-6 rounded shadow mb-6 border">
             <h3 class="font-semibold text-lg mb-2">Upload Menu via CSV</h3>
-            <p class="text-sm text-gray-500 mb-4">CSV format columns: <code>name, category, price</code></p>
+            <p class="text-sm text-gray-500 mb-4">CSV format columns supported: <code>Name, Category, Dine In Price, Takeaway Price</code></p>
             <input type="file" id="csvFile" accept=".csv" class="mb-3 block border p-2 rounded w-full max-w-md" />
             <button onclick="uploadCSV()" class="bg-purple-600 text-white px-6 py-2 rounded font-bold hover:bg-purple-700">Upload CSV</button>
         </div>
@@ -84,7 +84,7 @@
 
         // মেনু ফেচ করা এবং টেবিলে দেখানো
         async function fetchAdminMenu() {
-            const { data: menu } = await _supabase.from('menu_items').select('*');
+            const { data: menu } = await _supabase.from('menu_items').select('*').order('id', { ascending: false });
             const tbody = document.getElementById('adminMenuTable');
             tbody.innerHTML = '';
 
@@ -132,7 +132,7 @@
             await _supabase.from('menu_items').update({ image_url: imgUrl }).eq('id', itemId);
         }
 
-        // CSV ফাইল আপলোড ও ডাটাবেসে সেভ করা
+        // CSV ফাইল আপলোড ও ডাটাবেসে সেভ করা (ব্যাচ প্রসেসিং সহ)
         function uploadCSV() {
             const fileInput = document.getElementById('csvFile');
             if (fileInput.files.length === 0) {
@@ -143,20 +143,35 @@
             Papa.parse(fileInput.files[0], {
                 header: true,
                 complete: async function(results) {
-                    const rows = results.data.map(r => ({
-                        name_en: r.name,
-                        category: r.category,
-                        price: parseFloat(r.price),
-                        is_available: true
-                    }));
+                    const rows = results.data
+                        .filter(r => r.Name && r.Name.trim() !== '')
+                        .map(r => ({
+                            name_en: r.Name.trim(),
+                            category: r.Category ? r.Category.trim() : 'General',
+                            price: parseFloat(r['Dine In Price']) || 0,
+                            is_available: true
+                        }));
 
-                    const { error } = await _supabase.from('menu_items').insert(rows);
-                    if (error) {
-                        alert('সিএসভি আপলোড ব্যর্থ হয়েছে!');
-                    } else {
-                        alert('মেনু সফলভাবে আপলোড হয়েছে!');
-                        fetchAdminMenu();
+                    if (rows.length === 0) {
+                        alert('সিএসভি ফাইলে কোনো বৈধ ডেটা পাওয়া যায়নি!');
+                        return;
                     }
+
+                    // একসাথে অনেক ডেটা থাকলে Supabase-এ ৫০০টি করে ব্যাচে আপলোড করা
+                    const batchSize = 500;
+                    for (let i = 0; i < rows.length; i += batchSize) {
+                        const batch = rows.slice(i, i + batchSize);
+                        const { error } = await _supabase.from('menu_items').insert(batch);
+                        
+                        if (error) {
+                            console.error(error);
+                            alert('সিএসভি আপলোড করতে গিয়ে ত্রুটি হয়েছে!');
+                            return;
+                        }
+                    }
+
+                    alert('সব মেনু সফলভাবে আপলোড হয়েছে!');
+                    fetchAdminMenu();
                 }
             });
         }
