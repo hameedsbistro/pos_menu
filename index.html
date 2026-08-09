@@ -3,394 +3,508 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hameed's Restaurant POS & Ordering</title>
-    <!-- Tailwind CSS -->
+    <title>Restoran Hameeds Bistro</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
+    <!-- Supabase JS Library CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    </style>
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased pb-24">
-        <!-- টপ হেডার -->
-    <header class="bg-blue-900 text-white sticky top-0 z-40 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-white focus:outline-none text-xl">
-                    ☰
-                </button>
-                <h1 class="font-bold text-lg tracking-wide" data-i18n="brandName">Hameed's Restaurant</h1>
-            </div>
-            
-            <div class="flex items-center gap-3">
-                <!-- ভাষা পরিবর্তন ড্রপডাউন -->
-                <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-blue-800 text-white text-xs font-semibold px-2 py-1.5 rounded-lg border border-blue-700 focus:outline-none">
-                    <option value="en">English</option>
-                    <option value="ms">Melayu</option>
-                    <option value="bn">বাংলা</option>
-                    <option value="ta">தமிழ்</option>
-                    <option value="zh">中文</option>
-                </select>
+<body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans">
 
-                <!-- লগইন / প্রফাইল বাটন -->
-                <button onclick="handleAuthClick()" class="bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-bold text-xs px-3 py-1.5 rounded-lg transition shadow">
-                    <span id="loginBtnText" data-i18n="login">Login</span>
-                </button>
+    <!-- হেডার সেকশন -->
+    <header class="bg-blue-900 text-white p-4 shadow-lg flex justify-between items-center relative">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <img src="images/logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover">
+            <div>
+                <h1 class="text-lg font-bold uppercase tracking-wider">Restoran Hameeds Bistro</h1>
+                <p class="text-xs text-yellow-300" data-i18n="subtitle">Dine-In & Takeaway Ordering System</p>
             </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- ডাইনামিক লগইন/প্রোফাইল বাটন -->
+            <button id="mainAuthBtn" onclick="handleAuthClick()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition flex items-center gap-1 text-sm font-semibold">
+                <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span id="loginBtnText" data-i18n="login">Login</span>
+            </button>
+            <!-- লাইভ চ্যাট বাটন -->
+            <button onclick="openChat()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition flex items-center gap-1 text-sm font-semibold" title="Live Chat">
+                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                <span class="hidden md:inline" data-i18n="liveChat">Live Chat</span>
+            </button>
         </div>
     </header>
-        <!-- সাইডবার (Sidebar) -->
-    <div id="sidebar" class="fixed inset-y-0 left-0 bg-white w-64 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between">
+    <!-- বাঁ দিকের স্লাইডিং মেনু/সাইডবার -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
         <div>
-            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
-                <h2 class="font-bold text-lg" data-i18n="menu">Menu</h2>
-                <button onclick="toggleSidebar()" class="text-white text-xl font-bold">×</button>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800" data-i18n="menuAndProfile">Menu & Profile</h2>
+                <button onclick="toggleSidebar()" class="text-gray-500 hover:text-black font-bold text-xl">✕</button>
             </div>
-            
-            <div id="sidebarProfile" class="hidden p-4 bg-blue-50 border-b">
-                <p class="font-bold text-blue-900 text-sm" id="profileName">User Name</p>
-                <p class="text-xs text-gray-600" id="profileEmail">user@email.com</p>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-1" data-i18n="selectLang">Select Language</label>
+                <select id="langSelect" onchange="changeLanguage(this.value)" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
+                    <option value="en">English</option>
+                    <option value="ms">Malay (Melayu)</option>
+                    <option value="bn">বাংলা (Bengali)</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="ta">தமிழ் (Tamil)</option>
+                    <option value="ar">العربية (Arabic)</option>
+                    <option value="zh">中文 (Chinese)</option>
+                </select>
+            </div>
+            <div id="sidebarProfile" class="mb-6 p-4 bg-gray-50 rounded-lg border hidden">
+                <h3 class="font-bold text-gray-800" id="profileName">Guest</h3>
+                <p class="text-xs text-gray-500" id="profileEmail">-</p>
+                <button onclick="logoutCustomer()" class="mt-2 text-xs text-red-600 font-bold hover:underline" data-i18n="logout">Logout</button>
+            </div>
+            <ul class="space-y-3 font-semibold text-gray-700">
+                <li><a href="#" onclick="toggleSidebar(); showHome();" class="hover:text-blue-600" data-i18n="home">Home</a></li>
+                <li><a href="#" onclick="toggleSidebar(); showOrderHistory();" class="hover:text-blue-600" data-i18n="orderHistory">Order History</a></li>
+            </ul>
+        </div>
+        <div class="text-xs text-gray-400 text-center">Hameeds Bistro v2.0</div>
+    </div>
+    <!-- মূল কন্টেন্ট সেকশন -->
+    <main class="p-6 max-w-4xl mx-auto flex-grow w-full">
+        <!-- হোম পেজ -->
+        <div id="homeView" class="bg-white p-8 rounded-2xl shadow-md text-center border border-gray-200">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2" data-i18n="welcomeTitle">Welcome to Hameeds Bistro</h2>
+            <p class="text-gray-600 mb-8" data-i18n="welcomeSubtitle">Please choose your dining method to start ordering</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
+                <button onclick="startOrder('dine_in')" class="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-xl font-bold text-xl shadow-lg transition" data-i18n="dineInBtn">🍽️ Dine-In</button>
+                <button onclick="startOrder('takeaway')" class="bg-green-600 hover:bg-green-700 text-white p-6 rounded-xl font-bold text-xl shadow-lg transition" data-i18n="takeawayBtn">🛍️ Takeaway</button>
+            </div>
+        </div>
+        <!-- অর্ডার পেজ -->
+        <div id="orderView" class="hidden">
+            <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <button onclick="showHome()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition">
+                        🏠 <span data-i18n="home">Home</span>
+                    </button>
+                    <div>
+                        <span id="selectedOrderType" class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded uppercase">Dine-In</span>
+                        <p class="text-xs text-gray-500" data-i18n="currentLocation">Current Order Location</p>
+                    </div>
+                </div>
+
+                <div id="tableChangeContainer" class="flex items-center gap-2">
+                    <select id="activeSectionSelect" onchange="updateActiveTableDropdown()" class="border p-2 rounded-lg text-sm font-semibold bg-gray-50">
+                        <option value="indoor" data-i18n="indoor">Indoor (A)</option>
+                        <option value="outdoor" data-i18n="outdoor">Outdoor (B)</option>
+                        <option value="first_floor" data-i18n="firstFloor">First Floor (C)</option>
+                    </select>
+                    <select id="activeTableSelect" class="border p-2 rounded-lg text-sm font-semibold bg-gray-50"></select>
+                </div>
             </div>
 
-            <div class="p-4 space-y-3">
-                <button onclick="showHome(); toggleSidebar();" class="w-full text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 text-sm flex items-center gap-2">
-                    🏠 <span data-i18n="home">Home</span>
-                </button>
-                <button onclick="showOrderHistory(); toggleSidebar();" class="w-full text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 text-sm flex items-center gap-2">
-                    📋 <span data-i18n="orderHistory">Order History</span>
-                </button>
-                <button onclick="openChat(); toggleSidebar();" class="w-full text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 text-sm flex items-center gap-2">
-                    💬 <span data-i18n="liveChat">Live Chat</span>
-                </button>
-            </div>
+            <div class="mb-6 flex gap-3 overflow-x-auto pb-2" id="categoryContainer"></div>
+            <h3 class="text-2xl font-bold mb-4 text-gray-800" id="menuTitle" data-i18n="topPopular">Top 15 Popular Items</h3>
+            <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24"></div>
         </div>
         
-        <div class="p-4 border-t">
-            <button onclick="logoutCustomer()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 rounded-xl text-sm transition" data-i18n="logout">Logout</button>
-        </div>
-    </div>
-
-    <!-- হোম ভিউ (অর্ডার টাইপ সিলেকশন) -->
-    <main id="homeView" class="max-w-4xl mx-auto px-4 py-8">
-        <div class="text-center mb-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2" data-i18n="welcomeMsg">Welcome to Hameed's Restaurant</h2>
-            <p class="text-sm text-gray-600" data-i18n="selectOrderTypePrompt">Please select your dining method to start ordering</p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div onclick="startOrder('dine_in')" class="bg-white border-2 border-blue-100 hover:border-blue-600 p-6 rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer text-center flex flex-col items-center">
-                <div class="bg-blue-50 text-blue-600 p-4 rounded-full text-3xl mb-4">🍽️</div>
-                <h3 class="font-bold text-xl text-gray-800 mb-1" data-i18n="dineIn">Dine-In</h3>
-                <p class="text-xs text-gray-500" data-i18n="dineInDesc">Enjoy your meal at our restaurant tables</p>
+        <!-- অর্ডার হিস্টরি ভিউ -->
+        <div id="historyView" class="hidden">
+            <div class="flex gap-2 mb-4">
+                <button onclick="showHome()" class="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-1">🏠 <span data-i18n="home">Home</span></button>
             </div>
-
-            <div onclick="startOrder('takeaway')" class="bg-white border-2 border-blue-100 hover:border-blue-600 p-6 rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer text-center flex flex-col items-center">
-                <div class="bg-yellow-50 text-yellow-600 p-4 rounded-full text-3xl mb-4">🛍️</div>
-                <h3 class="font-bold text-xl text-gray-800 mb-1" data-i18n="takeaway">Takeaway</h3>
-                <p class="text-xs text-gray-500" data-i18n="takeawayDesc">Pack your food to take away</p>
-            </div>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800" data-i18n="orderHistory">Order History</h2>
+            <div id="orderHistoryContainer" class="space-y-4"></div>
         </div>
     </main>
-
-    <!-- অর্ডার ও মেনু ভিউ (যা শুরুতে লুকানো থাকে) -->
-    <main id="orderView" class="max-w-7xl mx-auto px-4 py-6 hidden">
-        <div class="flex flex-wrap justify-between items-center mb-6 gap-4 bg-white p-4 rounded-xl shadow-sm border">
-            <div class="flex items-center gap-3">
-                <button onclick="showHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-sm transition">← Back</button>
-                <h3 class="font-bold text-lg text-blue-900" id="selectedOrderType">Dine-In</h3>
-            </div>
-            
-            <div id="tableChangeContainer" class="flex items-center gap-2">
-                <select id="activeSectionSelect" onchange="updateActiveTableDropdown()" class="border p-2 rounded-lg text-xs font-semibold bg-gray-50">
-                    <option value="indoor">Indoor</option>
-                    <option value="outdoor">Outdoor</option>
-                    <option value="vip">VIP</option>
-                </select>
-                <select id="activeTableSelect" class="border p-2 rounded-lg text-xs font-semibold bg-gray-50">
-                </select>
-            </div>
-        </div>
-            <!-- Login / Register Modal -->
-    <div id="authModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
-                <h3 id="authModalTitle" class="font-bold text-lg">Customer Login</h3>
-                <button onclick="closeAuthModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
-            </div>
-            <div class="p-6 space-y-4">
-                <!-- ফর্ম টেমপ্লেট -->
-                <div id="registerNameGroup" class="space-y-1 hidden">
-                    <label class="block text-xs font-semibold text-gray-600">Full Name</label>
-                    <input type="text" id="authName" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" placeholder="Your Name">
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold text-gray-600">Email Address</label>
-                    <input type="email" id="authEmail" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" placeholder="customer@email.com">
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold text-gray-600">Password</label>
-                    <input type="password" id="authPassword" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" placeholder="••••••••">
-                </div>
-
-                <button id="authSubmitBtn" onclick="handleAuthSubmit()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow">Login</button>
-                
-                <div class="text-center pt-2">
-                    <p id="authSwitchText" class="text-xs text-gray-600">
-                        Don't have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-bold underline">Register here</button>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-        
-
-        <!-- সার্চ ও ক্যাটাগরি ফিল্টার বার -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div class="relative">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
-                <input type="text" id="menuSearchInput" oninput="searchMenuItems(this.value)" placeholder="Search menu..." class="w-full border p-2.5 pl-9 rounded-lg text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
+    <!-- কার্ট ও চেকআউট বার -->
+    <div id="cartBar" class="hidden fixed bottom-16 left-0 right-0 bg-blue-900 text-white border-t border-blue-800 p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
+        <div class="flex items-center gap-3">
+            <span class="bg-yellow-400 text-black px-3 py-1 rounded-full font-bold text-sm" id="cartCount">0 Items</span>
             <div>
-                <select id="categoryDropdown" onchange="filterByCategoryDropdown(this.value)" class="w-full border p-2.5 rounded-lg text-sm bg-white shadow-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="popular">Top 15 Popular Items</option>
-                </select>
+                <span class="text-xs text-yellow-300 block" data-i18n="subtotal">Subtotal:</span>
+                <span class="font-bold text-lg" id="cartSubtotal">৳0.00</span>
             </div>
         </div>
-
-        <div class="mb-4">
-            <h3 id="menuTitle" class="font-bold text-xl text-gray-900">Top 15 Popular Items</h3>
-        </div>
-
-        <!-- মেনু আইটেম গ্রিড -->
-        <div id="menuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        </div>
-    </main>
-
-    <!-- কার্ট স্টিকি বার -->
-    <div id="cartBar" class="hidden fixed bottom-0 inset-x-0 bg-blue-900 text-white p-4 shadow-2xl z-40 flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl">
-        <div>
-            <p id="cartCount" class="text-xs font-semibold text-yellow-400">0 Items</p>
-            <p id="cartSubtotal" class="font-bold text-lg">৳0.00</p>
-        </div>
-        <button onclick="openCartModal()" class="bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-bold px-6 py-2.5 rounded-xl transition shadow">View Cart & Checkout</button>
+        <button onclick="openCartModal()" class="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl font-bold shadow transition flex items-center gap-2">
+            🛒 <span data-i18n="viewCartCheckout">View Cart & Checkout</span>
+        </button>
     </div>
 
-    <!-- অর্ডার হিস্ট্রি ভিউ -->
-    <main id="historyView" class="max-w-4xl mx-auto px-4 py-8 hidden">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-900">My Order History</h2>
-            <button onclick="showHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-sm transition">Back to Home</button>
-        </div>
-        <div id="orderHistoryContainer" class="space-y-4">
-        </div>
-    </main>
-        <!-- কার্ট মোডাল -->
-    <div id="cartModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-lg" data-i18n="cartTitle">Your Cart</h3>
-                <button onclick="closeCartModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
+    <!-- কার্ট মোডাল / প্যানেল -->
+    <div id="cartModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeCartModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black font-bold text-xl">✕</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Your Shopping Cart</h3>
+            <div id="cartItemsListContainer" class="max-h-60 overflow-y-auto mb-4 border-b pb-2 space-y-3"></div>
+            <div class="flex justify-between items-center mb-6 font-bold text-lg text-black">
+                <span>Subtotal:</span> <span id="cartModalSubtotal">৳0.00</span>
             </div>
-            <div id="cartItemsListContainer" class="p-4 overflow-y-auto space-y-3 flex-grow">
-            </div>
-            <div class="p-4 bg-gray-50 border-t space-y-3">
-                <div class="flex justify-between font-bold text-base">
-                    <span data-i18n="subtotal">Subtotal:</span>
-                    <span id="cartModalSubtotal">৳0.00</span>
-                </div>
-                <button onclick="proceedToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow" data-i18n="proceedCheckout">Proceed to Checkout</button>
-            </div>
+            <button onclick="proceedToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow transition">Proceed to Checkout</button>
         </div>
     </div>
 
     <!-- চেকআউট মোডাল -->
-    <div id="checkoutModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-lg" data-i18n="checkoutTitle">Checkout & Confirm Order</h3>
-                <button onclick="closeCheckoutModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
+    <div id="checkoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeCheckoutModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black font-bold text-xl">✕</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="orderSummary">Order Summary & Checkout</h3>
+            
+            <!-- অর্ডার টাইপ ও টেবিল/লোকেশন ইনফো -->
+            <div class="bg-blue-50 p-3 rounded-lg mb-4 text-xs text-blue-900 space-y-1 font-semibold">
+                <div class="flex justify-between"><span>Order Type:</span> <span id="summaryOrderType" class="uppercase">Takeaway</span></div>
+                <div class="flex justify-between"><span>Table / Location:</span> <span id="summaryTableLocation">TAKEAWAY</span></div>
             </div>
-            <div class="p-4 overflow-y-auto space-y-4 flex-grow">
-                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                    <p class="text-xs text-blue-600 font-semibold" data-i18n="orderSummaryType">Order Type & Location:</p>
-                    <p class="font-bold text-gray-800"><span id="summaryOrderType">Dine-In</span> - <span id="summaryTableLocation">Table A1</span></p>
-                </div>
-                
-                <div class="space-y-2">
-                    <label class="block text-xs font-semibold text-gray-600" data-i18n="fullName">Full Name</label>
-                    <input type="text" id="checkoutName" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" placeholder="Customer Name">
-                </div>
-                <div class="space-y-2">
-                    <label class="block text-xs font-semibold text-gray-600" data-i18n="phone">Phone Number</label>
-                    <input type="text" id="checkoutPhone" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" placeholder="Phone Number">
-                </div>
 
-                <div class="border-t pt-3">
-                    <h4 class="font-bold text-sm text-gray-800 mb-2" data-i18n="orderItems">Order Items</h4>
-                    <div id="checkoutItemsList" class="space-y-1 max-h-32 overflow-y-auto"></div>
+            <div id="checkoutItemsList" class="max-h-36 overflow-y-auto mb-4 border-b pb-2 space-y-2"></div>
+            <div class="space-y-1 mb-4 text-sm text-gray-700">
+                <div class="flex justify-between"><span data-i18n="subtotal">Subtotal:</span> <span id="modalSubtotal">৳0.00</span></div>
+                <div class="flex justify-between"><span data-i18n="sstTax">SST Tax (6%):</span> <span id="modalTax">৳0.00</span></div>
+                <div class="flex justify-between font-bold text-lg text-black border-t pt-1"><span data-i18n="total">Total:</span> <span id="modalTotal">৳0.00</span></div>
+            </div>
+            <div class="space-y-3 mb-6">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600" data-i18n="customerName">Customer Name</label>
+                    <input type="text" id="checkoutName" class="w-full border p-2 rounded-lg text-sm bg-gray-50" readonly>
                 </div>
-
-                <div class="border-t pt-3 space-y-1 text-sm">
-                    <div class="flex justify-between text-gray-600"><span>Subtotal</span><span id="modalSubtotal">৳0.00</span></div>
-                    <div class="flex justify-between text-gray-600"><span>Tax (6%)</span><span id="modalTax">৳0.00</span></div>
-                    <div class="flex justify-between font-bold text-lg text-blue-900 border-t pt-2"><span>Total</span><span id="modalTotal">৳0.00</span></div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600" data-i18n="phoneNumber">Phone Number</label>
+                    <input type="text" id="checkoutPhone" class="w-full border p-2 rounded-lg text-sm bg-gray-50" readonly>
                 </div>
             </div>
-            <div class="p-4 bg-gray-50 border-t">
-                <button onclick="submitOrder()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition shadow" data-i18n="placeOrder">Place Order (Cashier Verification)</button>
+            <div class="flex gap-3">
+                <button onclick="closeCheckoutModal()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2.5 rounded-xl font-semibold" data-i18n="cancel">Cancel</button>
+                <button onclick="submitOrder()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold" data-i18n="placeOrder">Place Order</button>
             </div>
         </div>
     </div>
-        <script>
-        // আপনার সঠিক Supabase URL এবং Anon Key এখানে বসিয়ে দিন
+
+    <!-- লগইন ও রেজিস্ট্রেশন মোডাল -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-800 mb-4" id="authTitle" data-i18n="customerLogin">Customer Login</h3>
+            <div id="loginForm" class="space-y-3">
+                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="password" id="loginPassword" placeholder="Password" class="w-full border p-2.5 rounded-lg text-sm">
+                <button onclick="loginCustomer()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold" data-i18n="login">Login</button>
+                <p class="text-xs text-center text-gray-500 mt-2"><span data-i18n="noAccount">Don't have an account?</span> <span onclick="toggleAuthMode('register')" class="text-blue-600 cursor-pointer font-bold" data-i18n="registerHere">Register here</span></p>
+            </div>
+            <div id="registerForm" class="space-y-3 hidden">
+                <input type="text" id="regName" placeholder="Full Name" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="text" id="regPhone" placeholder="Phone Number" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="email" id="regEmail" placeholder="Email (Username)" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="password" id="regPassword" placeholder="Password" class="w-full border p-2.5 rounded-lg text-sm">
+                <button onclick="registerCustomer()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-semibold" data-i18n="registerAccount">Register Account</button>
+                <p class="text-xs text-center text-gray-500 mt-2"><span data-i18n="hasAccount">Already have an account?</span> <span onclick="toggleAuthMode('login')" class="text-blue-600 cursor-pointer font-bold" data-i18n="loginHere">Login here</span></p>
+            </div>
+            <button onclick="closeLoginModal()" class="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-xl text-sm font-semibold" data-i18n="close">Close</button>
+        </div>
+    </div>
+
+    <!-- ফুটার সেকশন -->
+    <footer class="bg-gray-900 text-gray-300 text-center py-4 border-t border-gray-800">
+        <p class="text-sm font-medium tracking-wide">
+            Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
+        </p>
+    </footer>
+    <script>
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let currentOrderType = 'dine_in';
         let menuItems = [];
         let cart = [];
-        let currentOrderType = 'dine_in';
-        let currentLanguage = 'en';
+        let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
+        let currentLang = localStorage.getItem('hameeds_lang') || 'en';
 
-        // মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি
+        // ৭টি ভাষার মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি
         const translations = {
             en: {
-                brandName: "Hameed's Restaurant",
-                menu: "Menu",
+                subtitle: "Dine-In & Takeaway Ordering System",
+                login: "Login",
+                liveChat: "Live Chat",
+                menuAndProfile: "Menu & Profile",
+                selectLang: "Select Language",
+                logout: "Logout",
                 home: "Home",
                 orderHistory: "Order History",
-                liveChat: "Live Chat",
-                logout: "Logout",
-                login: "Login",
-                welcomeMsg: "Welcome to Hameed's Restaurant",
-                selectOrderTypePrompt: "Please select your dining method to start ordering",
-                dineIn: "Dine-In",
-                dineInDesc: "Enjoy your meal at our restaurant tables",
-                takeaway: "Takeaway",
-                takeawayDesc: "Pack your food to take away",
-                cartTitle: "Your Cart",
+                welcomeTitle: "Welcome to Hameeds Bistro",
+                welcomeSubtitle: "Please choose your dining method to start ordering",
+                dineInBtn: "🍽️ Dine-In",
+                takeawayBtn: "🛍️ Takeaway",
+                currentLocation: "Current Order Location",
+                indoor: "Indoor (A)",
+                outdoor: "Outdoor (B)",
+                firstFloor: "First Floor (C)",
+                topPopular: "Top 15 Popular Items",
                 subtotal: "Subtotal:",
-                proceedCheckout: "Proceed to Checkout",
-                checkoutTitle: "Checkout & Confirm Order",
-                orderSummaryType: "Order Type & Location:",
-                fullName: "Full Name",
-                phone: "Phone Number",
-                orderItems: "Order Items",
-                placeOrder: "Place Order"
+                viewCartCheckout: "View Cart & Checkout",
+                orderSummary: "Order Summary & Checkout",
+                sstTax: "SST Tax (6%):",
+                total: "Total:",
+                customerName: "Customer Name",
+                phoneNumber: "Phone Number",
+                cancel: "Cancel",
+                placeOrder: "Place Order",
+                customerLogin: "Customer Login",
+                noAccount: "Don't have an account?",
+                registerHere: "Register here",
+                registerAccount: "Register Account",
+                hasAccount: "Already have an account?",
+                loginHere: "Login here",
+                close: "Close"
             },
             ms: {
-                brandName: "Restoran Hameed",
-                menu: "Menu",
+                subtitle: "Sistem Pesanan Makan & Bawa Pulang",
+                login: "Log Masuk",
+                liveChat: "Sembang",
+                menuAndProfile: "Menu & Profil",
+                selectLang: "Pilih Bahasa",
+                logout: "Log Keluar",
                 home: "Utama",
                 orderHistory: "Sejarah Pesanan",
-                liveChat: "Sembang Langsung",
-                logout: "Log Keluar",
-                login: "Log Masuk",
-                welcomeMsg: "Selamat Datang ke Restoran Hameed",
-                selectOrderTypePrompt: "Sila pilih cara makan anda untuk mula memesan",
-                dineIn: "Makan di Sini",
-                dineInDesc: "Nikmati hidangan anda di meja restoran kami",
-                takeaway: "Bungkus",
-                takeawayDesc: "Bungkus makanan anda untuk dibawa pulang",
-                cartTitle: "Troli Anda",
+                welcomeTitle: "Selamat Datang ke Hameeds Bistro",
+                welcomeSubtitle: "Sila pilih kaedah menjamu selera untuk mula memesan",
+                dineInBtn: "🍽️ Makan di Sini",
+                takeawayBtn: "🛍️ Bawa Pulang",
+                currentLocation: "Lokasi Pesanan Semasa",
+                indoor: "Dalam Bangunan (A)",
+                outdoor: "Luar (B)",
+                firstFloor: "Tingkat Pertama (C)",
+                topPopular: "15 Menu Paling Popular",
                 subtotal: "Subjumlah:",
-                proceedCheckout: "Teruskan ke Pembayaran",
-                checkoutTitle: "Pembayaran & Sahkan Pesanan",
-                orderSummaryType: "Jenis & Lokasi Pesanan:",
-                fullName: "Nama Penuh",
-                phone: "Nombor Telefon",
-                orderItems: "Item Pesanan",
-                placeOrder: "Buat Pesanan"
+                viewCartCheckout: "Lihat Troli & Bayar",
+                orderSummary: "Ringkasan Pesanan & Pembayaran",
+                sstTax: "Cukai SST (6%):",
+                total: "Jumlah:",
+                customerName: "Nama Pelanggan",
+                phoneNumber: "Nombor Telefon",
+                cancel: "Batal",
+                placeOrder: "Buat Pesanan",
+                customerLogin: "Log Masuk Pelanggan",
+                noAccount: "Tiada akaun?",
+                registerHere: "Daftar di sini",
+                registerAccount: "Daftar Akaun",
+                hasAccount: "Sudah ada akaun?",
+                loginHere: "Log masuk di sini",
+                close: "Tutup"
             },
             bn: {
-                brandName: "হামিদস রেস্টুরেন্ট",
-                menu: "মেনু",
-                home: "হোম",
-                orderHistory: "অর্ডার হিস্ট্রি",
-                liveChat: "লাইভ চ্যাট",
-                logout: "লগআউট",
+                subtitle: "ডাইন-ইন ও টেকঅ্যাওয়ে অর্ডার সিস্টেম",
                 login: "লগইন",
-                welcomeMsg: "হামিদস রেস্টুরেন্টে স্বাগতম",
-                selectOrderTypePrompt: "অর্ডার শুরু করতে আপনার ডাইনিং পদ্ধতি নির্বাচন করুন",
-                dineIn: "ডাইন-ইন",
-                dineInDesc: "আমাদের রেস্টুরেন্টের টেবিলে বসে খাবার উপভোগ করুন",
-                takeaway: "টেকঅ্যাওয়ে",
-                takeawayDesc: "খাবার পার্সেল করে নিয়ে যান",
-                cartTitle: "আপনার কার্ট",
+                liveChat: "লাইভ চ্যাট",
+                menuAndProfile: "মেনু ও প্রোফাইল",
+                selectLang: "ভাষা নির্বাচন করুন",
+                logout: "লগআউট",
+                home: "হোম",
+                orderHistory: "অর্ডার ইতিহাস",
+                welcomeTitle: "হামিদস বিস্ট্রোতে স্বাগতম",
+                welcomeSubtitle: "অর্ডার শুরু করতে আপনার ডাইনিং পদ্ধতি বেছে নিন",
+                dineInBtn: "🍽️ ডাইন-ইন",
+                takeawayBtn: "🛍️ টেকঅ্যাওয়ে",
+                currentLocation: "বর্তমান অর্ডারের অবস্থান",
+                indoor: "ইনডোর (এ)",
+                outdoor: "আউটডোর (বি)",
+                firstFloor: "প্রথম তলা (সি)",
+                topPopular: "সেরা ১৫টি জনপ্রিয় খাবার",
                 subtotal: "সাবটোটাল:",
-                proceedCheckout: "চেকআউটে যান",
-                checkoutTitle: "চেকআউট এবং অর্ডার নিশ্চিত করুন",
-                orderSummaryType: "অর্ডারের ধরন ও স্থান:",
-                fullName: "पूরা নাম",
-                phone: "মোবাইল নম্বর",
-                orderItems: "অর্ডারের আইটেমসমূহ",
-                placeOrder: "অর্ডার প্লেস করুন"
+                viewCartCheckout: "কার্ট দেখুন ও চেকআউট",
+                orderSummary: "অর্ডার সারাংশ ও চেকআউট",
+                sstTax: "এসএসটি ট্যাক্স (৬%):",
+                total: "মোট:",
+                customerName: "গ্রাহকের নাম",
+                phoneNumber: "মোবাইল নম্বর",
+                cancel: "বাতিল",
+                placeOrder: "অর্ডার নিশ্চিত করুন",
+                customerLogin: "গ্রাহক লগইন",
+                noAccount: "একাউন্ট নেই?",
+                registerHere: "রেজিস্ট্রেশন করুন",
+                registerAccount: "একাউন্ট তৈরি করুন",
+                hasAccount: "ইতিমধ্যে একাউন্ট আছে?",
+                loginHere: "লগইন করুন",
+                close: "বন্ধ করুন"
+            },
+            hi: {
+                subtitle: "डाइन-इन और टेकअवे ऑर्डरिंग सिस्टम",
+                login: "लॉगिन",
+                liveChat: "लाइव चैट",
+                menuAndProfile: "मेन्यू और प्रोफाइल",
+                selectLang: "भाषा चुनें",
+                logout: "लॉग आउट",
+                home: "होम",
+                orderHistory: "ऑर्डर इतिहास",
+                welcomeTitle: "हमीड्स बिस्ट्रो में आपका स्वागत है",
+                welcomeSubtitle: "ऑर्डर शुरू करने के लिए अपनी डाइनिंग विधि चुनें",
+                dineInBtn: "🍽️ डाइन-इन",
+                takeawayBtn: "🛍️ टेकअवे",
+                currentLocation: "वर्तमान ऑर्डर स्थान",
+                indoor: "इनडोर (ए)",
+                outdoor: "आउटडोर (बी)",
+                firstFloor: "पहली मंजिल (सी)",
+                topPopular: "शीर्ष 15 लोकप्रिय वस्तुएं",
+                subtotal: "उप-कुल:",
+                viewCartCheckout: "कार्ट देखें और चेकआउट",
+                orderSummary: "ऑर्डर सारांश और चेकआउट",
+                sstTax: "कर (6%):",
+                total: "कुल:",
+                customerName: "ग्राहक का नाम",
+                phoneNumber: "फ़ोन नंबर",
+                cancel: "रद्द करें",
+                placeOrder: "ऑर्डर दें",
+                customerLogin: "ग्राहक लॉगिन",
+                noAccount: "खाता नहीं है?",
+                registerHere: "रजिस्टर करें",
+                registerAccount: "खाता रजिस्टर करें",
+                hasAccount: "पहले से खाता है?",
+                loginHere: "यहाँ लॉगिन करें",
+                close: "बंद करें"
             },
             ta: {
-                brandName: "ஹமீத் உணவகம்",
-                menu: "பட்டியல்",
+                subtitle: "உணவகம் & பார்சல் ஆர்டர் அமைப்பு",
+                login: "உள்நுழை",
+                liveChat: "நேரலை அரட்டை",
+                menuAndProfile: "மெனு & சுயவிவரம்",
+                selectLang: "மொழியைத் தேர்ந்தெடுக்கவும்",
+                logout: "வெளியேறு",
                 home: "முகப்பு",
                 orderHistory: "ஆர்டர் வரலாறு",
-                liveChat: "நேரலை அரட்டை",
-                logout: "வெளியேறு",
-                login: "உள்நுழை",
-                welcomeMsg: "ஹமீத் உணவகத்திற்கு உங்களை வரவேற்கிறோம்",
-                selectOrderTypePrompt: "ஆர்டர் செய்ய உங்கள் முறையைத் தேர்ந்தெடுக்கவும்",
-                dineIn: "உணவகத்தில் உண்ண",
-                dineInDesc: "எங்கள் உணவகத்தில் உணவை அனுபவிக்கவும்",
-                takeaway: "எடுத்துச் செல்ல",
-                takeawayDesc: "வீட்டிற்கு எடுத்துச் செல்ல பார்சல்",
-                cartTitle: "உங்கள் கூடை",
-                subtotal: "உப மொத்தம்:",
-                proceedCheckout: "செக் அவுட்டுக்குச் செல்லவும்",
-                checkoutTitle: "செக் அவுட் & ஆர்டர் உறுதிப்படுத்தல்",
-                orderSummaryType: "ஆர்டர் வகை & இடம்:",
-                fullName: "முழு பெயர்",
-                phone: "தொலைபேசி எண்",
-                orderItems: "ஆர்டர் பொருட்கள்",
-                placeOrder: "ஆர்டரை வைக்கவும்"
+                welcomeTitle: "ஹமீத்ஸ் பிஸ்ட்ரோவுக்கு உங்களை வரவேற்கிறோம்",
+                welcomeSubtitle: "ஆர்டர் செய்ய முறையைத் தேர்ந்தெடுக்கவும்",
+                dineInBtn: "🍽️ உள்ளே உட்கார்ந்து உண்ண",
+                takeawayBtn: "🛍️ பார்சல்",
+                currentLocation: "தற்போதைய இடம்",
+                indoor: "உள்ளகம் (A)",
+                outdoor: "வெளியகம் (B)",
+                firstFloor: "முதல் தளம் (C)",
+                topPopular: "பிரபலமான 15 உணவுகள்",
+                subtotal: "துணை மொத்தம்:",
+                viewCartCheckout: "கார்ட் பார்க்க & கட்டணம்",
+                orderSummary: "ஆர்டர் விவரம்",
+                sstTax: "வரி (6%):",
+                total: "மொத்தம்:",
+                customerName: "வாடிக்கையாளர் பெயர்",
+                phoneNumber: "தொலைபேசி எண்",
+                cancel: "ரத்து செய்",
+                placeOrder: "ஆர்டர் செய்",
+                customerLogin: "உள்நுழைவு",
+                noAccount: "கணக்கு இல்லையா?",
+                registerHere: "பதிவு செய்க",
+                registerAccount: "கணக்கை பதிவு செய்",
+                hasAccount: "ஏற்கனவே கணக்கு உள்ளதா?",
+                loginHere: "உள்நுழை",
+                close: "மூடு"
+            },
+            ar: {
+                subtitle: "نظام طلبات الطعام والاستلام",
+                login: "تسجيل الدخول",
+                liveChat: "دردشة مباشرة",
+                menuAndProfile: "القائمة والملف الشخصي",
+                selectLang: "اختر اللغة",
+                logout: "تسجيل الخروج",
+                home: "الرئيسية",
+                orderHistory: "سجل الطلبات",
+                welcomeTitle: "مرحباً بكم في حميدز بيسترو",
+                welcomeSubtitle: "يرجى اختيار طريقة تناول الطعام للبدء",
+                dineInBtn: "🍽️ داخل المطعم",
+                takeawayBtn: "🛍️ سفري",
+                currentLocation: "موقع الطلب الحالي",
+                indoor: "داخلي (A)",
+                outdoor: "خارجي (B)",
+                firstFloor: "الطابق الأول (C)",
+                topPopular: "أفضل 15 صنفاً محبوباً",
+                subtotal: "المجموع الفرعي:",
+                viewCartCheckout: "عرض السلة والدفع",
+                orderSummary: "ملخص الطلب والدفع",
+                sstTax: "ضريبة (6%):",
+                total: "الإجمالي:",
+                customerName: "اسم العميل",
+                phoneNumber: "رقم الهاتف",
+                cancel: "إلغاء",
+                placeOrder: "إتمام الطلب",
+                customerLogin: "تسجيل دخول العميل",
+                noAccount: "ليس لديك حساب؟",
+                registerHere: "سجل هنا",
+                registerAccount: "تسجيل حساب",
+                hasAccount: "لديك حساب بالفعل؟",
+                loginHere: "سجل دخولك هنا",
+                close: "إغلاق"
             },
             zh: {
-                brandName: "哈米德餐厅",
-                menu: "菜单",
+                subtitle: "堂食与外带点餐系统",
+                login: "登录",
+                liveChat: "在线客服",
+                menuAndProfile: "菜单与个人资料",
+                selectLang: "选择语言",
+                logout: "登出",
                 home: "首页",
                 orderHistory: "订单历史",
-                liveChat: "在线客服",
-                logout: "登出",
-                login: "登录",
-                welcomeMsg: "欢迎光临哈米德餐厅",
-                selectOrderTypePrompt: "请选择您的用餐方式开始点餐",
-                dineIn: "堂食",
-                dineInDesc: "在我们的餐桌上享用美食",
-                takeaway: "打包",
-                takeawayDesc: "打包带走",
-                cartTitle: "您的购物车",
-                subtotal: "小计:",
-                proceedCheckout: "去结算",
-                checkoutTitle: "结账并确认订单",
-                orderSummaryType: "订单类型与位置:",
-                fullName: "全名",
-                phone: "电话号码",
-                orderItems: "订单项目",
-                placeOrder: "提交订单"
+                welcomeTitle: "欢迎来到 Hameeds Bistro",
+                welcomeSubtitle: "请选择用餐方式以开始点餐",
+                dineInBtn: "🍽️ 堂食",
+                takeawayBtn: "🛍️ 外带",
+                currentLocation: "当前点餐位置",
+                indoor: "室内 (A)",
+                outdoor: "室外 (B)",
+                firstFloor: "一楼 (C)",
+                topPopular: "前15大热门菜品",
+                subtotal: "小计：",
+                viewCartCheckout: "查看购物车并结账",
+                orderSummary: "订单摘要与结账",
+                sstTax: "税费 (6%):",
+                total: "总计：",
+                customerName: "顾客姓名",
+                phoneNumber: "手机号码",
+                cancel: "取消",
+                placeOrder: "提交订单",
+                customerLogin: "顾客登录",
+                noAccount: "没有账号？",
+                registerHere: "在此注册",
+                registerAccount: "注册账号",
+                hasAccount: "已有账号？",
+                loginHere: "在此登录",
+                close: "关闭"
             }
         };
 
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('langSelect').value = currentLang;
+            applyLanguage(currentLang);
+            updateLoginUI();
+        });
+
         function changeLanguage(lang) {
-            currentLanguage = lang;
-            const elements = document.querySelectorAll('[data-i18n]');
-            elements.forEach(el => {
+            currentLang = lang;
+            localStorage.setItem('hameeds_lang', lang);
+            applyLanguage(lang);
+        }
+
+        function applyLanguage(lang) {
+            const t = translations[lang] || translations['en'];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if (translations[lang] && translations[lang][key]) {
-                    el.innerText = translations[lang][key];
+                if (t[key]) {
+                    el.innerText = t[key];
                 }
             });
         }
-                    function toggleSidebar() {
+
+        function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        }
+        function startOrder(type) {
+            currentOrderType = type;
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('orderView').classList.remove('hidden');
+            document.getElementById('historyView').classList.add('hidden');
+            document.getElementById('selectedOrderType').innerText = type === 'dine_in' ? 'Dine-In' : 'Takeaway';
+            
+            if(type === 'takeaway') {
+                document.getElementById('tableChangeContainer').classList.add('hidden');
+            } else {
+                document.getElementById('tableChangeContainer').classList.remove('hidden');
+                updateActiveTableDropdown();
+            }
+            fetchMenu();
         }
 
         function showHome() {
@@ -398,203 +512,146 @@
             document.getElementById('orderView').classList.add('hidden');
             document.getElementById('historyView').classList.add('hidden');
             document.getElementById('cartBar').classList.add('hidden');
+            cart = [];
         }
 
-        function startOrder(type) {
-            currentOrderType = type;
+        async function showOrderHistory() {
+            if(!loggedInCustomer) {
+                alert('Please login first to view order history.');
+                openLoginModal();
+                return;
+            }
             document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('orderView').classList.remove('hidden');
-            document.getElementById('cartBar').classList.remove('hidden');
-            
-            const titleEl = document.getElementById('selectedOrderType');
-            const tableContainer = document.getElementById('tableChangeContainer');
+            document.getElementById('orderView').classList.add('hidden');
+            document.getElementById('historyView').classList.remove('hidden');
+            document.getElementById('cartBar').classList.add('hidden');
 
-            if(type === 'dine_in') {
-                titleEl.innerText = translations[currentLanguage].dineIn || 'Dine-In';
-                tableContainer.classList.remove('hidden');
-                populateTables();
-            } else {
-                titleEl.innerText = translations[currentLanguage].takeaway || 'Takeaway';
-                tableContainer.classList.add('hidden');
+            const container = document.getElementById('orderHistoryContainer');
+            container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
+
+            const { data, error } = await _supabase.from('orders').select('*').eq('customer_id', loggedInCustomer.id).order('created_at', { ascending: false });
+            if(error || !data || data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No past orders found.</p>';
+                return;
             }
 
-            fetchMenu();
+            container.innerHTML = data.map(o => `
+                <div class="bg-white border p-4 rounded-xl shadow-sm flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-gray-800">Order ID: #${o.id}</p>
+                        <p class="text-xs text-gray-500">Type: ${o.order_type.toUpperCase()} | Table/Loc: ${o.table_id}</p>
+                        <p class="text-xs text-gray-500">Status: <span class="font-semibold text-blue-600">${o.status}</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-lg text-blue-600">৳${o.total_amount.toFixed(2)}</p>
+                        <p class="text-xs text-gray-400">${new Date(o.created_at).toLocaleString()}</p>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // সুপাবেজ থেকে মেনু ডেটা ফেচ করা
+        function updateActiveTableDropdown() {
+            const section = document.getElementById('activeSectionSelect').value;
+            const tableSelect = document.getElementById('activeTableSelect');
+            tableSelect.innerHTML = '';
+            let prefix = section === 'indoor' ? 'A' : (section === 'outdoor' ? 'B' : 'C');
+            for(let i=1; i<=30; i++) {
+                let opt = document.createElement('option');
+                opt.value = prefix + i;
+                opt.innerText = `Table ${prefix}${i}`;
+                tableSelect.appendChild(opt);
+            }
+        }
+
         async function fetchMenu() {
-            console.log("Fetching menu from Supabase...");
-            const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
-            
-            if(error) {
-                console.error("Error fetching menu:", error.message);
-                alert("Database Error: " + error.message);
-                return;
-            }
-
+            const { data } = await _supabase.from('menu_items').select('*').eq('is_available', true);
             menuItems = data || [];
-            console.log("Loaded items:", menuItems.length);
-            
-            renderCategoriesDropdown();
-            filterByCategoryDropdown('popular');
+            renderMenu(menuItems.filter(i => i.is_popular));
+            renderCategories();
         }
 
-        // ক্যাটাগরি ড্রপডাউন ডাইনামিক তৈরি করা
-        function renderCategoriesDropdown() {
-            const dropdown = document.getElementById('categoryDropdown');
-            if (!dropdown) return;
-
-            const categories = [...new Set(menuItems.map(item => item.category))];
-            
-            let optionsHTML = `<option value="popular">Top 15 Popular Items</option>`;
-            optionsHTML += `<option value="all">All Items</option>`;
-            
+        function renderCategories() {
+            const container = document.getElementById('categoryContainer');
+            const categories = [...new Set(menuItems.map(i => i.category))];
+            container.innerHTML = `<button onclick="renderMenu(menuItems.filter(i => i.is_popular))" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold whitespace-nowrap">Top 15 Popular</button>`;
             categories.forEach(cat => {
-                if (cat) {
-                    optionsHTML += `<option value="${cat}">${cat}</option>`;
-                }
+                container.innerHTML += `<button onclick="filterCategory('${cat}')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold whitespace-nowrap">${cat}</button>`;
             });
-            dropdown.innerHTML = optionsHTML;
         }
 
-        // ড্রপডাউন বা ক্যাটাগরি ফিল্টার
-        function filterByCategoryDropdown(val) {
-            const menuTitle = document.getElementById('menuTitle');
-            const searchInput = document.getElementById('menuSearchInput');
-            if (searchInput) searchInput.value = '';
-
-            let filteredItems = [];
-
-            if(val === 'popular') {
-                menuTitle.innerText = 'Top 15 Popular Items';
-                filteredItems = menuItems.filter(i => i.is_popular);
-            } else if(val === 'all') {
-                menuTitle.innerText = 'All Menu Items';
-                filteredItems = menuItems;
-            } else {
-                menuTitle.innerText = val;
-                filteredItems = menuItems.filter(i => i.category === val);
-            }
-
-            renderMenu(filteredItems);
+        function filterCategory(cat) {
+            document.getElementById('menuTitle').innerText = cat;
+            renderMenu(menuItems.filter(i => i.category === cat));
         }
 
-        // মেনু সার্চ করা
-        function searchMenuItems(query) {
-            const searchTerm = query.toLowerCase().trim();
-            const menuTitle = document.getElementById('menuTitle');
-            const dropdown = document.getElementById('categoryDropdown');
-
-            if(searchTerm === '') {
-                filterByCategoryDropdown(dropdown.value);
-                return;
-            }
-
-            menuTitle.innerText = `Search Results for "${query}"`;
-            const filtered = menuItems.filter(i => {
-                let name = i.name_en ? i.name_en.toLowerCase() : '';
-                return name.includes(searchTerm);
-            });
-
-            renderMenu(filtered);
-        }
-
-        // স্ক্রিনে মেনু কার্ড রেন্ডার করা
         function renderMenu(items) {
             const container = document.getElementById('menuContainer');
-            if (!container) return;
-
+            container.innerHTML = '';
             if(items.length === 0) {
-                container.innerHTML = `<p class="col-span-full text-center text-gray-500 py-8">No menu items found.</p>`;
+                container.innerHTML = '<p class="text-gray-500 col-span-3">No items found.</p>';
                 return;
             }
-
-            let html = '';
             items.forEach(item => {
-                let price = currentOrderType === 'takeaway' ? item.takeaway_price : item.price;
-                html += `
-                    <div class="bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                let price = currentOrderType === 'takeaway' && item.takeaway_price ? item.takeaway_price : item.price;
+                let itemName = currentLang === 'bn' && item.name_bn ? item.name_bn : item.name_en;
+                container.innerHTML += `
+                    <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm flex flex-col justify-between">
                         <div>
-                            <div class="flex justify-between items-start gap-2 mb-2">
-                                <h4 class="font-bold text-gray-800 text-base">${item.name_en || item.name}</h4>
-                                <span class="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">${item.category || 'General'}</span>
-                            </div>
-                            <p class="text-xs text-gray-500 mb-4">Fresh & Delicious</p>
+                            <h4 class="font-bold text-lg text-gray-800">${itemName}</h4>
+                            <p class="text-blue-600 font-semibold mb-4">৳${price}</p>
                         </div>
-                        <div class="flex justify-between items-center mt-2 pt-3 border-t">
-                            <span class="font-bold text-blue-900 text-base">৳${Number(price || 0).toFixed(2)}</span>
-                            <button onclick="addToCart(${item.id})" class="bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs px-3 py-2 rounded-xl transition shadow">
-                                + Add
-                            </button>
-                        </div>
+                        <button onclick="addToCart(${item.id}, ${price})" class="bg-green-600 hover:bg-green-700 text-white w-full py-2 rounded-lg font-semibold transition">Add to Cart</button>
                     </div>
                 `;
             });
-            container.innerHTML = html;
         }
 
-        function addToCart(itemId) {
-            const item = menuItems.find(i => i.id === itemId);
-            if(!item) return;
-
-            let price = currentOrderType === 'takeaway' ? item.takeaway_price : item.price;
-            const existing = cart.find(i => i.id === itemId);
-
-            if(existing) {
-                existing.quantity += 1;
-            } else {
-                cart.push({
-                    id: item.id,
-                    name_en: item.name_en || item.name,
-                    price: Number(price || 0),
-                    quantity: 1
-                });
-            }
-            updateCartUI();
+        function addToCart(id, price) {
+            const item = menuItems.find(m => m.id === id);
+            const exist = cart.find(c => c.id === id);
+            if(exist) { exist.quantity += 1; }
+            else { cart.push({ ...item, price, quantity: 1 }); }
+            updateCartBar();
         }
 
-        function updateCartUI() {
-            const countEl = document.getElementById('cartCount');
-            const subtotalEl = document.getElementById('cartSubtotal');
-            const cartBar = document.getElementById('cartBar');
-
-            const totalCount = cart.reduce((sum, i) => sum + i.quantity, 0);
+        function updateCartBar() {
+            const bar = document.getElementById('cartBar');
+            const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-
-            if(totalCount > 0) {
-                cartBar.classList.remove('hidden');
+            if(totalQty > 0) {
+                bar.classList.remove('hidden');
+                document.getElementById('cartCount').innerText = `${totalQty} Items`;
+                document.getElementById('cartSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
             } else {
-                cartBar.classList.add('hidden');
+                bar.classList.add('hidden');
             }
-
-            countEl.innerText = `${totalCount} Items`;
-            subtotalEl.innerText = `৳${subtotal.toFixed(2)}`;
-        }
-
-        function populateTables() {
-            const tableSelect = document.getElementById('activeTableSelect');
-            if(!tableSelect) return;
-            tableSelect.innerHTML = `<option value="Table 1">Table 1</option><option value="Table 2">Table 2</option><option value="Table 3">Table 3</option>`;
         }
 
         function openCartModal() {
-            const listContainer = document.getElementById('cartItemsListContainer');
-            let html = '';
-            cart.forEach(i => {
-                html += `
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <div>
-                            <p class="font-bold text-sm text-gray-800">${i.name_en}</p>
-                            <p class="text-xs text-gray-500">৳${i.price} x ${i.quantity}</p>
-                        </div>
-                        <span class="font-bold text-blue-900">৳${(i.price * i.quantity).toFixed(2)}</span>
-                    </div>
-                `;
-            });
-            listContainer.innerHTML = html || '<p class="text-center text-gray-400 text-sm">Cart is empty</p>';
-            
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
             document.getElementById('cartModalSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
+
+            const container = document.getElementById('cartItemsListContainer');
+            if(cart.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-4">Your cart is empty.</p>';
+            } else {
+                container.innerHTML = cart.map((i, index) => {
+                    let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
+                    return `
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-800">${name}</h4>
+                                <p class="text-xs text-gray-500">৳${i.price} x ${i.quantity}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="changeCartQty(${index}, -1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">-</button>
+                                <span class="text-sm font-bold">${i.quantity}</span>
+                                <button onclick="changeCartQty(${index}, 1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">+</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
             document.getElementById('cartModal').classList.remove('hidden');
         }
 
@@ -602,8 +659,47 @@
             document.getElementById('cartModal').classList.add('hidden');
         }
 
+        function changeCartQty(index, delta) {
+            cart[index].quantity += delta;
+            if(cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCartBar();
+            openCartModal();
+            if(cart.length === 0) {
+                closeCartModal();
+            }
+        }
         function proceedToCheckout() {
+            if(!loggedInCustomer) {
+                closeCartModal();
+                openLoginModal();
+                alert('Please login first to proceed with checkout.');
+                return;
+            }
             closeCartModal();
+            openCheckoutModal();
+        }
+
+        function openCheckoutModal() {
+            if(loggedInCustomer) {
+                document.getElementById('checkoutName').value = loggedInCustomer.full_name;
+                document.getElementById('checkoutPhone').value = loggedInCustomer.phone;
+            }
+
+            const summaryType = document.getElementById('summaryOrderType');
+            const summaryLoc = document.getElementById('summaryTableLocation');
+            
+            if(currentOrderType === 'dine_in') {
+                summaryType.innerText = 'Dine-In';
+                const section = document.getElementById('activeSectionSelect').value;
+                const table = document.getElementById('activeTableSelect').value;
+                summaryLoc.innerText = `${section.toUpperCase()} - Table ${table}`;
+            } else {
+                summaryType.innerText = 'Takeaway';
+                summaryLoc.innerText = 'TAKEAWAY COUNTER';
+            }
+
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
             const tax = subtotal * 0.06;
             const total = subtotal + tax;
@@ -611,128 +707,133 @@
             document.getElementById('modalSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
             document.getElementById('modalTax').innerText = `৳${tax.toFixed(2)}`;
             document.getElementById('modalTotal').innerText = `৳${total.toFixed(2)}`;
+
+            const list = document.getElementById('checkoutItemsList');
+            list.innerHTML = cart.map(i => {
+                let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
+                return `<div class="flex justify-between text-sm"><span>${name} x ${i.quantity}</span><span>৳${(i.price*i.quantity).toFixed(2)}</span></div>`;
+            }).join('');
+            
             document.getElementById('checkoutModal').classList.remove('hidden');
         }
 
-        function closeCheckoutModal() {
-            document.getElementById('checkoutModal').classList.add('hidden');
-        }
+        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
-        function submitOrder() {
-            alert('Order placed successfully!');
-            cart = [];
-            updateCartUI();
+        async function submitOrder() {
+            const name = document.getElementById('checkoutName').value;
+            const phone = document.getElementById('checkoutPhone').value;
+            let section = 'takeaway';
+            let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
+
+            if(currentOrderType === 'dine_in') {
+                section = document.getElementById('activeSectionSelect').value;
+                tableId = document.getElementById('activeTableSelect').value;
+            }
+
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            const tax = subtotal * 0.06;
+            const total = subtotal + tax;
+
+            const { data: orderData, error } = await _supabase.from('orders').insert([{
+                customer_id: loggedInCustomer ? loggedInCustomer.id : null,
+                customer_name: name,
+                customer_phone: phone,
+                order_type: currentOrderType,
+                section: section,
+                table_id: tableId,
+                subtotal: subtotal,
+                sst_tax: tax,
+                total_amount: total,
+                status: 'pending',
+                payment_status: 'unpaid'
+            }]).select().single();
+
+            if(error) { alert('Order failed!'); return; }
+
+            const orderItems = cart.map(i => ({
+                order_id: orderData.id,
+                menu_item_id: i.id,
+                quantity: i.quantity,
+                price: i.price
+            }));
+
+            await _supabase.from('order_items').insert(orderItems);
+            alert('Order placed successfully! Pending Cashier verification.');
             closeCheckoutModal();
             showHome();
         }
 
-                // আগের handleAuthClick ফাংশনটি মুছে এটা বসিয়ে দিন
-                let isRegisterMode = false;
-
-        // হেডার বাটন ক্লিক করলে লগইন মোডাল ওপেন হবে
         function handleAuthClick() {
-            isRegisterMode = false;
-            document.getElementById('authModalTitle').innerText = "Customer Login";
-            document.getElementById('authSubmitBtn').innerText = "Login";
-            document.getElementById('registerNameGroup').classList.add('hidden');
-            document.getElementById('authSwitchText').innerHTML = `Don't have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-bold underline">Register here</button>`;
-            document.getElementById('authModal').classList.remove('hidden');
-        }
-
-        function closeAuthModal() {
-            document.getElementById('authModal').classList.add('hidden');
-        }
-
-        // লগইন এবং রেজিস্টার মোড পরিবর্তন করার টগল
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            const title = document.getElementById('authModalTitle');
-            const btn = document.getElementById('authSubmitBtn');
-            const nameGroup = document.getElementById('registerNameGroup');
-            const switchText = document.getElementById('authSwitchText');
-
-            if (isRegisterMode) {
-                title.innerText = "Create Account (Register)";
-                btn.innerText = "Register";
-                nameGroup.classList.remove('hidden');
-                switchText.innerHTML = `Already have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-bold underline">Login here</button>`;
+            if (loggedInCustomer) {
+                toggleSidebar();
             } else {
-                title.innerText = "Customer Login";
-                btn.innerText = "Login";
-                nameGroup.classList.add('hidden');
-                switchText.innerHTML = `Don't have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-bold underline">Register here</button>`;
+                openLoginModal();
             }
         }
 
-        // সুপাবেজ ব্যবহার করে সাইন আপ বা সাইন ইন প্রসেস
-        async function handleAuthSubmit() {
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value.trim();
-            const name = document.getElementById('authName').value.trim();
-
-            if (!email || !password) {
-                alert("Please fill in all required fields.");
-                return;
-            }
-
-            if (isRegisterMode) {
-                // সুপাবেজ রেজিস্টার (Sign Up)
-                const { data, error } = await _supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: { full_name: name }
-                    }
-                });
-
-                if (error) {
-                    alert("Registration Error: " + error.message);
-                } else {
-                    alert("Registration successful! You can now log in with your ID and password.");
-                    toggleAuthMode(); // লগইন মোডে ফিরে যাওয়া
-                }
+        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+        
+        function toggleAuthMode(mode) {
+            if(mode === 'register') {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('authTitle').innerText = 'Customer Register';
             } else {
-                // সুপাবেজ লগইন (Sign In)
-                const { data, error } = await _supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (error) {
-                    alert("Login Failed: " + error.message);
-                } else {
-                    currentUser = data.user;
-                    alert("Login successful!");
-                    
-                    // হেডার বাটনে ইউজারের ইমেল বা নাম দেখানো
-                    document.getElementById('loginBtnText').innerText = currentUser.email.split('@')[0];
-                    
-                    // চেকআউট ফর্মে অটো বসিয়ে দেওয়া
-                    document.getElementById('checkoutEmail').value = currentUser.email;
-                    
-                    closeAuthModal();
-                }
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('authTitle').innerText = 'Customer Login';
             }
         }
-            
-        function showOrderHistory() {
-            document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('orderView').classList.add('hidden');
-            document.getElementById('historyView').classList.remove('hidden');
+
+        async function registerCustomer() {
+            const full_name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            const { data, error } = await _supabase.from('customers').insert([{ full_name, phone, email, password }]).select().single();
+            if(error) { alert('Registration failed or email already exists.'); return; }
+            alert('Registration successful! Please login.');
+            toggleAuthMode('login');
         }
 
-        function openChat() {
-            alert('Live chat opening...');
+        async function loginCustomer() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const { data, error } = await _supabase.from('customers').select('*').eq('email', email).eq('password', password).single();
+            if(error || !data) { alert('Invalid email or password.'); return; }
+
+            loggedInCustomer = data;
+            localStorage.setItem('hameeds_customer', JSON.stringify(data));
+            updateLoginUI();
+            closeLoginModal();
+            alert('Login successful!');
         }
 
         function logoutCustomer() {
-            alert('Logged out successfully.');
+            loggedInCustomer = null;
+            localStorage.removeItem('hameeds_customer');
+            updateLoginUI();
             showHome();
+            alert('Logged out successfully.');
         }
 
-        function updateActiveTableDropdown() {
-            populateTables();
+        function updateLoginUI() {
+            const profileDiv = document.getElementById('sidebarProfile');
+            if(loggedInCustomer) {
+                document.getElementById('loginBtnText').innerText = loggedInCustomer.full_name.split(' ')[0];
+                profileDiv.classList.remove('hidden');
+                document.getElementById('profileName').innerText = loggedInCustomer.full_name;
+                document.getElementById('profileEmail').innerText = loggedInCustomer.email;
+            } else {
+                document.getElementById('loginBtnText').innerText = 'Login';
+                profileDiv.classList.add('hidden');
+            }
         }
+
+        function openChat() { alert('Live chat feature coming soon!'); }
     </script>
 </body>
 </html>
