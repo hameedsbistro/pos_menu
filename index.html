@@ -569,7 +569,8 @@
 
         async function fetchMenu() {
     console.log("Fetching menu from Supabase...");
-    const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
+    // সাময়িকভাবে is_available ফিল্টারটি বাদ দিয়ে চেক করা হচ্ছে
+    const { data, error } = await _supabase.from('menu_items').select('*');
     
     if (error) {
         console.error('Supabase Fetch Error Details:', error);
