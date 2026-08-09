@@ -394,39 +394,53 @@
         }
 
         async function fetchIncomingOrders() {
-            const { data } = await _supabase
-                .from('orders')
-                .select('*, order_items(*)')
-                .eq('status', 'pending')
-                .order('created_at', { ascending: false });
+    const { data } = await _supabase
+        .from('orders')
+        .select(`
+            *,
+            order_items (
+                id,
+                quantity,
+                price,
+                item_name,
+                menu_item_id,
+                menu_items ( name_en )
+            )
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-            const badge = document.getElementById('notificationBadge');
-            const container = document.getElementById('incomingOrdersList');
-            
-            if(data && data.length > 0) {
-                badge.innerText = data.length;
-                badge.classList.remove('hidden');
-                container.innerHTML = data.map(o => `
-                    <div class="border p-3 rounded-xl bg-gray-50 space-y-2 text-xs">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <span class="font-bold text-sm text-gray-900">Order #${o.id}</span>
-                                <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
-                            </div>
-                            <button onclick='openOrderDetails(${JSON.stringify(o)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded-lg text-xs">Open</button>
-                        </div>
-                        <div class="bg-white p-2 rounded border space-y-1 text-gray-700">
-                            ${o.order_items && o.order_items.length > 0 
-                                ? o.order_items.map(item => `<div>• ${item.item_name} (x${item.quantity})</div>`).join('') 
-                                : '<span class="text-gray-400">No items found</span>'}
-                        </div>
+    const badge = document.getElementById('notificationBadge');
+    const container = document.getElementById('incomingOrdersList');
+    
+    if(data && data.length > 0) {
+        badge.innerText = data.length;
+        badge.classList.remove('hidden');
+        container.innerHTML = data.map(o => `
+            <div class="border p-3 rounded-xl bg-gray-50 space-y-2 text-xs">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="font-bold text-sm text-gray-900">Order #${o.id}</span>
+                        <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
                     </div>
-                `).join('');
-            } else {
-                badge.classList.add('hidden');
-                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
-            }
-        }
+                    <button onclick='openOrderDetails(${JSON.stringify(o)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded-lg text-xs">Open</button>
+                </div>
+                <div class="bg-white p-2 rounded border space-y-1 text-gray-700">
+                    ${o.order_items && o.order_items.length > 0 
+                        ? o.order_items.map(item => {
+                            // item_name অথবা menu_items এর name_en থেকে নাম বের করার ব্যবস্থা
+                            const displayName = item.item_name || item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
+                            return `<div>• ${displayName} (x${item.quantity})</div>`;
+                          }).join('') 
+                        : '<span class="text-gray-400">No items found</span>'}
+                </div>
+            </div>
+        `).join('');
+    } else {
+        badge.classList.add('hidden');
+        container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
+    }
+}
 
         function setupRealtimeSubscription() {
             _supabase.channel('public:orders')
