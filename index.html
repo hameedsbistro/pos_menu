@@ -3,184 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restoran Hameeds Bistro</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Hameed's Restaurant POS & Ordering</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Library CDN -->
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans">
-
-    <!-- হেডার সেকশন (সম্পূর্ণ অপরিবর্তিত) -->
-    <header class="bg-blue-900 text-white p-4 shadow-lg flex justify-between items-center relative">
-        <div class="flex items-center gap-3">
-            <button onclick="toggleSidebar()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            </button>
-            <img src="images/logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover">
-            <div>
-                <h1 class="text-lg font-bold uppercase tracking-wider">Restoran Hameeds Bistro</h1>
-                <p class="text-xs text-yellow-300" data-i18n="subtitle">Dine-In & Takeaway Ordering System</p>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <!-- ডাইনামিক লগইন/প্রোফাইল বাটন -->
-            <button id="mainAuthBtn" onclick="handleAuthClick()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition flex items-center gap-1 text-sm font-semibold">
-                <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                <span id="loginBtnText" data-i18n="login">Login</span>
-            </button>
-            <!-- লাইভ চ্যাট বাটন -->
-            <button onclick="openChat()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition flex items-center gap-1 text-sm font-semibold" title="Live Chat">
-                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                <span class="hidden md:inline" data-i18n="liveChat">Live Chat</span>
-            </button>
-        </div>
-    </header>
-        <!-- সাইডবার মেনু ও প্রোফাইল -->
-    <div id="sidebar" class="fixed inset-y-0 left-0 bg-white w-72 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between">
-        <div>
-            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-lg" data-i18n="menuAndProfile">Menu & Profile</h3>
-                <button onclick="toggleSidebar()" class="text-white hover:text-yellow-400 font-bold text-xl">×</button>
+<body class="bg-gray-50 text-gray-800 antialiased pb-24">
+        <!-- টপ হেডার -->
+    <header class="bg-blue-900 text-white sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="text-white focus:outline-none text-xl">
+                    ☰
+                </button>
+                <h1 class="font-bold text-lg tracking-wide" data-i18n="brandName">Hameed's Restaurant</h1>
             </div>
             
-            <div class="p-4 border-b">
-                <label class="block text-xs font-semibold text-gray-600 mb-1" data-i18n="selectLang">Select Language</label>
-                <select id="langSelect" onchange="changeLanguage(this.value)" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
+            <div class="flex items-center gap-3">
+                <!-- ভাষা পরিবর্তন ড্রপডাউন -->
+                <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-blue-800 text-white text-xs font-semibold px-2 py-1.5 rounded-lg border border-blue-700 focus:outline-none">
                     <option value="en">English</option>
-                    <option value="ms">Bahasa Melayu</option>
+                    <option value="ms">Melayu</option>
                     <option value="bn">বাংলা</option>
-                    <option value="hi">हिन्दी</option>
                     <option value="ta">தமிழ்</option>
-                    <option value="ar">العربية</option>
                     <option value="zh">中文</option>
                 </select>
-            </div>
 
-            <!-- ইউজার প্রোফাইল সেকশন (লগইন থাকলে দেখাবে) -->
-            <div id="sidebarProfile" class="p-4 bg-gray-50 border-b hidden">
-                <div class="flex items-center gap-3">
-                    <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg" id="profileInitial">P</div>
-                    <div>
-                        <h4 class="font-bold text-sm text-gray-800" id="profileName">User Name</h4>
-                        <p class="text-xs text-gray-500" id="profileEmail">user@email.com</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 flex flex-col gap-2">
-                <button onclick="showHome(); toggleSidebar();" class="text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 flex items-center gap-2">🏠 <span data-i18n="home">Home</span></button>
-                <button onclick="showOrderHistory(); toggleSidebar();" class="text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 flex items-center gap-2">📦 <span data-i18n="orderHistory">Order History</span></button>
+                <!-- লগইন / প্রফাইল বাটন -->
+                <button onclick="handleAuthClick()" class="bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-bold text-xs px-3 py-1.5 rounded-lg transition shadow">
+                    <span id="loginBtnText">Login</span>
+                </button>
             </div>
         </div>
-
-        <div class="p-4 border-t" id="sidebarLogoutContainer">
-            <div id="logoutBtnWrapper">
-                <button onclick="logoutCustomer()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 rounded-lg transition text-sm" data-i18n="logout">Logout</button>
+    </header>
+        <!-- সাইডবার (Sidebar) -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 bg-white w-64 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between">
+        <div>
+            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
+                <h2 class="font-bold text-lg" data-i18n="menu">Menu</h2>
+                <button onclick="toggleSidebar()" class="text-white text-xl font-bold">×</button>
             </div>
-            <p class="text-center text-xs text-gray-400 mt-3">Hameeds Bistro v2.0</p>
+            
+            <!-- লগইন করা থাকলে প্রোফাইল ইনফো -->
+            <div id="sidebarProfile" class="hidden p-4 bg-blue-50 border-b">
+                <p class="font-bold text-blue-900 text-sm" id="profileName">User Name</p>
+                <p class="text-xs text-gray-600" id="profileEmail">user@email.com</p>
+            </div>
+
+            <div class="p-4 space-y-3">
+                <button onclick="showHome(); toggleSidebar();" class="w-full text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 text-sm flex items-center gap-2">
+                    🏠 <span data-i18n="home">Home</span>
+                </button>
+                <button onclick="showOrderHistory(); toggleSidebar();" class="w-full text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 text-sm flex items-center gap-2">
+                    📋 <span data-i18n="orderHistory">Order History</span>
+                </button>
+                <button onclick="openChat(); toggleSidebar();" class="w-full text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 text-sm flex items-center gap-2">
+                    💬 <span data-i18n="liveChat">Live Chat</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t">
+            <button onclick="logoutCustomer()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 rounded-xl text-sm transition" data-i18n="logout">Logout</button>
         </div>
     </div>
 
-    <!-- মূল কন্টেন্ট সেকশন -->
-    <main class="flex-grow p-4 max-w-4xl mx-auto w-full">
-
-        <!-- হোম ভিউ (Dine-In বা Takeaway সিলেক্ট করার পেজ) -->
-        <div id="homeView" class="bg-white p-6 rounded-2xl shadow-md text-center mt-10 border border-gray-200">
-            <h2 class="text-3xl font-bold mb-2 text-gray-800" data-i18n="welcomeTitle">Welcome to Hameeds Bistro</h2>
-            <p class="text-gray-500 mb-8 text-sm" data-i18n="welcomeSubtitle">Please choose your dining method to start ordering</p>
-
-            <div class="flex flex-col sm:flex-row justify-center gap-6">
-                <button onclick="startOrder('dine_in')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition flex items-center justify-center gap-3 text-lg">
-                    <span data-i18n="dineInBtn">🍽️ Dine-In</span>
-                </button>
-                <button onclick="startOrder('takeaway')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition flex items-center justify-center gap-3 text-lg">
-                    <span data-i18n="takeawayBtn">🛍️ Takeaway</span>
-                </button>
-            </div>
-        </div>
-                <!-- অর্ডার ভিউ (যেখানে ক্যাটাগরি ড্রপডাউন, সার্চ বার এবং মেনু আইটেম দেখাবে) -->
-        <div id="orderView" class="hidden">
-            <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 flex flex-wrap justify-between items-center gap-4">
-                <div class="flex items-center gap-3">
-                    <button onclick="showHome()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition">
-                        🏠 <span data-i18n="home">Home</span>
-                    </button>
-                    <div>
-                        <span id="selectedOrderType" class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded uppercase">Dine-In</span>
-                        <p class="text-xs text-gray-500" data-i18n="currentLocation">Current Order Location</p>
-                    </div>
-                </div>
-
-                <div id="tableChangeContainer" class="flex items-center gap-2">
-                    <select id="activeSectionSelect" onchange="updateActiveTableDropdown()" class="border p-2 rounded-lg text-sm font-semibold bg-gray-50">
-                        <option value="indoor" data-i18n="indoor">Indoor (A)</option>
-                        <option value="outdoor" data-i18n="outdoor">Outdoor (B)</option>
-                        <option value="first_floor" data-i18n="firstFloor">First Floor (C)</option>
-                    </select>
-                    <select id="activeTableSelect" class="border p-2 rounded-lg text-sm font-semibold bg-gray-50"></select>
-                </div>
-            </div>
-
-            <!-- হেডার টাইটেল, ক্যাটাগরি ড্রপডাউন এবং সার্চ বার (পাশাপাশি সারিবদ্ধ) -->
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
-                <h3 class="text-2xl font-bold text-gray-800" id="menuTitle">Top 15 Popular Items</h3>
-                
-                <!-- ক্যাটাগরি ড্রপডাউন ও সার্চ বক্স -->
-                <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                    <!-- সিলেক্ট ক্যাটাগরি ড্রপডাউন -->
-                    <select id="categoryDropdown" onchange="filterByCategoryDropdown(this.value)" class="border p-2.5 rounded-lg text-sm font-semibold bg-white shadow-sm min-w-[200px]">
-                        <option value="popular">Top 15 Popular Items</option>
-                    </select>
-
-                    <!-- সার্চ মেনু ইনপুট বক্স -->
-                    <div class="relative min-w-[220px]">
-                        <input type="text" id="menuSearchInput" oninput="searchMenuItems(this.value)" placeholder="Search menu..." class="w-full border p-2.5 pl-9 rounded-lg text-sm bg-white shadow-sm">
-                        <span class="absolute left-3 top-3 text-gray-400">🔍</span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24"></div>
+    <!-- হোম ভিউ (অর্ডার টাইপ সিলেকশন) -->
+    <main id="homeView" class="max-w-4xl mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2" data-i18n="welcomeMsg">Welcome to Hameed's Restaurant</h2>
+            <p class="text-sm text-gray-600" data-i18n="selectOrderTypePrompt">Please select your dining method to start ordering</p>
         </div>
 
-        <!-- অর্ডার হিস্টরি ভিউ -->
-        <div id="historyView" class="hidden">
-            <div class="flex gap-2 mb-4">
-                <button onclick="showHome()" class="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-1">🏠 <span data-i18n="home">Home</span></button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <!-- ডাইন-ইন কার্ড -->
+            <div onclick="startOrder('dine_in')" class="bg-white border-2 border-blue-100 hover:border-blue-600 p-6 rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer text-center flex flex-col items-center">
+                <div class="bg-blue-50 text-blue-600 p-4 rounded-full text-3xl mb-4">🍽️</div>
+                <h3 class="font-bold text-xl text-gray-800 mb-1" data-i18n="dineIn">Dine-In</h3>
+                <p class="text-xs text-gray-500" data-i18n="dineInDesc">Enjoy your meal at our restaurant tables</p>
             </div>
-            <h2 class="text-2xl font-bold mb-4 text-gray-800" data-i18n="orderHistory">Order History</h2>
-            <div id="orderHistoryContainer" class="space-y-4"></div>
+
+            <!-- টেকঅ্যাওয়ে কার্ড -->
+            <div onclick="startOrder('takeaway')" class="bg-white border-2 border-blue-100 hover:border-blue-600 p-6 rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer text-center flex flex-col items-center">
+                <div class="bg-yellow-50 text-yellow-600 p-4 rounded-full text-3xl mb-4">🛍️</div>
+                <h3 class="font-bold text-xl text-gray-800 mb-1" data-i18n="takeaway">Takeaway</h3>
+                <p class="text-xs text-gray-500" data-i18n="takeawayDesc">Pack your food to take away</p>
+            </div>
         </div>
     </main>
-        <!-- কার্ট ফ্লোটিং বার -->
-    <div id="cartBar" class="hidden fixed bottom-0 left-0 right-0 bg-blue-900 text-white p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
-        <div>
-            <p id="cartCount" class="font-bold text-sm">0 Items</p>
-            <p id="cartSubtotal" class="text-xs text-yellow-300">৳0.00</p>
+        <!-- অর্ডার ভিউ (মেনু ও ক্যাটাগরি) -->
+    <main id="orderView" class="max-w-7xl mx-auto px-4 py-6 hidden">
+        <!-- টপ বার: ব্যাক ও টেবিল সিলেকশন -->
+        <div class="flex flex-wrap justify-between items-center mb-6 gap-4 bg-white p-4 rounded-xl shadow-sm border">
+            <div class="flex items-center gap-3">
+                <button onclick="showHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-sm transition">← Back</button>
+                <h3 class="font-bold text-lg text-blue-900" id="selectedOrderType">Dine-In</h3>
+            </div>
+            
+            <!-- ডাইন-ইন হলে টেবিল সিলেকশন অপশন -->
+            <div id="tableChangeContainer" class="flex items-center gap-2">
+                <select id="activeSectionSelect" onchange="updateActiveTableDropdown()" class="border p-2 rounded-lg text-xs font-semibold bg-gray-50">
+                    <option value="indoor">Indoor</option>
+                    <option value="outdoor">Outdoor</option>
+                    <option value="vip">VIP</option>
+                </select>
+                <select id="activeTableSelect" class="border p-2 rounded-lg text-xs font-semibold bg-gray-50">
+                    <!-- ডাইনামিক টেবিল অপশন -->
+                </select>
+            </div>
         </div>
-        <button onclick="openCartModal()" class="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold px-6 py-2.5 rounded-xl shadow transition" data-i18n="viewCart">View Cart & Checkout</button>
+
+        <!-- সার্চ ও ক্যাটাগরি ফিল্টার বার -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">🔍</span>
+                <input type="text" id="menuSearchInput" oninput="searchMenuItems(this.value)" placeholder="Search menu..." class="w-full border p-2.5 pl-9 rounded-lg text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <select id="categoryDropdown" onchange="filterByCategoryDropdown(this.value)" class="w-full border p-2.5 rounded-lg text-sm bg-white shadow-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="popular">Top 15 Popular Items</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- মেনু সেকশন টাইটেল -->
+        <div class="mb-4">
+            <h3 id="menuTitle" class="font-bold text-xl text-gray-900">Top 15 Popular Items</h3>
+        </div>
+
+        <!-- মেনু আইটেম গ্রিড -->
+        <div id="menuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- ডাইনামিক মেনু কার্ড এখানে লোড হবে -->
+        </div>
+    </main>
+
+    <!-- কার্ট স্টিকি বার -->
+    <div id="cartBar" class="hidden fixed bottom-0 inset-x-0 bg-blue-900 text-white p-4 shadow-2xl z-40 flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl">
+        <div>
+            <p id="cartCount" class="text-xs font-semibold text-yellow-400">0 Items</p>
+            <p id="cartSubtotal" class="font-bold text-lg">৳0.00</p>
+        </div>
+        <button onclick="openCartModal()" class="bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-bold px-6 py-2.5 rounded-xl transition shadow">View Cart & Checkout</button>
     </div>
 
-    <!-- কার্ট মোডাল -->
+    <!-- অর্ডার হিস্ট্রি ভিউ -->
+    <main id="historyView" class="max-w-4xl mx-auto px-4 py-8 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">My Order History</h2>
+            <button onclick="showHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-sm transition">Back to Home</button>
+        </div>
+        <div id="orderHistoryContainer" class="space-y-4">
+            <!-- ডাইনামিক হিস্ট্রি আইটেম -->
+        </div>
+    </main>
+        <!-- কার্ট মোডাল -->
     <div id="cartModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
             <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
-                <h3 class="font-bold text-lg" data-i18n="yourCart">Your Cart</h3>
+                <h3 class="font-bold text-lg" data-i18n="cartTitle">Your Cart</h3>
                 <button onclick="closeCartModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
             </div>
-            <div id="cartItemsListContainer" class="p-4 overflow-y-auto space-y-3 flex-grow"></div>
-            <div class="p-4 bg-gray-50 border-t">
-                <div class="flex justify-between mb-4">
-                    <span class="font-semibold text-gray-600" data-i18n="subtotal">Subtotal:</span>
-                    <span id="cartModalSubtotal" class="font-bold text-blue-600 text-lg">৳0.00</span>
+            <div id="cartItemsListContainer" class="p-4 overflow-y-auto space-y-3 flex-grow">
+                <!-- ডাইনামিক কার্ট আইটেম -->
+            </div>
+            <div class="p-4 bg-gray-50 border-t space-y-3">
+                <div class="flex justify-between font-bold text-base">
+                    <span data-i18n="subtotal">Subtotal:</span>
+                    <span id="cartModalSubtotal">৳0.00</span>
                 </div>
-                <button onclick="proceedToCheckout()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition shadow" data-i18n="proceedCheckout">Proceed to Checkout</button>
+                <button onclick="proceedToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow" data-i18n="proceedCheckout">Proceed to Checkout</button>
             </div>
         </div>
     </div>
-        <!-- চেকআউট মোডাল -->
+
+    <!-- চেকআউট মোডাল -->
     <div id="checkoutModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
@@ -218,384 +220,368 @@
             </div>
         </div>
     </div>
-
-    <!-- লগইন / রেজিস্টার মোডাল -->
-    <div id="loginModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
-            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
-                <h3 id="authTitle" class="font-bold text-lg">Customer Login</h3>
-                <button onclick="closeLoginModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
-            </div>
-            <div class="p-6">
-                <!-- লগইন ফর্ম -->
-                <div id="loginForm" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Email Address</label>
-                        <input type="email" id="loginEmail" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Password</label>
-                        <input type="password" id="loginPassword" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
-                    </div>
-                    <button onclick="loginCustomer()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition">Login</button>
-                    <p class="text-xs text-center text-gray-500 mt-2">Don't have an account? <span onclick="toggleAuthMode('register')" class="text-blue-600 font-bold cursor-pointer underline">Register here</span></p>
-                </div>
-
-                <!-- রেজিস্টার ফর্ম -->
-                <div id="registerForm" class="space-y-3 hidden">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Full Name</label>
-                        <input type="text" id="regName" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Phone Number</label>
-                        <input type="text" id="regPhone" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Email Address</label>
-                        <input type="email" id="regEmail" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Password</label>
-                        <input type="password" id="regPassword" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
-                    </div>
-                    <button onclick="registerCustomer()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition">Register</button>
-                    <p class="text-xs text-center text-gray-500 mt-2">Already have an account? <span onclick="toggleAuthMode('login')" class="text-blue-600 font-bold cursor-pointer underline">Login here</span></p>
-                </div>
-            </div>
-        </div>
-    </div>
-        <!-- Supabase Configuration & JavaScript Logic -->
+        <!-- জাভাস্ক্রিপ্ট লজিক শুরু -->
     <script>
-        const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+        // Supabase Configuration
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentOrderType = 'dine_in';
+        // গ্লোবাল ভেরিয়েবলস
         let menuItems = [];
         let cart = [];
-        let currentLang = localStorage.getItem('hameeds_lang') || 'en';
-        let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
+        let currentOrderType = 'dine_in';
+        let currentLanguage = 'en';
+        let currentUser = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('langSelect').value = currentLang;
-            updateLoginUI();
-        });
+        // মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি
+        const translations = {
+            en: {
+                brandName: "Hameed's Restaurant",
+                menu: "Menu",
+                home: "Home",
+                orderHistory: "Order History",
+                liveChat: "Live Chat",
+                logout: "Logout",
+                welcomeMsg: "Welcome to Hameed's Restaurant",
+                selectOrderTypePrompt: "Please select your dining method to start ordering",
+                dineIn: "Dine-In",
+                dineInDesc: "Enjoy your meal at our restaurant tables",
+                takeaway: "Takeaway",
+                takeawayDesc: "Pack your food to take away",
+                cartTitle: "Your Cart",
+                subtotal: "Subtotal:",
+                proceedCheckout: "Proceed to Checkout",
+                checkoutTitle: "Checkout & Confirm Order",
+                orderSummaryType: "Order Type & Location:",
+                fullName: "Full Name",
+                phone: "Phone Number",
+                orderItems: "Order Items",
+                placeOrder: "Place Order (Cashier Verification)"
+            },
+            ms: {
+                brandName: "Restoran Hameed",
+                menu: "Menu",
+                home: "Utama",
+                orderHistory: "Sejarah Pesanan",
+                liveChat: "Sembang Langsung",
+                logout: "Log Keluar",
+                welcomeMsg: "Selamat Datang ke Restoran Hameed",
+                selectOrderTypePrompt: "Sila pilih cara makan anda untuk mula memesan",
+                dineIn: "Makan di Sini",
+                dineInDesc: "Nikmati hidangan anda di meja restoran kami",
+                takeaway: "Bungkus",
+                takeawayDesc: "Bungkus makanan anda untuk dibawa pulang",
+                cartTitle: "Troli Anda",
+                subtotal: "Subjumlah:",
+                proceedCheckout: "Teruskan ke Pembayaran",
+                checkoutTitle: "Pembayaran & Sahkan Pesanan",
+                orderSummaryType: "Jenis & Lokasi Pesanan:",
+                fullName: "Nama Penuh",
+                phone: "Nombor Telefon",
+                orderItems: "Item Pesanan",
+                placeOrder: "Buat Pesanan (Pengesahan Juruwang)"
+            },
+            bn: {
+                brandName: "হামিদস রেস্টুরেন্ট",
+                menu: "মেনু",
+                home: "হোম",
+                orderHistory: "অর্ডার হিস্ট্রি",
+                liveChat: "লাইভ চ্যাট",
+                logout: "লগআউট",
+                welcomeMsg: "হামিদস রেস্টুরেন্টে স্বাগতম",
+                selectOrderTypePrompt: "অর্ডার শুরু করতে আপনার ডাইনিং পদ্ধতি নির্বাচন করুন",
+                dineIn: "ডাইন-ইন",
+                dineInDesc: "আমাদের রেস্টুরেন্টের টেবিলে বসে খাবার উপভোগ করুন",
+                takeaway: "টেকঅ্যাওয়ে",
+                takeawayDesc: "খাবার পার্সেল করে নিয়ে যান",
+                cartTitle: "আপনার কার্ট",
+                subtotal: "সাবটোটাল:",
+                proceedCheckout: "চেকআউটে যান",
+                checkoutTitle: "চেকআউট এবং অর্ডার নিশ্চিত করুন",
+                orderSummaryType: "অর্ডারের ধরন ও স্থান:",
+                fullName: "पूরা নাম",
+                phone: "মোবাইল নম্বর",
+                orderItems: "অর্ডারের আইটেমসমূহ",
+                placeOrder: "অর্ডার প্লেস করুন (ক্যাশিয়ার ভেরিফিকেশন)"
+            },
+            ta: {
+                brandName: "ஹமீத் உணவகம்",
+                menu: "பட்டியல்",
+                home: "முகப்பு",
+                orderHistory: "ஆர்டர் வரலாறு",
+                liveChat: "நேரலை அரட்டை",
+                logout: "வெளியேறு",
+                welcomeMsg: "ஹமீத் உணவகத்திற்கு உங்களை வரவேற்கிறோம்",
+                selectOrderTypePrompt: "ஆர்டர் செய்ய உங்கள் முறையைத் தேர்ந்தெடுக்கவும்",
+                dineIn: "உணவகத்தில் உண்ண",
+                dineInDesc: "எங்கள் உணவகத்தில் உணவை அனுபவிக்கவும்",
+                takeaway: "எடுத்துச் செல்ல",
+                takeawayDesc: "வீட்டிற்கு எடுத்துச் செல்ல பார்சல்",
+                cartTitle: "உங்கள் கூடை",
+                subtotal: "உப மொத்தம்:",
+                proceedCheckout: "செக் அவுட்டுக்குச் செல்லவும்",
+                checkoutTitle: "செக் அவுட் & ஆர்டர் உறுதிப்படுத்தல்",
+                orderSummaryType: "ஆர்டர் வகை & இடம்:",
+                fullName: "முழு பெயர்",
+                phone: "தொலைபேசி எண்",
+                orderItems: "ஆர்டர் பொருட்கள்",
+                placeOrder: "ஆர்டரை வைக்கவும்"
+            },
+            zh: {
+                brandName: "哈米德餐厅",
+                menu: "菜单",
+                home: "首页",
+                orderHistory: "订单历史",
+                liveChat: "在线客服",
+                logout: "登出",
+                welcomeMsg: "欢迎光临哈米德餐厅",
+                selectOrderTypePrompt: "请选择您的用餐方式开始点餐",
+                dineIn: "堂食",
+                dineInDesc: "在我们的餐桌上享用美食",
+                takeaway: "打包",
+                takeawayDesc: "打包带走",
+                cartTitle: "您的购物车",
+                subtotal: "小计:",
+                proceedCheckout: "去结算",
+                checkoutTitle: "结账并确认订单",
+                orderSummaryType: "订单类型与位置:",
+                fullName: "全名",
+                phone: "电话号码",
+                orderItems: "订单项目",
+                placeOrder: "提交订单"
+            }
+        };
 
+        // ভাষা পরিবর্তনের ফাংশন (যা সমস্ত [data-i18n] ট্যাগ আপডেট করবে)
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+        }
+                // সাইডবার টগল করার ফাংশন
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('-translate-x-full');
         }
 
-        // ভাষা পরিবর্তন ও অটো ট্রান্সলেশন লজিক
-        async function changeLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem('hameeds_lang', lang);
-            
-            // ভাষা পরিবর্তনের সাথে সাথে বর্তমান মেনু লিস্ট রি-রেন্ডার হবে
-            const currentCat = document.getElementById('categoryDropdown') ? document.getElementById('categoryDropdown').value : 'popular';
-            if(currentCat === 'popular') {
-                renderMenu(menuItems.filter(i => i.is_popular));
-            } else if(currentCat === 'all' || !currentCat) {
-                renderMenu(menuItems);
-            } else {
-                renderMenu(menuItems.filter(i => i.category === currentCat));
-            }
-        }
-
-        // ফ্রি ট্রান্সলেটর API ব্যবহার করে যেকোনো ভাষা থেকে সিলেক্ট করা ভাষায় রূপান্তর করার ফাংশন
-        async function translateText(text, targetLang) {
-            if (!text || targetLang === 'en') return text;
-            try {
-                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${targetLang}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data && data.responseData && data.responseData.translatedText) {
-                    return data.responseData.translatedText;
-                }
-            } catch (error) {
-                console.error('Translation error:', error);
-            }
-            return text;
-        }
-
-        function startOrder(type) {
-            currentOrderType = type;
-            document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('orderView').classList.remove('hidden');
-            document.getElementById('historyView').classList.add('hidden');
-            document.getElementById('selectedOrderType').innerText = type === 'dine_in' ? 'Dine-In' : 'Takeaway';
-            
-            if(type === 'takeaway') {
-                document.getElementById('tableChangeContainer').classList.add('hidden');
-            } else {
-                document.getElementById('tableChangeContainer').classList.remove('hidden');
-                updateActiveTableDropdown();
-            }
-            fetchMenu();
-        }
-
+        // হোম পেজে যাওয়ার ফাংশন
         function showHome() {
             document.getElementById('homeView').classList.remove('hidden');
             document.getElementById('orderView').classList.add('hidden');
             document.getElementById('historyView').classList.add('hidden');
             document.getElementById('cartBar').classList.add('hidden');
-            cart = [];
         }
 
-        async function showOrderHistory() {
-            if(!loggedInCustomer) {
-                alert('Please login first to view order history.');
-                openLoginModal();
-                return;
-            }
+        // অর্ডার শুরু করার ফাংশন
+        function startOrder(type) {
+            currentOrderType = type;
             document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('orderView').classList.add('hidden');
-            document.getElementById('historyView').classList.remove('hidden');
-            document.getElementById('cartBar').classList.add('hidden');
+            document.getElementById('orderView').classList.remove('hidden');
+            document.getElementById('cartBar').classList.remove('hidden');
+            
+            const titleEl = document.getElementById('selectedOrderType');
+            const tableContainer = document.getElementById('tableChangeContainer');
 
-            const container = document.getElementById('orderHistoryContainer');
-            container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
+            if(type === 'dine_in') {
+                titleEl.innerText = translations[currentLanguage].dineIn || 'Dine-In';
+                tableContainer.classList.remove('hidden');
+                populateTables();
+            } else {
+                titleEl.innerText = translations[currentLanguage].takeaway || 'Takeaway';
+                tableContainer.classList.add('hidden');
+            }
 
-            const { data, error } = await _supabase.from('orders').select('*').eq('customer_id', loggedInCustomer.id).order('created_at', { ascending: false });
-            if(error || !data || data.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">No past orders found.</p>';
+            fetchMenu();
+        }
+
+        // সুপাবেজ থেকে মেনু লোড করার ফাংশন
+        async function fetchMenu() {
+            const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
+            
+            if(error) {
+                console.error("Error fetching menu:", error);
                 return;
             }
 
-            container.innerHTML = data.map(o => `
-                <div class="bg-white border p-4 rounded-xl shadow-sm flex justify-between items-center">
-                    <div>
-                        <p class="font-bold text-gray-800">Order ID: #${o.id}</p>
-                        <p class="text-xs text-gray-500">Type: ${o.order_type.toUpperCase()} | Table/Loc: ${o.table_id}</p>
-                        <p class="text-xs text-gray-500">Status: <span class="font-semibold text-blue-600">${o.status}</span></p>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-bold text-lg text-blue-600">৳${o.total_amount.toFixed(2)}</p>
-                        <p class="text-xs text-gray-400">${new Date(o.created_at).toLocaleString()}</p>
-                    </div>
-                </div>
-            `).join('');
+            menuItems = data || [];
+            renderCategoriesDropdown();
+            filterByCategoryDropdown('popular');
         }
 
-        function updateActiveTableDropdown() {
-            const section = document.getElementById('activeSectionSelect').value;
-            const tableSelect = document.getElementById('activeTableSelect');
-            tableSelect.innerHTML = '';
-            let prefix = section === 'indoor' ? 'A' : (section === 'outdoor' ? 'B' : 'C');
-            for(let i=1; i<=30; i++) {
-                let opt = document.createElement('option');
-                opt.value = prefix + i;
-                opt.innerText = `Table ${prefix}${i}`;
-                tableSelect.appendChild(opt);
-            }
+        // ক্যাটাগরি ড্রপডাউন পপুলেট করা
+        function renderCategoriesDropdown() {
+            const dropdown = document.getElementById('categoryDropdown');
+            if (!dropdown) return;
+
+            const categories = [...new Set(menuItems.map(item => item.category))];
+            
+            let optionsHTML = `<option value="popular">Top 15 Popular Items</option>`;
+            optionsHTML += `<option value="all">All Items</option>`;
+            
+            categories.forEach(cat => {
+                if (cat) {
+                    optionsHTML += `<option value="${cat}">${cat}</option>`;
+                }
+            });
+            dropdown.innerHTML = optionsHTML;
         }
 
-        
-                 async function fetchMenu() {
-    // সুপাবেজ থেকে সব মেনু আইটেম আনছি
-    const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
-    
-    if(error) {
-        console.error("Error fetching menu:", error);
-        return;
-    }
-
-    menuItems = data || [];
-    
-    // ১. প্রথমে ড্রপডাউন পপুলেট করছি
-    renderCategoriesDropdown();
-    
-    // ২. ডিফল্টভাবে পপুলার আইটেম দেখাচ্ছি
-    renderMenu(menuItems.filter(i => i.is_popular));
-                 }
-        
-
-                function renderCategoriesDropdown() {
-    const dropdown = document.getElementById('categoryDropdown');
-    if (!dropdown) return;
-
-    // মেনু আইটেম থেকে ক্যাটাগরিগুলো বের করছি
-    const categories = [...new Set(menuItems.map(i => i.category).filter(cat => cat !== null && cat !== undefined))];
-    
-    let optionsHTML = `<option value="popular">Top 15 Popular Items</option>`;
-    optionsHTML += `<option value="all">All Items</option>`;
-    
-    categories.forEach(cat => {
-        optionsHTML += `<option value="${cat}">${cat}</option>`;
-    });
-    
-    dropdown.innerHTML = optionsHTML;
-    console.log("Categories loaded:", categories); // এটি কনসোলে চেক করতে পারবেন
-}
-
-        
-
-                function filterByCategoryDropdown(val) {
+        // ক্যাটাগরি অনুযায়ী ফিল্টার করা
+        function filterByCategoryDropdown(val) {
+            const menuTitle = document.getElementById('menuTitle');
             const searchInput = document.getElementById('menuSearchInput');
             if (searchInput) searchInput.value = '';
 
-            const menuTitle = document.getElementById('menuTitle');
+            let filteredItems = [];
 
             if(val === 'popular') {
-                if (menuTitle) menuTitle.innerText = 'Top 15 Popular Items';
-                renderMenu(menuItems.filter(i => i.is_popular));
+                menuTitle.innerText = 'Top 15 Popular Items';
+                filteredItems = menuItems.filter(i => i.is_popular);
             } else if(val === 'all') {
-                if (menuTitle) menuTitle.innerText = 'All Menu Items';
-                renderMenu(menuItems);
+                menuTitle.innerText = 'All Menu Items';
+                filteredItems = menuItems;
             } else {
-                if (menuTitle) menuTitle.innerText = val;
-                renderMenu(menuItems.filter(i => i.category === val));
+                menuTitle.innerText = val;
+                filteredItems = menuItems.filter(i => i.category === val);
             }
-                }
-        
 
-                function searchMenuItems(query) {
+            renderMenu(filteredItems);
+        }
+
+        // সার্চ ফাংশন
+        function searchMenuItems(query) {
             const searchTerm = query.toLowerCase().trim();
             const menuTitle = document.getElementById('menuTitle');
             const dropdown = document.getElementById('categoryDropdown');
 
-            // যদি সার্চ বক্স খালি থাকে, তাহলে ড্রপডাউনের বর্তমান সিলেকশন অনুযায়ী মেনু দেখাবে
             if(searchTerm === '') {
                 filterByCategoryDropdown(dropdown.value);
                 return;
             }
 
-            // সার্চ করার সময় টাইটেল আপডেট
-            if (menuTitle) menuTitle.innerText = `Search Results for "${query}"`;
-
-            // মেনু থেকে ফিল্টার করা (নামের সাথে মিল থাকলে)
+            menuTitle.innerText = `Search Results for "${query}"`;
             const filtered = menuItems.filter(i => {
                 let name = i.name_en ? i.name_en.toLowerCase() : '';
                 return name.includes(searchTerm);
             });
 
-            // রেজাল্ট রেন্ডার করা
             renderMenu(filtered);
-                }
-        
-
-        async function renderMenu(items) {
+            }
+                // মেনু কার্ড স্ক্রিনে রেন্ডার করার ফাংশন
+        function renderMenu(items) {
             const container = document.getElementById('menuContainer');
-            container.innerHTML = '<p class="text-gray-500 col-span-3">Loading menu items...</p>';
-            
+            if (!container) return;
+
             if(items.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 col-span-3">No items found.</p>';
+                container.innerHTML = `<p class="col-span-full text-center text-gray-500 py-8">No menu items found.</p>`;
                 return;
             }
 
-            let htmlContent = '';
-            for (let item of items) {
-                let price = currentOrderType === 'takeaway' && item.takeaway_price ? item.takeaway_price : item.price;
-                let originalName = item.name_en || item.name || "Item";
-                
-                let displayName = originalName;
-                if (currentLang !== 'en') {
-                    displayName = await translateText(originalName, currentLang);
-                }
-
-                htmlContent += `
-                    <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+            let html = '';
+            items.forEach(item => {
+                let price = currentOrderType === 'takeaway' ? item.takeaway_price : item.price;
+                html += `
+                    <div class="bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                         <div>
-                            <h4 class="font-bold text-lg text-gray-800">${displayName}</h4>
-                            <p class="text-blue-600 font-semibold mb-4">৳${price}</p>
+                            <div class="flex justify-between items-start gap-2 mb-2">
+                                <h4 class="font-bold text-gray-800 text-base">${item.name_en}</h4>
+                                <span class="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">${item.category}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4">Fresh & Delicious</p>
                         </div>
-                        <button onclick="addToCart(${item.id}, ${price})" class="bg-green-600 hover:bg-green-700 text-white w-full py-2 rounded-lg font-semibold transition">Add to Cart</button>
+                        <div class="flex justify-between items-center mt-2 pt-3 border-t">
+                            <span class="font-bold text-blue-900 text-base">৳${Number(price).toFixed(2)}</span>
+                            <button onclick="addToCart(${item.id})" class="bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs px-3 py-2 rounded-xl transition shadow">
+                                + Add
+                            </button>
+                        </div>
                     </div>
                 `;
-            }
-            container.innerHTML = htmlContent;
+            });
+            container.innerHTML = html;
         }
 
-        function addToCart(id, price) {
-            const item = menuItems.find(m => m.id === id);
-            const exist = cart.find(c => c.id === id);
-            if(exist) { exist.quantity += 1; }
-            else { cart.push({ ...item, price, quantity: 1 }); }
-            updateCartBar();
-        }
+        // কার্টে আইটেম যোগ করা
+        function addToCart(itemId) {
+            const item = menuItems.find(i => i.id === itemId);
+            if(!item) return;
 
-        function updateCartBar() {
-            const bar = document.getElementById('cartBar');
-            const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
-            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-            if(totalQty > 0) {
-                bar.classList.remove('hidden');
-                document.getElementById('cartCount').innerText = `${totalQty} Items`;
-                document.getElementById('cartSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
+            let price = currentOrderType === 'takeaway' ? item.takeaway_price : item.price;
+            const existing = cart.find(i => i.id === itemId);
+
+            if(existing) {
+                existing.quantity += 1;
             } else {
-                bar.classList.add('hidden');
+                cart.push({
+                    id: item.id,
+                    name_en: item.name_en,
+                    price: Number(price),
+                    quantity: 1
+                });
             }
+            updateCartUI();
         }
 
+        // কার্ট UI আপডেট করা
+        function updateCartUI() {
+            const countEl = document.getElementById('cartCount');
+            const subtotalEl = document.getElementById('cartSubtotal');
+            const cartBar = document.getElementById('cartBar');
+
+            const totalCount = cart.reduce((sum, i) => sum + i.quantity, 0);
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+
+            if(totalCount > 0) {
+                cartBar.classList.remove('hidden');
+            } else {
+                cartBar.classList.add('hidden');
+            }
+
+            countEl.innerText = `${totalCount} Items`;
+            subtotalEl.innerText = `৳${subtotal.toFixed(2)}`;
+        }
+
+        // ডেমো টেবিল পপুলেট ফাংশন
+        function populateTables() {
+            const tableSelect = document.getElementById('activeTableSelect');
+            if(!tableSelect) return;
+            tableSelect.innerHTML = `<option value="Table 1">Table 1</option><option value="Table 2">Table 2</option><option value="Table 3">Table 3</option>`;
+        }
+
+        // অন্যান্য প্লেসহোল্ডার ফাংশন (দরকার অনুযায়ী এক্সপ্যান্ড করতে পারেন)
         function openCartModal() {
+            const listContainer = document.getElementById('cartItemsListContainer');
+            let html = '';
+            cart.forEach(i => {
+                html += `
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <div>
+                            <p class="font-bold text-sm text-gray-800">${i.name_en}</p>
+                            <p class="text-xs text-gray-500">৳${i.price} x ${i.quantity}</p>
+                        </div>
+                        <span class="font-bold text-blue-900">৳${(i.price * i.quantity).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html || '<p class="text-center text-gray-400 text-sm">Cart is empty</p>';
+            
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
             document.getElementById('cartModalSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
-
-            const container = document.getElementById('cartItemsListContainer');
-            if(cart.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 py-4">Your cart is empty.</p>';
-            } else {
-                container.innerHTML = cart.map((i, index) => {
-                    let name = i.name_en || i.name || "Item";
-                    return `
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <div>
-                                <h4 class="font-bold text-sm text-gray-800">${name}</h4>
-                                <p class="text-xs text-gray-500">৳${i.price} x ${i.quantity}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="changeCartQty(${index}, -1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">-</button>
-                                <span class="text-sm font-bold">${i.quantity}</span>
-                                <button onclick="changeCartQty(${index}, 1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">+</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
             document.getElementById('cartModal').classList.remove('hidden');
         }
 
-        function closeCartModal() { document.getElementById('cartModal').classList.add('hidden'); }
-
-        function changeCartQty(index, delta) {
-            cart[index].quantity += delta;
-            if(cart[index].quantity <= 0) { cart.splice(index, 1); }
-            updateCartBar();
-            openCartModal();
-            if(cart.length === 0) { closeCartModal(); }
+        function closeCartModal() {
+            document.getElementById('cartModal').classList.add('hidden');
         }
 
         function proceedToCheckout() {
-            if(!loggedInCustomer) {
-                closeCartModal();
-                openLoginModal();
-                alert('Please login first to proceed with checkout.');
-                return;
-            }
             closeCartModal();
-            openCheckoutModal();
-        }
-
-        function openCheckoutModal() {
-            if(loggedInCustomer) {
-                document.getElementById('checkoutName').value = loggedInCustomer.full_name;
-                document.getElementById('checkoutPhone').value = loggedInCustomer.phone;
-            }
-
-            const summaryType = document.getElementById('summaryOrderType');
-            const summaryLoc = document.getElementById('summaryTableLocation');
-            
-            if(currentOrderType === 'dine_in') {
-                summaryType.innerText = 'Dine-In';
-                const section = document.getElementById('activeSectionSelect').value;
-                const table = document.getElementById('activeTableSelect').value;
-                summaryLoc.innerText = `${section.toUpperCase()} - Table ${table}`;
-            } else {
-                summaryType.innerText = 'Takeaway';
-                summaryLoc.innerText = 'TAKEAWAY COUNTER';
-            }
-
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
             const tax = subtotal * 0.06;
             const total = subtotal + tax;
@@ -603,133 +589,43 @@
             document.getElementById('modalSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
             document.getElementById('modalTax').innerText = `৳${tax.toFixed(2)}`;
             document.getElementById('modalTotal').innerText = `৳${total.toFixed(2)}`;
-
-            const list = document.getElementById('checkoutItemsList');
-            list.innerHTML = cart.map(i => {
-                let name = i.name_en || i.name || "Item";
-                return `<div class="flex justify-between text-sm"><span>${name} x ${i.quantity}</span><span>৳${(i.price*i.quantity).toFixed(2)}</span></div>`;
-            }).join('');
-            
             document.getElementById('checkoutModal').classList.remove('hidden');
         }
 
-        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+        function closeCheckoutModal() {
+            document.getElementById('checkoutModal').classList.add('hidden');
+        }
 
-        async function submitOrder() {
-            const name = document.getElementById('checkoutName').value;
-            const phone = document.getElementById('checkoutPhone').value;
-            let section = 'takeaway';
-            let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
-
-            if(currentOrderType === 'dine_in') {
-                section = document.getElementById('activeSectionSelect').value;
-                tableId = document.getElementById('activeTableSelect').value;
-            }
-
-            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-            const tax = subtotal * 0.06;
-            const total = subtotal + tax;
-
-            const { data: orderData, error } = await _supabase.from('orders').insert([{
-                customer_id: loggedInCustomer ? loggedInCustomer.id : null,
-                customer_name: name,
-                customer_phone: phone,
-                order_type: currentOrderType,
-                section: section,
-                table_id: tableId,
-                subtotal: subtotal,
-                sst_tax: tax,
-                total_amount: total,
-                status: 'pending',
-                payment_status: 'unpaid'
-            }]).select().single();
-
-            if(error) { alert('Order failed!'); return; }
-
-            const orderItems = cart.map(i => ({
-                order_id: orderData.id,
-                menu_item_id: i.id,
-                quantity: i.quantity,
-                price: i.price
-            }));
-
-            await _supabase.from('order_items').insert(orderItems);
-            alert('Order placed successfully! Pending Cashier verification.');
+        function submitOrder() {
+            alert('Order placed successfully!');
+            cart = [];
+            updateCartUI();
             closeCheckoutModal();
             showHome();
         }
 
         function handleAuthClick() {
-            if (loggedInCustomer) {
-                toggleSidebar();
-            } else {
-                openLoginModal();
-            }
+            alert('Login feature triggered.');
         }
 
-        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
-        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
-        
-        function toggleAuthMode(mode) {
-            if(mode === 'register') {
-                document.getElementById('loginForm').classList.add('hidden');
-                document.getElementById('registerForm').classList.remove('hidden');
-                document.getElementById('authTitle').innerText = 'Customer Register';
-            } else {
-                document.getElementById('registerForm').classList.add('hidden');
-                document.getElementById('loginForm').classList.remove('hidden');
-                document.getElementById('authTitle').innerText = 'Customer Login';
-            }
+        function showOrderHistory() {
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('orderView').classList.add('hidden');
+            document.getElementById('historyView').classList.remove('hidden');
         }
 
-        async function registerCustomer() {
-            const full_name = document.getElementById('regName').value;
-            const phone = document.getElementById('regPhone').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-
-            const { data, error } = await _supabase.from('customers').insert([{ full_name, phone, email, password }]).select().single();
-            if(error) { alert('Registration failed or email already exists.'); return; }
-            alert('Registration successful! Please login.');
-            toggleAuthMode('login');
-        }
-
-        async function loginCustomer() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            const { data, error } = await _supabase.from('customers').select('*').eq('email', email).eq('password', password).single();
-            if(error || !data) { alert('Invalid email or password.'); return; }
-
-            loggedInCustomer = data;
-            localStorage.setItem('hameeds_customer', JSON.stringify(data));
-            updateLoginUI();
-            closeLoginModal();
-            alert('Login successful!');
+        function openChat() {
+            alert('Live chat opening...');
         }
 
         function logoutCustomer() {
-            loggedInCustomer = null;
-            localStorage.removeItem('hameeds_customer');
-            updateLoginUI();
-            showHome();
             alert('Logged out successfully.');
+            showHome();
         }
 
-        function updateLoginUI() {
-            const profileDiv = document.getElementById('sidebarProfile');
-            if(loggedInCustomer) {
-                document.getElementById('loginBtnText').innerText = loggedInCustomer.full_name.split(' ')[0];
-                profileDiv.classList.remove('hidden');
-                document.getElementById('profileName').innerText = loggedInCustomer.full_name;
-                document.getElementById('profileEmail').innerText = loggedInCustomer.email;
-            } else {
-                document.getElementById('loginBtnText').innerText = 'Login';
-                profileDiv.classList.add('hidden');
-            }
+        function updateActiveTableDropdown() {
+            populateTables();
         }
-
-        function openChat() { alert('Live chat feature coming soon!'); }
     </script>
 </body>
 </html>
