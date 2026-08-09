@@ -92,7 +92,7 @@
             </main>
         </div>
 
-        <!-- Right Sidebar Panel (~2 to 2.5 inches width for 14-inch display) -->
+        <!-- Right Sidebar Panel -->
         <aside class="w-56 bg-gray-900 text-white flex flex-col p-4 justify-start space-y-3 shadow-xl flex-shrink-0">
             <div class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Quick Actions</div>
             
@@ -184,14 +184,11 @@
     </div>
 
     <script>
-        // ====================================================
-        // এখানে আপনার সুপারবেস প্রজেক্টের URL এবং Anon Key বসিয়ে দিন
-        // ====================================================
+        // Supabase Credentials
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        // ====================================================
 
         let currentActiveOrderId = null;
         let activeOrderData = null;
@@ -244,6 +241,8 @@
                     </div>
                 </div>
             `).join('');
+
+            fetchIncomingOrdersCount();
         }
 
         // Open Order Details Modal & Load Items
@@ -291,7 +290,7 @@
                 return;
             }
 
-            select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name}">${m.name} - RM${m.price}</option>`).join('');
+            select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name_en || m.name}">${m.name_en || m.name} - RM${m.price}</option>`).join('');
         }
 
         // Add Extra Item from Menu to Order
@@ -313,6 +312,13 @@
                 console.error(error);
                 return;
             }
+
+            // Recalculate order total amount
+            const { data: currentItems } = await _supabase.from('order_items').select('price, quantity').eq('order_id', currentActiveOrderId);
+            const newTotal = currentItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            await _supabase.from('orders').update({ total_amount: newTotal }).eq('id', currentActiveOrderId);
+            activeOrderData.total_amount = newTotal;
 
             alert('Extra item added successfully!');
             openOrderDetails(activeOrderData);
@@ -355,10 +361,26 @@
         }
 
         // Notifications Handling
+        async function fetchIncomingOrdersCount() {
+            const { data } = await _supabase
+                .from('orders')
+                .select('id')
+                .eq('status', 'Pending Customer Order');
+            
+            const badge = document.getElementById('notificationBadge');
+            if (data && data.length > 0) {
+                badge.innerText = data.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
         function openNotificationModal() {
             document.getElementById('notificationModal').classList.remove('hidden');
             fetchIncomingOrders();
         }
+
         function closeNotificationModal() {
             document.getElementById('notificationModal').classList.add('hidden');
         }
@@ -378,26 +400,24 @@
                 return;
             }
 
-            const badge = document.getElementById('notificationBadge');
-            if (data && data.length > 0) {
-                badge.innerText = data.length;
-                badge.classList.remove('hidden');
-                
-                container.innerHTML = data.map(order => `
-                    <div class="border border-gray-200 p-3 rounded-xl bg-gray-50 flex justify-between items-center text-xs">
-                        <div>
-                            <span class="font-bold text-gray-800">Order ID: #${order.id}</span>
-                            <p class="text-gray-600">Table: ${order.table_id || 'N/A'} | Total: RM${Number(order.total_amount).toFixed(2)}</p>
-                        </div>
-                        <button onclick="acceptNotificationOrder(${order.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-semibold shadow">
-                            Accept
-                        </button>
-                    </div>
-                `).join('');
-            } else {
-                badge.classList.add('hidden');
+            fetchIncomingOrdersCount();
+
+            if (!data || data.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-sm">No new notifications.</p>';
+                return;
             }
+
+            container.innerHTML = data.map(order => `
+                <div class="border border-gray-200 p-3 rounded-xl bg-gray-50 flex justify-between items-center text-xs">
+                    <div>
+                        <span class="font-bold text-gray-800">Order ID: #${order.id}</span>
+                        <p class="text-gray-600">Table: ${order.table_id || 'N/A'} | Total: RM${Number(order.total_amount).toFixed(2)}</p>
+                    </div>
+                    <button onclick="acceptNotificationOrder(${order.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-semibold shadow">
+                        Accept
+                    </button>
+                </div>
+            `).join('');
         }
 
         async function acceptNotificationOrder(orderId) {
@@ -412,6 +432,7 @@
             }
 
             alert(`Order #${orderId} accepted into Current Orders!`);
+            closeNotificationModal();
             fetchIncomingOrders();
             loadPendingOrders();
         }
@@ -421,6 +442,7 @@
         function doCheckOut() { alert("Checked-out successfully!"); }
         function refreshCashierSystem() { 
             loadPendingOrders();
+            fetchIncomingOrdersCount();
             alert("System refreshed!"); 
         }
         function checkAdminAccess() { alert("Admin verification prompt."); }
@@ -428,6 +450,7 @@
         // Initial Load on Page Startup
         window.addEventListener('DOMContentLoaded', () => {
             loadPendingOrders();
+            fetchIncomingOrdersCount();
         });
     </script>
 </body>
