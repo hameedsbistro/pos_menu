@@ -617,7 +617,7 @@
                     <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm flex flex-col justify-between">
                         <div>
                             <h4 class="font-bold text-lg text-gray-800">${itemName}</h4>
-                            <p class="text-blue-600 font-semibold mb-4">৳${price}</p>
+                            <p class="text-blue-600 font-semibold mb-4">RM${price}</p>
                         </div>
                         <button onclick="addToCart(${item.id}, ${price})" class="bg-green-600 hover:bg-green-700 text-white w-full py-2 rounded-lg font-semibold transition">Add to Cart</button>
                     </div>
@@ -640,7 +640,7 @@
             if(totalQty > 0) {
                 bar.classList.remove('hidden');
                 document.getElementById('cartCount').innerText = `${totalQty} Items`;
-                document.getElementById('cartSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
+                document.getElementById('cartSubtotal').innerText = `RM${subtotal.toFixed(2)}`;
             } else {
                 bar.classList.add('hidden');
             }
@@ -648,7 +648,7 @@
 
         function openCartModal() {
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-            document.getElementById('cartModalSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
+            document.getElementById('cartModalSubtotal').innerText = `RM${subtotal.toFixed(2)}`;
 
             const container = document.getElementById('cartItemsListContainer');
             if(cart.length === 0) {
@@ -724,14 +724,14 @@
             const tax = subtotal * 0.06;
             const total = subtotal + tax;
 
-            document.getElementById('modalSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
+            document.getElementById('modalSubtotal').innerText = `RM${subtotal.toFixed(2)}`;
             document.getElementById('modalTax').innerText = `৳${tax.toFixed(2)}`;
             document.getElementById('modalTotal').innerText = `৳${total.toFixed(2)}`;
 
             const list = document.getElementById('checkoutItemsList');
             list.innerHTML = cart.map(i => {
                 let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
-                return `<div class="flex justify-between text-sm"><span>${name} x ${i.quantity}</span><span>৳${(i.price*i.quantity).toFixed(2)}</span></div>`;
+                return `<div class="flex justify-between text-sm"><span>${name} x ${i.quantity}</span><span>RM${(i.price*i.quantity).toFixed(2)}</span></div>`;
             }).join('');
             
             document.getElementById('checkoutModal').classList.remove('hidden');
