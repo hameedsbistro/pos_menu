@@ -530,65 +530,50 @@
         }
 
         async function showOrderHistory() {
-    if(!loggedInCustomer) {
-        alert('Please login first to view order history.');
-        openLoginModal();
-        return;
-    }
-    document.getElementById('homeView').classList.add('hidden');
-    document.getElementById('orderView').classList.add('hidden');
-    document.getElementById('historyView').classList.remove('hidden');
-    document.getElementById('cartBar').classList.add('hidden');
+            if(!loggedInCustomer) {
+                alert('Please login first to view order history.');
+                openLoginModal();
+                return;
+            }
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('orderView').classList.add('hidden');
+            document.getElementById('historyView').classList.remove('hidden');
+            document.getElementById('cartBar').classList.add('hidden');
 
-    const container = document.getElementById('orderHistoryContainer');
-    container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
+            const container = document.getElementById('orderHistoryContainer');
+            container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
 
-    console.log("Searching history for Customer ID:", loggedInCustomer.id);
+            console.log("Searching history for Customer ID:", loggedInCustomer.id);
 
-    const { data, error } = await _supabase.from('orders').select('*').eq('customer_id', loggedInCustomer.id).order('created_at', { ascending: false });
-    
-    if(error) {
-        console.error("History Fetch Error:", error);
-        container.innerHTML = `<p class="text-red-500">Error loading history: ${error.message}</p>`;
-        return;
-    }
+            const { data, error } = await _supabase.from('orders').select('*').eq('customer_id', loggedInCustomer.id).order('created_at', { ascending: false });
+            
+            if(error) {
+                console.error("History Fetch Error:", error);
+                container.innerHTML = `<p class="text-red-500">Error loading history: ${error.message}</p>`;
+                return;
+            }
 
-    console.log("Fetched History Data:", data);
+            console.log("Fetched History Data:", data);
 
-    if(!data || data.length === 0) {
-        container.innerHTML = '<p class="text-gray-500">No past orders found.</p>';
-        return;
-    }
-
-    container.innerHTML = data.map(o => `
-        <div class="bg-white border p-4 rounded-xl shadow-sm flex justify-between items-center">
-            <div>
-                <p class="font-bold text-gray-800">Order ID: #${o.id}</p>
-                <p class="text-xs text-gray-500">Type: ${(o.order_type || '').toUpperCase()} | Table/Loc: ${o.table_id || o.table_no || 'N/A'}</p>
-                <p class="text-xs text-gray-500">Status: <span class="font-semibold text-blue-600">${o.status}</span></p>
-            </div>
-            <div class="text-right">
-                <p class="font-bold text-lg text-blue-600">RM${Number(o.total_amount || 0).toFixed(2)}</p>
-                <p class="text-xs text-gray-400">${o.created_at ? new Date(o.created_at).toLocaleString() : ''}</p>
-            </div>
-        </div>
-    `).join('');
-}
+            if(!data || data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No past orders found.</p>';
+                return;
+            }
 
             container.innerHTML = data.map(o => `
                 <div class="bg-white border p-4 rounded-xl shadow-sm flex justify-between items-center">
                     <div>
                         <p class="font-bold text-gray-800">Order ID: #${o.id}</p>
-                        <p class="text-xs text-gray-500">Type: ${o.order_type.toUpperCase()} | Table/Loc: ${o.table_id}</p>
+                        <p class="text-xs text-gray-500">Type: ${(o.order_type || '').toUpperCase()} | Table/Loc: ${o.table_id || o.table_no || 'N/A'}</p>
                         <p class="text-xs text-gray-500">Status: <span class="font-semibold text-blue-600">${o.status}</span></p>
                     </div>
                     <div class="text-right">
-                        <p class="font-bold text-lg text-blue-600">RM${o.total_amount.toFixed(2)}</p>
-                        <p class="text-xs text-gray-400">${new Date(o.created_at).toLocaleString()}</p>
+                        <p class="font-bold text-lg text-blue-600">RM${Number(o.total_amount || 0).toFixed(2)}</p>
+                        <p class="text-xs text-gray-400">${o.created_at ? new Date(o.created_at).toLocaleString() : ''}</p>
                     </div>
                 </div>
             `).join('');
-        
+        }
 
         function updateActiveTableDropdown() {
             const section = document.getElementById('activeSectionSelect').value;
@@ -652,7 +637,6 @@
 
                 container.innerHTML += `
                     <div class="bg-white rounded-xl shadow p-4 flex justify-between items-center relative border border-gray-100">
-                        <!-- বাম পাশের টেক্সট ও প্রাইস -->
                         <div class="flex-1 pr-3">
                             <h3 class="font-bold text-gray-800 text-base mb-1">${itemName}</h3>
                             <p class="text-blue-600 font-semibold mb-3">RM${Number(price).toFixed(2)}</p>
@@ -660,8 +644,6 @@
                                 Add to Cart
                             </button>
                         </div>
-
-                        <!-- ডান পাশের বক্স (ছবি এবং ক্লিক করলে বড় হবে) -->
                         <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center" onclick="openImageViewer('${imgSrc}', '${itemName}')">
                             <img src="${imgSrc}" alt="${itemName}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/80'">
                         </div>
@@ -795,51 +777,58 @@
         function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
         async function submitOrder() {
-    const name = document.getElementById('checkoutName').value;
-    const phone = document.getElementById('checkoutPhone').value;
-    let section = 'takeaway';
-    let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
+            const name = document.getElementById('checkoutName').value;
+            const phone = document.getElementById('checkoutPhone').value;
+            let section = 'takeaway';
+            let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
 
-    if(currentOrderType === 'dine_in') {
-        section = document.getElementById('activeSectionSelect').value;
-        tableId = document.getElementById('activeTableSelect').value;
-    }
+            if(currentOrderType === 'dine_in') {
+                section = document.getElementById('activeSectionSelect').value;
+                tableId = document.getElementById('activeTableSelect').value;
+            }
 
-    const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-    const tax = subtotal * 0.06;
-    const total = subtotal + tax;
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            const tax = subtotal * 0.06;
+            const total = subtotal + tax;
 
-    const { data: orderData, error } = await _supabase.from('orders').insert([{
-        customer_name: name,
-        customer_phone: phone,
-        order_type: currentOrderType,
-        section: section,
-        table_id: tableId,
-        subtotal: subtotal,
-        sst_tax: tax,
-        total_amount: total,
-        status: 'pending',
-        payment_status: 'unpaid'
-    }]).select().single();
+            const orderPayload = {
+                customer_id: loggedInCustomer ? loggedInCustomer.id : null,
+                customer_name: name,
+                customer_phone: phone,
+                order_type: currentOrderType,
+                section: section,
+                table_id: tableId,
+                subtotal: subtotal,
+                sst_tax: tax,
+                total_amount: total,
+                status: 'pending',
+                payment_status: 'unpaid'
+            };
 
-    if(error) { 
-        console.error("Supabase Error Details:", error);
-        alert('Order failed! Check console.'); 
-        return; 
-    }
+            const { data: orderData, error } = await _supabase.from('orders').insert([orderPayload]).select().single();
 
-    const orderItems = cart.map(i => ({
-        order_id: orderData.id,
-        menu_item_id: i.id,
-        quantity: i.quantity,
-        price: i.price
-    }));
+            if(error) { 
+                console.error('Supabase Error Details:', error);
+                alert('Order failed! Error: ' + error.message); 
+                return; 
+            }
 
-    await _supabase.from('order_items').insert(orderItems);
-    alert('Order placed successfully! Pending Cashier verification.');
-    closeCheckoutModal();
-    showHome();
-}
+            const orderItems = cart.map(i => ({
+                order_id: orderData.id,
+                menu_item_id: i.id,
+                quantity: i.quantity,
+                price: i.price
+            }));
+
+            const { error: itemsError } = await _supabase.from('order_items').insert(orderItems);
+            if(itemsError) {
+                console.error('Order Items Insert Error:', itemsError);
+            }
+
+            alert('Order placed successfully! Pending Cashier verification.');
+            closeCheckoutModal();
+            showHome();
+        }
 
         function handleAuthClick() {
             if (loggedInCustomer) {
@@ -855,7 +844,7 @@
         function toggleAuthMode(mode) {
             if(mode === 'register') {
                 document.getElementById('loginForm').classList.add('hidden');
-                document.getElementById('registerForm').classList.remove('hidden');
+                dopplet = document.getElementById('registerForm').classList.remove('hidden');
                 document.getElementById('authTitle').innerText = 'Customer Register';
             } else {
                 document.getElementById('registerForm').classList.add('hidden');
@@ -878,7 +867,7 @@
 
         async function loginCustomer() {
             const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            const password = document.getElementById('loginPassword'.value);
 
             const { data, error } = await _supabase.from('customers').select('*').eq('email', email).eq('password', password).single();
             if(error || !data) { alert('Invalid email or password.'); return; }
