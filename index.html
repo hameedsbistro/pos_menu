@@ -568,12 +568,16 @@
         }
 
         async function fetchMenu() {
+    console.log("Fetching menu from Supabase...");
     const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
+    
     if (error) {
-        console.error('Supabase Error:', error);
-        alert('Menu load failed: ' + error.message);
+        console.error('Supabase Fetch Error Details:', error);
+        alert('Menu load failed! Error: ' + error.message);
         return;
     }
+    
+    console.log('Fetched Menu Data:', data);
     menuItems = data || [];
     renderMenu(menuItems.filter(i => i.is_popular));
     renderCategories();
