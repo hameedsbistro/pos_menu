@@ -609,7 +609,7 @@
             }
         }
 
-        function openCheckoutModal() {
+                function openCheckoutModal() {
             if(loggedInCustomer) {
                 document.getElementById('checkoutName').value = loggedInCustomer.full_name;
                 document.getElementById('checkoutPhone').value = loggedInCustomer.phone;
@@ -625,4 +625,129 @@
             const list = document.getElementById('checkoutItemsList');
             list.innerHTML = cart.map(i => {
                 let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
-                return `<div class="fl
+                return `<div class="flex justify-between text-sm"><span>${name} x ${i.quantity}</span><span>৳${(i.price*i.quantity).toFixed(2)}</span></div>`;
+            }).join('');
+            
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+
+        async function submitOrder() {
+            const name = document.getElementById('checkoutName').value;
+            const phone = document.getElementById('checkoutPhone').value;
+            let section = 'takeaway';
+            let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
+
+            if(currentOrderType === 'dine_in') {
+                section = document.getElementById('activeSectionSelect').value;
+                tableId = document.getElementById('activeTableSelect').value;
+            }
+
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            const tax = subtotal * 0.06;
+            const total = subtotal + tax;
+
+            const { data: orderData, error } = await _supabase.from('orders').insert([{
+                customer_id: loggedInCustomer ? loggedInCustomer.id : null,
+                customer_name: name,
+                customer_phone: phone,
+                order_type: currentOrderType,
+                section: section,
+                table_id: tableId,
+                subtotal: subtotal,
+                sst_tax: tax,
+                total_amount: total,
+                status: 'pending',
+                payment_status: 'unpaid'
+            }]).select().single();
+
+            if(error) { alert('Order failed!'); return; }
+
+            const orderItems = cart.map(i => ({
+                order_id: orderData.id,
+                menu_item_id: i.id,
+                quantity: i.quantity,
+                price: i.price
+            }));
+
+            await _supabase.from('order_items').insert(orderItems);
+            alert('Order placed successfully! Pending Cashier verification.');
+            closeCheckoutModal();
+            showHome();
+        }
+
+        function handleAuthClick() {
+            if (loggedInCustomer) {
+                toggleSidebar();
+            } else {
+                openLoginModal();
+            }
+        }
+
+        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+        
+        function toggleAuthMode(mode) {
+            if(mode === 'register') {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('authTitle').innerText = 'Customer Register';
+            } else {
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('authTitle').innerText = 'Customer Login';
+            }
+        }
+
+        async function registerCustomer() {
+            const full_name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            const { data, error } = await _supabase.from('customers').insert([{ full_name, phone, email, password }]).select().single();
+            if(error) { alert('Registration failed or email already exists.'); return; }
+            alert('Registration successful! Please login.');
+            toggleAuthMode('login');
+        }
+
+        async function loginCustomer() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const { data, error } = await _supabase.from('customers').select('*').eq('email', email).eq('password', password).single();
+            if(error || !data) { alert('Invalid email or password.'); return; }
+
+            loggedInCustomer = data;
+            localStorage.setItem('hameeds_customer', JSON.stringify(data));
+            updateLoginUI();
+            closeLoginModal();
+            alert('Login successful!');
+        }
+
+        function logoutCustomer() {
+            loggedInCustomer = null;
+            localStorage.removeItem('hameeds_customer');
+            updateLoginUI();
+            showHome();
+            alert('Logged out successfully.');
+        }
+
+        function updateLoginUI() {
+            const profileDiv = document.getElementById('sidebarProfile');
+            if(loggedInCustomer) {
+                document.getElementById('loginBtnText').innerText = loggedInCustomer.full_name.split(' ')[0];
+                profileDiv.classList.remove('hidden');
+                document.getElementById('profileName').innerText = loggedInCustomer.full_name;
+                document.getElementById('profileEmail').innerText = loggedInCustomer.email;
+            } else {
+                document.getElementById('loginBtnText').innerText = 'Login';
+                profileDiv.classList.add('hidden');
+            }
+        }
+
+        function openChat() { alert('Live chat feature coming soon!'); }
+    </script>
+</body>
+</html>
