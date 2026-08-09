@@ -121,7 +121,7 @@
 
     </div>
 
-    <!-- Modals (Order Details মডালে z-9999 ব্যবহার করা হয়েছে) -->
+    <!-- Modals (Order Details মডালে z-9999 ব্যবহার করা হয়েছে) -->
     <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
             <button onclick="closeOrderModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
@@ -285,68 +285,44 @@
             document.getElementById('orderDetailModal').classList.remove('hidden');
         }
 
-        // এই ফাংশনটি কোডের ভেতর যেখানে আছে, সেখানে এটি বসান
-        // মেনু লিস্ট লোড করার ফাংশনে নাম দেখানোর জন্য এটি ব্যবহার করুন
-async function loadMenuForAddingItems() {
-    const { data: menuItems, error } = await _supabase
-        .from('menu_items')
-        .select('id, name_en, price'); // এখানে name_en ব্যবহার করা হয়েছে
-
-    if (error) {
-        console.error('Error loading menu:', error);
-        return;
-    }
-
-    // ড্রপডাউন বা লিস্টে দেখানোর সময় item.name_en ব্যবহার করুন
-    const selectElement = document.getElementById('extraItemSelect'); // আপনার এলেমেন্টের আইডি অনুযায়ী পরিবর্তন করে নেবেন
-    if (selectElement) {
-        selectElement.innerHTML = menuItems.map(item => `
-            <option value="${item.id}">${item.name_en} - RM${item.price}</option>
-        `).join('');
-    }
-}
-
-
         async function renderModalItems(orderId) {
-    const itemsContainer = document.getElementById('modalOrderItemsList');
-    itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
+            const itemsContainer = document.getElementById('modalOrderItemsList');
+            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
 
-    // order_items টেবিলের সাথে সঠিক 'menu_items' টেবিল এবং 'name_en' কলাম জয়েন করা হলো
-    const { data: items, error } = await _supabase
-        .from('order_items')
-        .select(`
-            id,
-            order_id,
-            quantity,
-            price,
-            menu_item_id,
-            menu_items ( name_en )
-        `)
-        .eq('order_id', orderId);
-    
-    if (error || !items || items.length === 0) {
-        itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
-        return;
-    }
+            // order_items টেবিলের সাথে সঠিক 'menu_items' টেবিল এবং 'name_en' কলাম জয়েন করা হলো
+            const { data: items, error } = await _supabase
+                .from('order_items')
+                .select(`
+                    id,
+                    order_id,
+                    quantity,
+                    price,
+                    menu_item_id,
+                    menu_items ( name_en )
+                `)
+                .eq('order_id', orderId);
+            
+            if (error || !items || items.length === 0) {
+                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
+                return;
+            }
 
-    itemsContainer.innerHTML = items.map(item => {
-        // menu_items টেবিল থেকে name_en ফেচ করা হচ্ছে
-        const itemName = item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
+            itemsContainer.innerHTML = items.map(item => {
+                const itemName = item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
 
-        return `
-            <div class="flex justify-between items-center py-1.5 border-b text-xs">
-                <div>
-                    <span class="font-medium text-gray-800">${itemName}</span>
-                    <span class="text-gray-500 ml-2">x${item.quantity} (RM${(item.price * item.quantity).toFixed(2)})</span>
-                </div>
-                <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 bg-red-50 rounded text-xs">✕ Remove</button>
-            </div>
-        `;
-    }).join('');
-}
-        
+                return `
+                    <div class="flex justify-between items-center py-1.5 border-b text-xs">
+                        <div>
+                            <span class="font-medium text-gray-800">${itemName}</span>
+                            <span class="text-gray-500 ml-2">x${item.quantity} (RM${(item.price * item.quantity).toFixed(2)})</span>
+                        </div>
+                        <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 bg-red-50 rounded text-xs">✕ Remove</button>
+                    </div>
+                `;
+            }).join('');
+        }
 
-            async function removeItemFromOrder(itemId, orderId) {
+        async function removeItemFromOrder(itemId, orderId) {
             const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
             if (!error) {
                 await renderModalItems(orderId);
@@ -361,9 +337,10 @@ async function loadMenuForAddingItems() {
 
         async function loadMenuForDropdown() {
             const select = document.getElementById('extraMenuItemSelect');
-            const { data } = await _supabase.from('menu_items').select('*');
+            // menu_items থেকে name_en ফেচ করা হচ্ছে
+            const { data } = await _supabase.from('menu_items').select('id, name_en, price');
             if(data) {
-                select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name}">${m.name} - RM${m.price}</option>`).join('');
+                select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name_en}">${m.name_en} - RM${m.price}</option>`).join('');
             }
         }
 
@@ -416,7 +393,6 @@ async function loadMenuForAddingItems() {
             document.getElementById('notificationModal').classList.add('hidden'); 
         }
 
-        // নোটিফিকেশন মডালে আইটেমের নাম সহ শো করানোর লজিক
         async function fetchIncomingOrders() {
             const { data } = await _supabase
                 .from('orders')
@@ -439,7 +415,6 @@ async function loadMenuForAddingItems() {
                             </div>
                             <button onclick='openOrderDetails(${JSON.stringify(o)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded-lg text-xs">Open</button>
                         </div>
-                        <!-- নোটিফিকেশনের ভেতরে আইটেমগুলোর নাম ও পরিমাণ দেখানোর জায়গা -->
                         <div class="bg-white p-2 rounded border space-y-1 text-gray-700">
                             ${o.order_items && o.order_items.length > 0 
                                 ? o.order_items.map(item => `<div>• ${item.item_name} (x${item.quantity})</div>`).join('') 
