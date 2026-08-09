@@ -11,41 +11,34 @@
 </head>
 <body class="bg-gray-100 font-sans overflow-hidden">
 
-    <!-- ================= LOGIN OVERLAY ================= -->
-    <div id="loginOverlay" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <!-- ==================== LOGIN SECTION ==================== -->
+    <div id="loginSection" class="flex h-screen w-screen items-center justify-center bg-gray-900 absolute inset-0 z-50">
         <div class="bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
             <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Hameeds Bistro</h2>
-                <p class="text-xs text-gray-500 mt-1">Please login as Cashier, Manager, or Admin</p>
+                <img src="images/logo.png" alt="Logo" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-600 mx-auto mb-2" onerror="this.src='https://via.placeholder.com/60'">
+                <h1 class="font-bold text-2xl text-gray-900">Hameeds Bistro</h1>
+                <p class="text-xs text-gray-500 mt-1">Cashier Panel Login</p>
             </div>
 
-            <div id="loginErrorMsg" class="hidden mb-4 p-3 bg-red-100 text-red-700 text-xs rounded-xl text-center font-semibold"></div>
-
-            <form onsubmit="handleLogin(event)" class="space-y-4">
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Email or Username</label>
-                    <input type="text" id="loginEmail" required class="w-full border px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Enter your email/username">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+                    <input type="email" id="loginEmail" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="cashier@bistro.com">
                 </div>
-
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="loginPassword" required class="w-full border px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Enter password">
+                    <input type="password" id="loginPassword" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••">
                 </div>
-
-                <button type="submit" id="loginBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-sm shadow transition mt-2">
-                    Login to System
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow transition">
+                    Login to Panel
                 </button>
             </form>
-            
-            <div class="mt-4 text-center">
-                <span id="dbStatusText" class="text-[11px] text-gray-400">Checking database connection...</span>
-            </div>
+            <div id="loginError" class="text-red-500 text-xs text-center mt-3 hidden"></div>
         </div>
     </div>
-    <!-- ================= END LOGIN OVERLAY ================= -->
 
-    <!-- Main System Container (Hidden until logged in) -->
-    <div id="mainSystemContainer" class="flex h-screen w-screen hidden">
+    <!-- ==================== MAIN CASHIER PANEL ==================== -->
+    <div id="mainPanel" class="flex h-screen w-screen hidden">
         
         <!-- Main Panel (Current Orders + Header) -->
         <div class="flex-1 flex flex-col h-full overflow-hidden">
@@ -59,12 +52,10 @@
                     
                     <div class="flex flex-col">
                         <h1 class="font-bold text-lg text-gray-900 leading-tight">Hameeds Bistro</h1>
-                        
                         <div class="flex items-center space-x-2 mt-0.5">
                             <span class="text-xs text-gray-500 font-medium">Welcome:</span>
-                            <span id="cashierName" class="text-xs font-bold text-emerald-700">Prokash Rakshit</span>
+                            <span id="cashierName" class="text-xs font-bold text-emerald-700">Cashier</span>
                         </div>
-                        
                         <div class="flex items-center space-x-2 mt-0.5">
                             <span class="text-xs text-gray-500 font-medium">Role:</span>
                             <span id="cashierRole" class="text-xs uppercase font-bold text-blue-600">Cashier</span>
@@ -87,7 +78,7 @@
                     <div class="relative">
                         <button onclick="openNotificationModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center relative" title="New Order Notifications">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
                             <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hidden">0</span>
                         </button>
@@ -101,7 +92,7 @@
                     </button>
 
                     <!-- Logout Button -->
-                    <button onclick="doLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">
+                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">
                         Logout
                     </button>
                 </div>
@@ -112,26 +103,16 @@
                 <div class="mb-4">
                     <h2 class="text-xl font-bold text-gray-800">Current Orders</h2>
                 </div>
-                <!-- Pending Order Cards Container -->
-                <div id="pendingOrdersContainer" class="space-y-3">
-                    <!-- Dynamic order cards will load here -->
-                </div>
+                <div id="pendingOrdersContainer" class="space-y-3"></div>
             </main>
         </div>
 
         <!-- Right Sidebar Panel -->
         <aside class="w-56 bg-gray-900 text-white flex flex-col p-4 justify-start space-y-3 shadow-xl flex-shrink-0">
             <div class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Quick Actions</div>
-            
-            <button class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
-                NEW ORDER
-            </button>
-            <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
-                INVOICE LIST
-            </button>
-            <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
-                LAST RECEIPT
-            </button>
+            <button class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">NEW ORDER</button>
+            <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">INVOICE LIST</button>
+            <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">LAST RECEIPT</button>
         </aside>
 
     </div>
@@ -140,12 +121,9 @@
     <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
             <button onclick="closeOrderModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            
             <h3 id="modalOrderTitle" class="font-bold text-xl text-gray-800 mb-1">Order Details</h3>
             <p id="modalOrderMeta" class="text-xs text-gray-500 mb-4"></p>
-
             <div class="border rounded-xl p-3 mb-4 max-h-40 overflow-y-auto bg-gray-50" id="modalOrderItemsList"></div>
-
             <div class="border-t pt-3 flex-1 flex flex-col">
                 <h4 class="font-semibold text-gray-700 text-sm mb-2">Add Extra Item from Menu:</h4>
                 <div class="flex gap-2 mb-3">
@@ -153,7 +131,6 @@
                     <button onclick="addExtraItemToOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Add</button>
                 </div>
             </div>
-
             <div class="flex justify-end space-x-3 mt-4 pt-3 border-t">
                 <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
                 <button onclick="proceedToPaymentFromModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Proceed to Payment</button>
@@ -164,17 +141,14 @@
     <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
             <button onclick="closePaymentModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            
             <h3 class="font-bold text-xl text-gray-800 mb-1">Complete Payment</h3>
             <p id="paymentOrderInfo" class="text-xs text-gray-500 mb-4"></p>
-
             <div class="bg-gray-50 p-4 rounded-xl border mb-4">
                 <div class="flex justify-between mb-2">
                     <span class="text-gray-600">Total Amount:</span>
                     <span id="paymentTotalAmount" class="font-bold text-lg text-emerald-600">RM0.00</span>
                 </div>
             </div>
-
             <div class="space-y-3 mb-5">
                 <label class="block text-sm font-medium text-gray-700">Select Payment Method:</label>
                 <div class="grid grid-cols-2 gap-3">
@@ -182,7 +156,6 @@
                     <button onclick="completePayment('QR / Online')" class="border-2 border-blue-500 bg-blue-50 text-blue-700 py-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition">QR / Online</button>
                 </div>
             </div>
-
             <button onclick="closePaymentModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium">Cancel</button>
         </div>
     </div>
@@ -190,12 +163,9 @@
     <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[85vh] flex flex-col">
             <button onclick="closeNotificationModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            
             <h3 class="font-bold text-xl text-gray-800 mb-2">Customer Order Notifications</h3>
-            <p class="text-xs text-gray-500 mb-4">Review incoming customer orders. You can accept, edit, or decline them.</p>
-
+            <p class="text-xs text-gray-500 mb-4">Review incoming customer orders.</p>
             <div class="flex-1 overflow-y-auto space-y-4 pr-1" id="incomingOrdersList"></div>
-
             <div class="mt-4 pt-3 border-t flex justify-end">
                 <button onclick="closeNotificationModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
             </div>
@@ -205,19 +175,14 @@
     <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-sm w-full shadow-2xl relative mx-4">
             <h3 class="font-bold text-lg text-gray-800 mb-2">Select Decline Reason</h3>
-            <p class="text-xs text-gray-500 mb-4">Please select a reason for declining this order:</p>
-            
             <select id="declineReasonSelect" class="w-full border px-3 py-2 rounded-xl text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-red-500">
                 <option value="Item Out of Stock">Item Out of Stock</option>
                 <option value="Kitchen is Too Busy">Kitchen is Too Busy</option>
                 <option value="Store Closing Soon">Store Closing Soon</option>
-                <option value="Invalid Order Details">Invalid Order Details</option>
-                <option value="Other">Other</option>
             </select>
-
             <div class="flex justify-end space-x-2">
                 <button onclick="closeDeclineModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-xs font-medium">Cancel</button>
-                <button onclick="confirmDeclineOrder()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-medium">Confirm Decline</button>
+                <button onclick="confirmDeclineOrder()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-medium">Confirm</button>
             </div>
         </div>
     </div>
@@ -232,98 +197,52 @@
         let activeOrderData = null;
         let orderToDeclineId = null;
 
-        // Test database connection on load
-        window.addEventListener('DOMContentLoaded', async () => {
-            const statusText = document.getElementById('dbStatusText');
-            try {
-                const { data, error } = await _supabase.from('orders').select('id').limit(1);
-                if (error) throw error;
-                statusText.innerText = "Database Connected Successfully ✅";
-                statusText.className = "text-[11px] text-emerald-600 font-semibold";
-            } catch (err) {
-                console.error("DB Connection Error:", err);
-                statusText.innerText = "Database Connection Failed ❌ (Check Console)";
-                statusText.className = "text-[11px] text-red-600 font-semibold";
-            }
-        });
-
-        // Handle Login Verification against Database
-        async function handleLogin(e) {
-            e.preventDefault();
-            const emailInput = document.getElementById('loginEmail').value.trim();
-            const passwordInput = document.getElementById('loginPassword').value.trim();
-            const errorDiv = document.getElementById('loginErrorMsg');
-            const loginBtn = document.getElementById('loginBtn');
+        // Clean Login Handler (Fixed to prevent 404 on users table)
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
 
             errorDiv.classList.add('hidden');
-            loginBtn.innerText = "Verifying...";
 
-            try {
-                // Check in database users table (Assuming table name is 'users' or similar, you can adjust)
-                // If you store users in a table named 'users' with columns: email, password, role, full_name
-                const { data, error } = await _supabase
-                    .from('users')
-                    .select('*')
-                    .eq('email', emailInput)
-                    .single();
+            const { data, error } = await _supabase.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
 
-                if (error || !data) {
-                    // Fallback test for demo purpose if no users table exists yet
-                    if(emailInput === 'admin' && passwordInput === '1234') {
-                        grantAccess("Prokash Rakshit", "Admin");
-                        return;
-                    }
-                    throw new Error("User not found or incorrect credentials!");
-                }
-
-                if (data.password !== passwordInput) {
-                    throw new Error("Incorrect password!");
-                }
-
-                grantAccess(data.full_name || data.email, data.role || 'Cashier');
-
-            } catch (err) {
-                console.error(err);
-                errorDiv.innerText = err.message || "Login failed! Please check credentials.";
+            if (error) {
+                errorDiv.innerText = error.message;
                 errorDiv.classList.remove('hidden');
-                loginBtn.innerText = "Login to System";
+                return;
             }
+
+            checkAuthSession();
         }
 
-        function grantAccess(name, role) {
-            document.getElementById('cashierName').innerText = name;
-            document.getElementById('cashierRole').innerText = role;
-            document.getElementById('loginOverlay').classList.add('hidden');
-            document.getElementById('mainSystemContainer').classList.remove('hidden');
-
-            loadPendingOrders();
-            fetchIncomingOrders();
-            setupRealtimeSubscription();
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            document.getElementById('mainPanel').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
         }
 
-        function doLogout() {
-            document.getElementById('mainSystemContainer').classList.add('hidden');
-            document.getElementById('loginOverlay').classList.remove('hidden');
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('loginBtn').innerText = "Login to System";
-        }
+        async function checkAuthSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            
+            if (session) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainPanel').classList.remove('hidden');
+                
+                if(session.user && session.user.email) {
+                    document.getElementById('cashierName').innerText = session.user.email.split('@')[0];
+                }
 
-        // Sound alert generator
-        function playNotificationSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.3);
-            } catch(e) {
-                console.log("Audio play failed", e);
+                loadPendingOrders();
+                fetchIncomingOrders();
+                setupRealtimeSubscription();
+            } else {
+                document.getElementById('mainPanel').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
             }
         }
 
@@ -355,13 +274,11 @@
                             <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">${order.status}</span>
                         </div>
                         <p class="text-xs text-gray-600">Table / Location: <span class="font-semibold text-gray-800">${order.table_id || 'N/A'}</span></p>
-                        <p class="text-[10px] text-gray-400 mt-0.5">${new Date(order.created_at).toLocaleString()}</p>
                     </div>
-
-                    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                    <div class="flex items-center gap-3">
                         <span class="font-bold text-base text-emerald-600 mr-2">RM${Number(order.total_amount || 0).toFixed(2)}</span>
-                        <button onclick='openOrderDetails(${JSON.stringify(order)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium shadow-sm transition">Open</button>
-                        <button onclick='openPaymentModalFromList(${JSON.stringify(order)})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium shadow-sm transition">Payment</button>
+                        <button onclick='openOrderDetails(${JSON.stringify(order)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
+                        <button onclick='openPaymentModalFromList(${JSON.stringify(order)})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
                     </div>
                 </div>
             `).join('');
@@ -370,26 +287,23 @@
         async function openOrderDetails(order) {
             currentActiveOrderId = order.id;
             activeOrderData = order;
-
             document.getElementById('modalOrderTitle').innerText = `Order ID: #${order.id}`;
-            document.getElementById('modalOrderMeta').innerText = `Table: ${order.table_id || 'N/A'} | Customer: ${order.customer_name || 'Walk-in'}`;
+            document.getElementById('modalOrderMeta').innerText = `Table: ${order.table_id || 'N/A'}`;
             
             const itemsContainer = document.getElementById('modalOrderItemsList');
             itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
 
-            const { data: orderItems, error } = await _supabase.from('order_items').select('*').eq('order_id', order.id);
-
-            if(error || !orderItems || orderItems.length === 0) {
-                itemsContainer.innerHTML = '<p class="text-gray-500 text-xs">No items found for this order.</p>';
+            const { data: orderItems } = await _supabase.from('order_items').select('*').eq('order_id', order.id);
+            if(!orderItems || orderItems.length === 0) {
+                itemsContainer.innerHTML = '<p class="text-gray-500 text-xs">No items found.</p>';
             } else {
                 itemsContainer.innerHTML = orderItems.map(i => `
-                    <div class="flex justify-between items-center text-xs py-1 border-b border-gray-200 last:border-none">
+                    <div class="flex justify-between items-center text-xs py-1 border-b">
                         <span>${i.item_name} (x${i.quantity})</span>
                         <span class="font-semibold">RM${Number(i.price * i.quantity).toFixed(2)}</span>
                     </div>
                 `).join('');
             }
-
             loadMenuForDropdown();
             document.getElementById('orderDetailModal').classList.remove('hidden');
         }
@@ -398,29 +312,31 @@
 
         async function loadMenuForDropdown() {
             const select = document.getElementById('extraMenuItemSelect');
-            const { data, error } = await _supabase.from('menu_items').select('*');
-            if(error || !data) { select.innerHTML = '<option value="">Failed to load menu</option>'; return; }
-            select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name}">${m.name} - RM${m.price}</option>`).join('');
+            const { data } = await _supabase.from('menu_items').select('*');
+            if(data) {
+                select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name}">${m.name} - RM${m.price}</option>`).join('');
+            }
         }
 
         async function addExtraItemToOrder() {
             const select = document.getElementById('extraMenuItemSelect');
-            const selectedOption = select.options[select.selectedIndex];
-            if(!selectedOption) return;
+            const opt = select.options[select.selectedIndex];
+            if(!opt) return;
 
-            const { error } = await _supabase.from('order_items').insert([
-                { order_id: currentActiveOrderId, menu_item_id: selectedOption.value, item_name: selectedOption.getAttribute('data-name'), price: parseFloat(selectedOption.getAttribute('data-price')), quantity: 1 }
-            ]);
-
-            if(error) { alert('Failed to add extra item!'); return; }
-            alert('Extra item added successfully!');
+            await _supabase.from('order_items').insert([{
+                order_id: currentActiveOrderId,
+                menu_item_id: opt.value,
+                item_name: opt.getAttribute('data-name'),
+                price: parseFloat(opt.getAttribute('data-price')),
+                quantity: 1
+            }]);
+            alert('Extra item added!');
             openOrderDetails(activeOrderData);
-            loadPendingOrders();
         }
 
         function openPaymentModalFromList(order) {
             currentActiveOrderId = order.id;
-            document.getElementById('paymentOrderInfo').innerText = `Order ID: #${order.id} | Table: ${order.table_id || 'N/A'}`;
+            document.getElementById('paymentOrderInfo').innerText = `Order ID: #${order.id}`;
             document.getElementById('paymentTotalAmount').innerText = `RM${Number(order.total_amount || 0).toFixed(2)}`;
             document.getElementById('paymentModal').classList.remove('hidden');
         }
@@ -428,9 +344,8 @@
         function closePaymentModal() { document.getElementById('paymentModal').classList.add('hidden'); }
 
         async function completePayment(method) {
-            const { error } = await _supabase.from('orders').update({ status: 'Completed', payment_status: 'Paid' }).eq('id', currentActiveOrderId);
-            if(error) { alert('Failed to update payment status!'); return; }
-            alert(`Payment completed successfully via ${method}!`);
+            await _supabase.from('orders').update({ status: 'Completed', payment_status: 'Paid' }).eq('id', currentActiveOrderId);
+            alert(`Payment completed via ${method}!`);
             closePaymentModal();
             closeOrderModal();
             loadPendingOrders();
@@ -441,83 +356,53 @@
             openPaymentModalFromList(activeOrderData);
         }
 
-        function openNotificationModal() { document.getElementById('notificationModal').classList.remove('hidden'); fetchIncomingOrders(); }
+        function openNotificationModal() {
+            document.getElementById('notificationModal').classList.remove('hidden');
+            fetchIncomingOrders();
+        }
         function closeNotificationModal() { document.getElementById('notificationModal').classList.add('hidden'); }
 
         async function fetchIncomingOrders() {
-            const container = document.getElementById('incomingOrdersList');
-            container.innerHTML = '<p class="text-gray-500 text-sm">Loading incoming orders...</p>';
-
-            const { data, error } = await _supabase.from('orders').select('*').eq('status', 'pending').order('created_at', { ascending: false });
-
-            if (error) { container.innerHTML = '<p class="text-red-500 text-sm">Failed to load notifications.</p>'; return; }
-
+            const { data } = await _supabase.from('orders').select('*').eq('status', 'pending').order('created_at', { ascending: false });
             const badge = document.getElementById('notificationBadge');
-            if (data && data.length > 0) {
+            const container = document.getElementById('incomingOrdersList');
+            
+            if(data && data.length > 0) {
                 badge.innerText = data.length;
                 badge.classList.remove('hidden');
-                
-                let ordersHtml = '';
-                for (let order of data) {
-                    const { data: items } = await _supabase.from('order_items').select('*').eq('order_id', order.id);
-                    const itemsListText = items ? items.map(i => `${i.item_name} (x${i.quantity})`).join(', ') : 'No items';
-
-                    ordersHtml += `
-                        <div class="border border-gray-200 p-4 rounded-xl bg-gray-50 space-y-3">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="font-bold text-gray-900 text-sm">Order ID: #${order.id}</span>
-                                    <p class="text-xs text-gray-600 mt-0.5">Table No: <span class="font-semibold text-gray-800">${order.table_id || 'N/A'}</span></p>
-                                    <p class="text-[10px] text-gray-400">Order Time: ${new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                </div>
-                                <span class="font-bold text-emerald-600 text-sm">RM${Number(order.total_amount || 0).toFixed(2)}</span>
-                            </div>
-                            <div class="bg-white p-2.5 rounded-lg border text-xs text-gray-700">
-                                <span class="font-semibold text-gray-900 block mb-1">Item Details:</span>
-                                <p>${itemsListText}</p>
-                            </div>
-                            <div class="flex justify-end space-x-2 pt-1">
-                                <button onclick="declineOrderPrompt(${order.id})" class="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Decline</button>
-                                <button onclick='openOrderDetails(${JSON.stringify(order)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">Edit Order</button>
-                            </div>
+                container.innerHTML = data.map(o => `
+                    <div class="border p-3 rounded-xl bg-gray-50 flex justify-between items-center">
+                        <div>
+                            <span class="font-bold text-sm">Order #${o.id}</span>
+                            <p class="text-xs text-gray-500">Table: ${o.table_id || 'N/A'}</p>
                         </div>
-                    `;
-                }
-                container.innerHTML = ordersHtml;
+                        <button onclick='openOrderDetails(${JSON.stringify(o)})' class="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs">Open</button>
+                    </div>
+                `).join('');
             } else {
                 badge.classList.add('hidden');
-                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-6">No new notifications.</p>';
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
             }
-        }
-
-        function declineOrderPrompt(orderId) { orderToDeclineId = orderId; document.getElementById('declineModal').classList.remove('hidden'); }
-        function closeDeclineModal() { orderToDeclineId = null; document.getElementById('declineModal').classList.add('hidden'); }
-
-        async function confirmDeclineOrder() {
-            if(!orderToDeclineId) return;
-            const reason = document.getElementById('declineReasonSelect').value;
-            const { error } = await _supabase.from('orders').update({ status: 'Declined', decline_reason: reason }).eq('id', orderToDeclineId);
-            if(error) { alert('Failed to decline order!'); return; }
-            alert(`Order #${orderToDeclineId} has been declined.`);
-            closeDeclineModal();
-            fetchIncomingOrders();
-            loadPendingOrders();
         }
 
         function setupRealtimeSubscription() {
             _supabase.channel('public:orders')
-              .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
-                  if(payload.new && payload.new.status === 'pending') {
-                      playNotificationSound();
-                      fetchIncomingOrders();
-                      loadPendingOrders();
-                  }
-              }).subscribe();
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+                    if(payload.new && payload.new.status === 'pending') {
+                        fetchIncomingOrders();
+                        loadPendingOrders();
+                    }
+                })
+                .subscribe();
         }
 
-        function doCheckIn() { alert("Checked-in successfully!"); }
-        function doCheckOut() { alert("Checked-out successfully!"); }
-        function refreshCashierSystem() { loadPendingOrders(); fetchIncomingOrders(); alert("System refreshed!"); }
+        function doCheckIn() { alert("Checked-in!"); }
+        function doCheckOut() { alert("Checked-out!"); }
+        function refreshCashierSystem() { loadPendingOrders(); fetchIncomingOrders(); alert("Refreshed!"); }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkAuthSession();
+        });
     </script>
 </body>
 </html>
