@@ -568,11 +568,16 @@
         }
 
         async function fetchMenu() {
-            const { data } = await _supabase.from('menu_items').select('*').eq('is_available', true);
-            menuItems = data || [];
-            renderMenu(menuItems.filter(i => i.is_popular));
-            renderCategories();
-        }
+    const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
+    if (error) {
+        console.error('Supabase Error:', error);
+        alert('Menu load failed: ' + error.message);
+        return;
+    }
+    menuItems = data || [];
+    renderMenu(menuItems.filter(i => i.is_popular));
+    renderCategories();
+}
 
         function renderCategories() {
             const container = document.getElementById('categoryContainer');
