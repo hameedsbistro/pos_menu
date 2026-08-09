@@ -533,11 +533,11 @@
     const container = document.getElementById('orderHistoryContainer');
     container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
 
-    // এখানে loggedInCustomer.id অথবা customer_phone দিয়ে চেক করা হচ্ছে যাতে সহজে অর্ডারগুলো পাওয়া যায়
+    // UUID টাইপ ত্রুটি এড়াতে শুধুমাত্র ফোন নম্বর দিয়ে কুয়েরি করা হচ্ছে
     const { data, error } = await _supabase
         .from('orders')
         .select('*')
-        .or(`customer_id.eq.${loggedInCustomer.id},customer_phone.eq.${loggedInCustomer.phone}`)
+        .eq('customer_phone', loggedInCustomer.phone)
         .order('created_at', { ascending: false });
 
     if(error) {
