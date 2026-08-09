@@ -579,11 +579,11 @@
         }
 
         async function fetchMenu() {
-            const { data } = await _supabase.from('menu_items').select('*').eq('is_available', true);
-            menuItems = data || [];
-            renderMenu(menuItems.filter(i => i.is_popular));
-            renderCategories();
-        }
+    const { data } = await _supabase.from('menu_items').select('*').eq('is_available', true);
+    menuItems = data || [];
+    renderMenu(menuItems.filter(i => i.is_popular));
+    renderCategories();
+}
 
         function renderCategories() {
             const container = document.getElementById('categoryContainer');
@@ -605,28 +605,34 @@
         }
 
         // মেনু কার্ড রেন্ডার করার কোড
-function renderMenuItems(items) {
-    const menuContainer = document.getElementById('menuContainer'); // আপনার কন্টেইনার আইডি বসাবেন
+        function renderMenu(items) {
+    const menuContainer = document.getElementById('menuContainer');
     if(!menuContainer) return;
+
+    if(items.length === 0) {
+        menuContainer.innerHTML = '<p class="text-gray-500 col-span-3">No items found.</p>';
+        return;
+    }
 
     menuContainer.innerHTML = items.map(item => `
         <div class="bg-white rounded-xl shadow p-4 flex justify-between items-center relative border border-gray-100">
             <!-- বাম পাশের টেক্সট ও প্রাইস -->
             <div class="flex-1 pr-3">
-                <h3 class="font-bold text-gray-800 text-base mb-1">${item.name}</h3>
+                <h3 class="font-bold text-gray-800 text-base mb-1">${item.name_en || item.name}</h3>
                 <p class="text-blue-600 font-semibold mb-3">RM${Number(item.price).toFixed(2)}</p>
-                <button onclick="addToCart(${item.id})" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium w-full shadow-sm">
+                <button onclick="addToCart(${item.id}, ${item.price})" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium w-full shadow-sm">
                     Add to Cart
                 </button>
             </div>
 
-            <!-- ডান পাশের বক্স (যেখানে আপাতত লোগো শো করবে এবং ক্লিক করলে বড় হবে) -->
-            <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center" onclick="openImageViewer('images/logo.png', '${item.name}')">
+            <!-- ডান পাশের বক্স (যেখানে লোগো শো করবে এবং ক্লিক করলে বড় হবে) -->
+            <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center" onclick="openImageViewer('images/logo.png', '${item.name_en || item.name}')">
                 <img src="images/logo.png" alt="Logo" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/80'">
             </div>
         </div>
     `).join('');
 }
+
 
         function addToCart(id, price) {
             const item = menuItems.find(m => m.id === id);
