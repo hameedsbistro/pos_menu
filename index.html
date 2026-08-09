@@ -11,7 +11,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans">
 
-    <!-- হেডার সেকশন -->
+    <!-- হেডার সেকশন (সম্পূর্ণ অপরিবর্তিত) -->
     <header class="bg-blue-900 text-white p-4 shadow-lg flex justify-between items-center relative">
         <div class="flex items-center gap-3">
             <button onclick="toggleSidebar()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition">
@@ -37,49 +37,70 @@
             </button>
         </div>
     </header>
-        <!-- বাঁ দিকের স্লাইডিং মেনু/সাইডবার -->
-    <div id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
+        <!-- সাইডবার মেনু ও প্রোফাইল -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 bg-white w-72 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between">
         <div>
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-gray-800" data-i18n="menuAndProfile">Menu & Profile</h2>
-                <button onclick="toggleSidebar()" class="text-gray-500 hover:text-black font-bold text-xl">✕</button>
+            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg" data-i18n="menuAndProfile">Menu & Profile</h3>
+                <button onclick="toggleSidebar()" class="text-white hover:text-yellow-400 font-bold text-xl">×</button>
             </div>
-            <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-1" data-i18n="selectLang">Select Language</label>
+            
+            <div class="p-4 border-b">
+                <label class="block text-xs font-semibold text-gray-600 mb-1" data-i18n="selectLang">Select Language</label>
                 <select id="langSelect" onchange="changeLanguage(this.value)" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
                     <option value="en">English</option>
-                    <option value="ms">Malay (Melayu)</option>
-                    <option value="bn">বাংলা (Bengali)</option>
-                    <option value="hi">हिन्दी (Hindi)</option>
-                    <option value="ta">தமிழ் (Tamil)</option>
-                    <option value="ar">العربية (Arabic)</option>
-                    <option value="zh">中文 (Chinese)</option>
+                    <option value="ms">Bahasa Melayu</option>
+                    <option value="bn">বাংলা</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="ta">தமிழ்</option>
+                    <option value="ar">العربية</option>
+                    <option value="zh">中文</option>
                 </select>
             </div>
-            <div id="sidebarProfile" class="mb-6 p-4 bg-gray-50 rounded-lg border hidden">
-                <h3 class="font-bold text-gray-800" id="profileName">Guest</h3>
-                <p class="text-xs text-gray-500" id="profileEmail">-</p>
-                <button onclick="logoutCustomer()" class="mt-2 text-xs text-red-600 font-bold hover:underline" data-i18n="logout">Logout</button>
+
+            <!-- ইউজার প্রোফাইল সেকশন (লগইন থাকলে দেখাবে) -->
+            <div id="sidebarProfile" class="p-4 bg-gray-50 border-b hidden">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg" id="profileInitial">P</div>
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800" id="profileName">User Name</h4>
+                        <p class="text-xs text-gray-500" id="profileEmail">user@email.com</p>
+                    </div>
+                </div>
             </div>
-            <ul class="space-y-3 font-semibold text-gray-700">
-                <li><a href="#" onclick="toggleSidebar(); showHome();" class="hover:text-blue-600" data-i18n="home">Home</a></li>
-                <li><a href="#" onclick="toggleSidebar(); showOrderHistory();" class="hover:text-blue-600" data-i18n="orderHistory">Order History</a></li>
-            </ul>
+
+            <div class="p-4 flex flex-col gap-2">
+                <button onclick="showHome(); toggleSidebar();" class="text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 flex items-center gap-2">🏠 <span data-i18n="home">Home</span></button>
+                <button onclick="showOrderHistory(); toggleSidebar();" class="text-left py-2 px-3 hover:bg-gray-100 rounded-lg font-semibold text-gray-700 flex items-center gap-2">📦 <span data-i18n="orderHistory">Order History</span></button>
+            </div>
         </div>
-        <div class="text-xs text-gray-400 text-center">Hameeds Bistro v2.0</div>
+
+        <div class="p-4 border-t" id="sidebarLogoutContainer">
+            <div id="logoutBtnWrapper">
+                <button onclick="logoutCustomer()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 rounded-lg transition text-sm" data-i18n="logout">Logout</button>
+            </div>
+            <p class="text-center text-xs text-gray-400 mt-3">Hameeds Bistro v2.0</p>
+        </div>
     </div>
+
     <!-- মূল কন্টেন্ট সেকশন -->
-    <main class="p-6 max-w-4xl mx-auto flex-grow w-full">
-        <!-- হোম পেজ -->
-        <div id="homeView" class="bg-white p-8 rounded-2xl shadow-md text-center border border-gray-200">
-            <h2 class="text-3xl font-bold text-gray-800 mb-2" data-i18n="welcomeTitle">Welcome to Hameeds Bistro</h2>
-            <p class="text-gray-600 mb-8" data-i18n="welcomeSubtitle">Please choose your dining method to start ordering</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
-                <button onclick="startOrder('dine_in')" class="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-xl font-bold text-xl shadow-lg transition" data-i18n="dineInBtn">🍽️ Dine-In</button>
-                <button onclick="startOrder('takeaway')" class="bg-green-600 hover:bg-green-700 text-white p-6 rounded-xl font-bold text-xl shadow-lg transition" data-i18n="takeawayBtn">🛍️ Takeaway</button>
+    <main class="flex-grow p-4 max-w-4xl mx-auto w-full">
+
+        <!-- হোম ভিউ (Dine-In বা Takeaway সিলেক্ট করার পেজ) -->
+        <div id="homeView" class="bg-white p-6 rounded-2xl shadow-md text-center mt-10 border border-gray-200">
+            <h2 class="text-3xl font-bold mb-2 text-gray-800" data-i18n="welcomeTitle">Welcome to Hameeds Bistro</h2>
+            <p class="text-gray-500 mb-8 text-sm" data-i18n="welcomeSubtitle">Please choose your dining method to start ordering</p>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-6">
+                <button onclick="startOrder('dine_in')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition flex items-center justify-center gap-3 text-lg">
+                    <span data-i18n="dineInBtn">🍽️ Dine-In</span>
+                </button>
+                <button onclick="startOrder('takeaway')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition flex items-center justify-center gap-3 text-lg">
+                    <span data-i18n="takeawayBtn">🛍️ Takeaway</span>
+                </button>
             </div>
         </div>
-                <!-- অর্ডার পেজ -->
+                <!-- অর্ডার ভিউ (যেখানে ক্যাটাগরি ড্রপডাউন, সার্চ বার এবং মেনু আইটেম দেখাবে) -->
         <div id="orderView" class="hidden">
             <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 flex flex-wrap justify-between items-center gap-4">
                 <div class="flex items-center gap-3">
@@ -102,11 +123,28 @@
                 </div>
             </div>
 
-            <div class="mb-6 flex gap-3 overflow-x-auto pb-2" id="categoryContainer"></div>
-            <h3 class="text-2xl font-bold mb-4 text-gray-800" id="menuTitle" data-i18n="topPopular">Top 15 Popular Items</h3>
+            <!-- হেডার টাইটেল, ক্যাটাগরি ড্রপডাউন এবং সার্চ বার (পাশাপাশি সারিবদ্ধ) -->
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+                <h3 class="text-2xl font-bold text-gray-800" id="menuTitle">Top 15 Popular Items</h3>
+                
+                <!-- ক্যাটাগরি ড্রপডাউন ও সার্চ বক্স -->
+                <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                    <!-- সিলেক্ট ক্যাটাগরি ড্রপডাউন -->
+                    <select id="categoryDropdown" onchange="filterByCategoryDropdown(this.value)" class="border p-2.5 rounded-lg text-sm font-semibold bg-white shadow-sm min-w-[200px]">
+                        <option value="popular">Top 15 Popular Items</option>
+                    </select>
+
+                    <!-- সার্চ মেনু ইনপুট বক্স -->
+                    <div class="relative min-w-[220px]">
+                        <input type="text" id="menuSearchInput" oninput="searchMenuItems(this.value)" placeholder="Search menu..." class="w-full border p-2.5 pl-9 rounded-lg text-sm bg-white shadow-sm">
+                        <span class="absolute left-3 top-3 text-gray-400">🔍</span>
+                    </div>
+                </div>
+            </div>
+
             <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24"></div>
         </div>
-        
+
         <!-- অর্ডার হিস্টরি ভিউ -->
         <div id="historyView" class="hidden">
             <div class="flex gap-2 mb-4">
@@ -116,97 +154,119 @@
             <div id="orderHistoryContainer" class="space-y-4"></div>
         </div>
     </main>
-        <!-- কার্ট ও চেকআউট বার -->
-    <div id="cartBar" class="hidden fixed bottom-16 left-0 right-0 bg-blue-900 text-white border-t border-blue-800 p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
-        <div class="flex items-center gap-3">
-            <span class="bg-yellow-400 text-black px-3 py-1 rounded-full font-bold text-sm" id="cartCount">0 Items</span>
-            <div>
-                <span class="text-xs text-yellow-300 block" data-i18n="subtotal">Subtotal:</span>
-                <span class="font-bold text-lg" id="cartSubtotal">৳0.00</span>
-            </div>
+        <!-- কার্ট ফ্লোটিং বার -->
+    <div id="cartBar" class="hidden fixed bottom-0 left-0 right-0 bg-blue-900 text-white p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
+        <div>
+            <p id="cartCount" class="font-bold text-sm">0 Items</p>
+            <p id="cartSubtotal" class="text-xs text-yellow-300">৳0.00</p>
         </div>
-        <button onclick="openCartModal()" class="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl font-bold shadow transition flex items-center gap-2">
-            🛒 <span data-i18n="viewCartCheckout">View Cart & Checkout</span>
-        </button>
+        <button onclick="openCartModal()" class="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold px-6 py-2.5 rounded-xl shadow transition" data-i18n="viewCart">View Cart & Checkout</button>
     </div>
 
-    <!-- কার্ট মোডাল / প্যানেল -->
-    <div id="cartModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onclick="closeCartModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black font-bold text-xl">✕</button>
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Your Shopping Cart</h3>
-            <div id="cartItemsListContainer" class="max-h-60 overflow-y-auto mb-4 border-b pb-2 space-y-3"></div>
-            <div class="flex justify-between items-center mb-6 font-bold text-lg text-black">
-                <span>Subtotal:</span> <span id="cartModalSubtotal">৳0.00</span>
+    <!-- কার্ট মোডাল -->
+    <div id="cartModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg" data-i18n="yourCart">Your Cart</h3>
+                <button onclick="closeCartModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
             </div>
-            <button onclick="proceedToCheckout()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow transition">Proceed to Checkout</button>
-        </div>
-    </div>
-
-    <!-- চেকআউট মোডাল -->
-    <div id="checkoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-            <button onclick="closeCheckoutModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black font-bold text-xl">✕</button>
-            <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="orderSummary">Order Summary & Checkout</h3>
-            
-            <!-- অর্ডার টাইপ ও টেবিল/লোকেশন ইনফো -->
-            <div class="bg-blue-50 p-3 rounded-lg mb-4 text-xs text-blue-900 space-y-1 font-semibold">
-                <div class="flex justify-between"><span>Order Type:</span> <span id="summaryOrderType" class="uppercase">Takeaway</span></div>
-                <div class="flex justify-between"><span>Table / Location:</span> <span id="summaryTableLocation">TAKEAWAY</span></div>
-            </div>
-
-            <div id="checkoutItemsList" class="max-h-36 overflow-y-auto mb-4 border-b pb-2 space-y-2"></div>
-            <div class="space-y-1 mb-4 text-sm text-gray-700">
-                <div class="flex justify-between"><span data-i18n="subtotal">Subtotal:</span> <span id="modalSubtotal">৳0.00</span></div>
-                <div class="flex justify-between"><span data-i18n="sstTax">SST Tax (6%):</span> <span id="modalTax">৳0.00</span></div>
-                <div class="flex justify-between font-bold text-lg text-black border-t pt-1"><span data-i18n="total">Total:</span> <span id="modalTotal">৳0.00</span></div>
-            </div>
-            <div class="space-y-3 mb-6">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600" data-i18n="customerName">Customer Name</label>
-                    <input type="text" id="checkoutName" class="w-full border p-2 rounded-lg text-sm bg-gray-50" readonly>
+            <div id="cartItemsListContainer" class="p-4 overflow-y-auto space-y-3 flex-grow"></div>
+            <div class="p-4 bg-gray-50 border-t">
+                <div class="flex justify-between mb-4">
+                    <span class="font-semibold text-gray-600" data-i18n="subtotal">Subtotal:</span>
+                    <span id="cartModalSubtotal" class="font-bold text-blue-600 text-lg">৳0.00</span>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600" data-i18n="phoneNumber">Phone Number</label>
-                    <input type="text" id="checkoutPhone" class="w-full border p-2 rounded-lg text-sm bg-gray-50" readonly>
+                <button onclick="proceedToCheckout()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition shadow" data-i18n="proceedCheckout">Proceed to Checkout</button>
+            </div>
+        </div>
+    </div>
+        <!-- চেকআউট মোডাল -->
+    <div id="checkoutModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg" data-i18n="checkoutTitle">Checkout & Confirm Order</h3>
+                <button onclick="closeCheckoutModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-4 flex-grow">
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <p class="text-xs text-blue-600 font-semibold" data-i18n="orderSummaryType">Order Type & Location:</p>
+                    <p class="font-bold text-gray-800"><span id="summaryOrderType">Dine-In</span> - <span id="summaryTableLocation">Table A1</span></p>
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-gray-600" data-i18n="fullName">Full Name</label>
+                    <input type="text" id="checkoutName" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" readonly>
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-gray-600" data-i18n="phone">Phone Number</label>
+                    <input type="text" id="checkoutPhone" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" readonly>
+                </div>
+
+                <div class="border-t pt-3">
+                    <h4 class="font-bold text-sm text-gray-800 mb-2" data-i18n="orderItems">Order Items</h4>
+                    <div id="checkoutItemsList" class="space-y-1 max-h-32 overflow-y-auto"></div>
+                </div>
+
+                <div class="border-t pt-3 space-y-1 text-sm">
+                    <div class="flex justify-between text-gray-600"><span>Subtotal</span><span id="modalSubtotal">৳0.00</span></div>
+                    <div class="flex justify-between text-gray-600"><span>Tax (6%)</span><span id="modalTax">৳0.00</span></div>
+                    <div class="flex justify-between font-bold text-lg text-blue-900 border-t pt-2"><span>Total</span><span id="modalTotal">৳0.00</span></div>
                 </div>
             </div>
-            <div class="flex gap-3">
-                <button onclick="closeCheckoutModal()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2.5 rounded-xl font-semibold" data-i18n="cancel">Cancel</button>
-                <button onclick="submitOrder()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold" data-i18n="placeOrder">Place Order</button>
+            <div class="p-4 bg-gray-50 border-t">
+                <button onclick="submitOrder()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition shadow" data-i18n="placeOrder">Place Order (Cashier Verification)</button>
             </div>
         </div>
     </div>
 
-    <!-- লগইন ও রেজিস্ট্রেশন মোডাল -->
-    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <h3 class="text-xl font-bold text-gray-800 mb-4" id="authTitle" data-i18n="customerLogin">Customer Login</h3>
-            <div id="loginForm" class="space-y-3">
-                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full border p-2.5 rounded-lg text-sm">
-                <input type="password" id="loginPassword" placeholder="Password" class="w-full border p-2.5 rounded-lg text-sm">
-                <button onclick="loginCustomer()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold" data-i18n="login">Login</button>
-                <p class="text-xs text-center text-gray-500 mt-2"><span data-i18n="noAccount">Don't have an account?</span> <span onclick="toggleAuthMode('register')" class="text-blue-600 cursor-pointer font-bold" data-i18n="registerHere">Register here</span></p>
+    <!-- লগইন / রেজিস্টার মোডাল -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-blue-900 text-white p-4 flex justify-between items-center">
+                <h3 id="authTitle" class="font-bold text-lg">Customer Login</h3>
+                <button onclick="closeLoginModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
             </div>
-            <div id="registerForm" class="space-y-3 hidden">
-                <input type="text" id="regName" placeholder="Full Name" class="w-full border p-2.5 rounded-lg text-sm">
-                <input type="text" id="regPhone" placeholder="Phone Number" class="w-full border p-2.5 rounded-lg text-sm">
-                <input type="email" id="regEmail" placeholder="Email (Username)" class="w-full border p-2.5 rounded-lg text-sm">
-                <input type="password" id="regPassword" placeholder="Password" class="w-full border p-2.5 rounded-lg text-sm">
-                <button onclick="registerCustomer()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-semibold" data-i18n="registerAccount">Register Account</button>
-                <p class="text-xs text-center text-gray-500 mt-2"><span data-i18n="hasAccount">Already have an account?</span> <span onclick="toggleAuthMode('login')" class="text-blue-600 cursor-pointer font-bold" data-i18n="loginHere">Login here</span></p>
+            <div class="p-6">
+                <!-- লগইন ফর্ম -->
+                <div id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Email Address</label>
+                        <input type="email" id="loginEmail" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Password</label>
+                        <input type="password" id="loginPassword" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50">
+                    </div>
+                    <button onclick="loginCustomer()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition">Login</button>
+                    <p class="text-xs text-center text-gray-500 mt-2">Don't have an account? <span onclick="toggleAuthMode('register')" class="text-blue-600 font-bold cursor-pointer underline">Register here</span></p>
+                </div>
+
+                <!-- রেজিস্টার ফর্ম -->
+                <div id="registerForm" class="space-y-3 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Full Name</label>
+                        <input type="text" id="regName" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Phone Number</label>
+                        <input type="text" id="regPhone" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Email Address</label>
+                        <input type="email" id="regEmail" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Password</label>
+                        <input type="password" id="regPassword" class="w-full border p-2 rounded-lg text-sm bg-gray-50">
+                    </div>
+                    <button onclick="registerCustomer()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition">Register</button>
+                    <p class="text-xs text-center text-gray-500 mt-2">Already have an account? <span onclick="toggleAuthMode('login')" class="text-blue-600 font-bold cursor-pointer underline">Login here</span></p>
+                </div>
             </div>
-            <button onclick="closeLoginModal()" class="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-xl text-sm font-semibold" data-i18n="close">Close</button>
         </div>
     </div>
-
-    <!-- ফুটার সেকশন -->
-    <footer class="bg-gray-900 text-gray-300 text-center py-4 border-t border-gray-800">
-        <p class="text-sm font-medium tracking-wide">
-            Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
-        </p>
-    </footer>
-        <script>
+        <!-- Supabase Configuration & JavaScript Logic -->
+    <script>
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -214,284 +274,52 @@
         let currentOrderType = 'dine_in';
         let menuItems = [];
         let cart = [];
-        let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
         let currentLang = localStorage.getItem('hameeds_lang') || 'en';
-
-        // ৭টি ভাষার মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি
-        const translations = {
-            en: {
-                subtitle: "Dine-In & Takeaway Ordering System",
-                login: "Login",
-                liveChat: "Live Chat",
-                menuAndProfile: "Menu & Profile",
-                selectLang: "Select Language",
-                logout: "Logout",
-                home: "Home",
-                orderHistory: "Order History",
-                welcomeTitle: "Welcome to Hameeds Bistro",
-                welcomeSubtitle: "Please choose your dining method to start ordering",
-                dineInBtn: "🍽️ Dine-In",
-                takeawayBtn: "🛍️ Takeaway",
-                currentLocation: "Current Order Location",
-                indoor: "Indoor (A)",
-                outdoor: "Outdoor (B)",
-                firstFloor: "First Floor (C)",
-                topPopular: "Top 15 Popular Items",
-                subtotal: "Subtotal:",
-                viewCartCheckout: "View Cart & Checkout",
-                orderSummary: "Order Summary & Checkout",
-                sstTax: "SST Tax (6%):",
-                total: "Total:",
-                customerName: "Customer Name",
-                phoneNumber: "Phone Number",
-                cancel: "Cancel",
-                placeOrder: "Place Order",
-                customerLogin: "Customer Login",
-                noAccount: "Don't have an account?",
-                registerHere: "Register here",
-                registerAccount: "Register Account",
-                hasAccount: "Already have an account?",
-                loginHere: "Login here",
-                close: "Close"
-            },
-            ms: {
-                subtitle: "Sistem Pesanan Makan & Bawa Pulang",
-                login: "Log Masuk",
-                liveChat: "Sembang",
-                menuAndProfile: "Menu & Profil",
-                selectLang: "Pilih Bahasa",
-                logout: "Log Keluar",
-                home: "Utama",
-                orderHistory: "Sejarah Pesanan",
-                welcomeTitle: "Selamat Datang ke Hameeds Bistro",
-                welcomeSubtitle: "Sila pilih kaedah menjamu selera untuk mula memesan",
-                dineInBtn: "🍽️ Makan di Sini",
-                takeawayBtn: "🛍️ Bawa Pulang",
-                currentLocation: "Lokasi Pesanan Semasa",
-                indoor: "Dalam Bangunan (A)",
-                outdoor: "Luar (B)",
-                firstFloor: "Tingkat Pertama (C)",
-                topPopular: "15 Menu Paling Popular",
-                subtotal: "Subjumlah:",
-                viewCartCheckout: "Lihat Troli & Bayar",
-                orderSummary: "Ringkasan Pesanan & Pembayaran",
-                sstTax: "Cukai SST (6%):",
-                total: "Jumlah:",
-                customerName: "Nama Pelanggan",
-                phoneNumber: "Nombor Telefon",
-                cancel: "Batal",
-                placeOrder: "Buat Pesanan",
-                customerLogin: "Log Masuk Pelanggan",
-                noAccount: "Tiada akaun?",
-                registerHere: "Daftar di sini",
-                registerAccount: "Daftar Akaun",
-                hasAccount: "Sudah ada akaun?",
-                loginHere: "Log masuk di sini",
-                close: "Tutup"
-            },
-            bn: {
-                subtitle: "ডাইন-ইন ও টেকঅ্যাওয়ে অর্ডার সিস্টেম",
-                login: "লগইন",
-                liveChat: "লাইভ চ্যাট",
-                menuAndProfile: "মেনু ও প্রোফাইল",
-                selectLang: "ভাষা নির্বাচন করুন",
-                logout: "লগআউট",
-                home: "হোম",
-                orderHistory: "অর্ডার ইতিহাস",
-                welcomeTitle: "হামিদস বিস্ট্রোতে স্বাগতম",
-                welcomeSubtitle: "অর্ডার শুরু করতে আপনার ডাইনিং পদ্ধতি বেছে নিন",
-                dineInBtn: "🍽️ ডাইন-ইন",
-                takeawayBtn: "🛍️ টেকঅ্যাওয়ে",
-                currentLocation: "বর্তমান অর্ডারের অবস্থান",
-                indoor: "ইনডোর (এ)",
-                outdoor: "আউটডোর (বি)",
-                firstFloor: "প্রথম তলা (সি)",
-                topPopular: "সেরা ১৫টি জনপ্রিয় খাবার",
-                subtotal: "সাবটোটাল:",
-                viewCartCheckout: "কার্ট দেখুন ও চেকআউট",
-                orderSummary: "অর্ডার সারাংশ ও চেকআউট",
-                sstTax: "এসএসটি ট্যাক্স (৬%):",
-                total: "মোট:",
-                customerName: "গ্রাহকের নাম",
-                phoneNumber: "মোবাইল নম্বর",
-                cancel: "বাতিল",
-                placeOrder: "অর্ডার নিশ্চিত করুন",
-                customerLogin: "গ্রাহক লগইন",
-                noAccount: "একাউন্ট নেই?",
-                registerHere: "রেজিস্ট্রেশন করুন",
-                registerAccount: "একাউন্ট তৈরি করুন",
-                hasAccount: "ইতিমধ্যে একাউন্ট আছে?",
-                loginHere: "লগইন করুন",
-                close: "বন্ধ করুন"
-            },
-                        hi: {
-                subtitle: "डाइन-इन और टेकअवे ऑर्डरिंग सिस्टम",
-                login: "लॉगिन",
-                liveChat: "लाइव चैट",
-                menuAndProfile: "मेन्यू और प्रोफाइल",
-                selectLang: "भाषा चुनें",
-                logout: "लॉग आउट",
-                home: "होम",
-                orderHistory: "ऑर्डर इतिहास",
-                welcomeTitle: "हमीड्स बिस्ट्रो में आपका स्वागत है",
-                welcomeSubtitle: "ऑर्डर शुरू करने के लिए अपनी डाइनिंग विधि चुनें",
-                dineInBtn: "🍽️ डाइन-इन",
-                takeawayBtn: "🛍️ टेकअवे",
-                currentLocation: "वर्तमान ऑर्डर स्थान",
-                indoor: "इनडोर (ए)",
-                outdoor: "आउटडोर (बी)",
-                firstFloor: "पहली मंजिल (सी)",
-                topPopular: "शीर्ष 15 लोकप्रिय वस्तुएं",
-                subtotal: "उप-कुल:",
-                viewCartCheckout: "कार्ट देखें और चेकआउट",
-                orderSummary: "ऑर्डर सारांश और चेकआउट",
-                sstTax: "कर (6%):",
-                total: "कुल:",
-                customerName: "ग्राहक का नाम",
-                phoneNumber: "फ़ोन नंबर",
-                cancel: "रद्द करें",
-                placeOrder: "ऑर्डर दें",
-                customerLogin: "ग्राहक लॉगिन",
-                noAccount: "खाता नहीं है?",
-                registerHere: "रजिस्टर करें",
-                registerAccount: "खाता रजिस्टर करें",
-                hasAccount: "पहले से खाता है?",
-                loginHere: "यहाँ लॉगिन करें",
-                close: "बंद करें"
-            },
-            ta: {
-                subtitle: "உணவகம் & பார்சல் ஆர்டர் அமைப்பு",
-                login: "உள்நுழை",
-                liveChat: "நேரலை அரட்டை",
-                menuAndProfile: "மெனு & சுயவிவரம்",
-                selectLang: "மொழியைத் தேர்ந்தெடுக்கவும்",
-                logout: "வெளியேறு",
-                home: "முகப்பு",
-                orderHistory: "ஆர்டர் வரலாறு",
-                welcomeTitle: "ஹமீத்ஸ் பிஸ்ட்ரோவுக்கு உங்களை வரவேற்கிறோம்",
-                welcomeSubtitle: "ஆர்டர் செய்ய முறையைத் தேர்ந்தெடுக்கவும்",
-                dineInBtn: "🍽️ உள்ளே உட்கார்ந்து உண்ண",
-                takeawayBtn: "🛍️ பார்சல்",
-                currentLocation: "தற்போதைய இடம்",
-                indoor: "உள்ளகம் (A)",
-                outdoor: "வெளியகம் (B)",
-                firstFloor: "முதல் தளம் (C)",
-                topPopular: "பிரபலமான 15 உணவுகள்",
-                subtotal: "துணை மொத்தம்:",
-                viewCartCheckout: "கார்ட் பார்க்க & கட்டணம்",
-                orderSummary: "ஆர்டர் விவரம்",
-                sstTax: "வரி (6%):",
-                total: "மொத்தம்:",
-                customerName: "வாடிக்கையாளர் பெயர்",
-                phoneNumber: "தொலைபேசி எண்",
-                cancel: "ரத்து செய்",
-                placeOrder: "ஆர்டர் செய்",
-                customerLogin: "உள்நுழைவு",
-                noAccount: "கணக்கு இல்லையா?",
-                registerHere: "பதிவு செய்க",
-                registerAccount: "கணக்கை பதிவு செய்",
-                hasAccount: "ஏற்கனவே கணக்கு உள்ளதா?",
-                loginHere: "உள்நுழை",
-                close: "மூடு"
-            },
-            ar: {
-                subtitle: "نظام طلبات الطعام والاستلام",
-                login: "تسجيل الدخول",
-                liveChat: "دردشة مباشرة",
-                menuAndProfile: "القائمة والملف الشخصي",
-                selectLang: "اختر اللغة",
-                logout: "تسجيل الخروج",
-                home: "الرئيسية",
-                orderHistory: "سجل الطلبات",
-                welcomeTitle: "مرحباً بكم في حميدز بيسترو",
-                welcomeSubtitle: "يرجى اختيار طريقة تناول الطعام للبدء",
-                dineInBtn: "🍽️ داخل المطعم",
-                takeawayBtn: "🛍️ سفري",
-                currentLocation: "موقع الطلب الحالي",
-                indoor: "داخلي (A)",
-                outdoor: "خارجي (B)",
-                firstFloor: "الطابق الأول (C)",
-                topPopular: "أفضل 15 صنفاً محبوباً",
-                subtotal: "المجموع الفرعي:",
-                viewCartCheckout: "عرض السلة والدفع",
-                orderSummary: "ملخص الطلب والدفع",
-                sstTax: "ضريبة (6%):",
-                total: "الإجمالي:",
-                customerName: "اسم العميل",
-                phoneNumber: "رقم الهاتف",
-                cancel: "إلغاء",
-                placeOrder: "إتمام الطلب",
-                customerLogin: "تسجيل دخول العميل",
-                noAccount: "ليس لديك حساب؟",
-                registerHere: "سجل هنا",
-                registerAccount: "تسجيل حساب",
-                hasAccount: "لديك حساب بالفعل؟",
-                loginHere: "سجل دخولك هنا",
-                close: "إغلاق"
-            },
-            zh: {
-                subtitle: "堂食与外带点餐系统",
-                login: "登录",
-                liveChat: "在线客服",
-                menuAndProfile: "菜单与个人资料",
-                selectLang: "选择语言",
-                logout: "登出",
-                home: "首页",
-                orderHistory: "订单历史",
-                welcomeTitle: "欢迎来到 Hameeds Bistro",
-                welcomeSubtitle: "请选择用餐方式以开始点餐",
-                dineInBtn: "🍽️ 堂食",
-                takeawayBtn: "🛍️ 外带",
-                currentLocation: "当前点餐位置",
-                indoor: "室内 (A)",
-                outdoor: "室外 (B)",
-                firstFloor: "一楼 (C)",
-                topPopular: "前15大热门菜品",
-                subtotal: "小计：",
-                viewCartCheckout: "查看购物车并结账",
-                orderSummary: "订单摘要与结账",
-                sstTax: "税费 (6%):",
-                total: "总计：",
-                customerName: "顾客姓名",
-                phoneNumber: "手机号码",
-                cancel: "取消",
-                placeOrder: "提交订单",
-                customerLogin: "顾客登录",
-                noAccount: "没有账号？",
-                registerHere: "在此注册",
-                registerAccount: "注册账号",
-                hasAccount: "已有账号？",
-                loginHere: "在此登录",
-                close: "关闭"
-            }
-        };
+        let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('langSelect').value = currentLang;
-            applyLanguage(currentLang);
             updateLoginUI();
         });
 
-        function changeLanguage(lang) {
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // ভাষা পরিবর্তন ও অটো ট্রান্সলেশন লজিক
+        async function changeLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('hameeds_lang', lang);
-            applyLanguage(lang);
-        }
-
-        function applyLanguage(lang) {
-            const t = translations[lang] || translations['en'];
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (t[key]) {
-                    el.innerText = t[key];
-                }
-            });
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            
+            // ভাষা পরিবর্তনের সাথে সাথে বর্তমান মেনু লিস্ট রি-রেন্ডার হবে
+            const currentCat = document.getElementById('categoryDropdown') ? document.getElementById('categoryDropdown').value : 'popular';
+            if(currentCat === 'popular') {
+                renderMenu(menuItems.filter(i => i.is_popular));
+            } else if(currentCat === 'all' || !currentCat) {
+                renderMenu(menuItems);
+            } else {
+                renderMenu(menuItems.filter(i => i.category === currentCat));
             }
-                    function startOrder(type) {
+        }
+
+        // ফ্রি ট্রান্সলেটর API ব্যবহার করে যেকোনো ভাষা থেকে সিলেক্ট করা ভাষায় রূপান্তর করার ফাংশন
+        async function translateText(text, targetLang) {
+            if (!text || targetLang === 'en') return text;
+            try {
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${targetLang}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.responseData && data.responseData.translatedText) {
+                    return data.responseData.translatedText;
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+            }
+            return text;
+        }
+
+        function startOrder(type) {
             currentOrderType = type;
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('orderView').classList.remove('hidden');
@@ -566,44 +394,78 @@
         async function fetchMenu() {
             const { data } = await _supabase.from('menu_items').select('*').eq('is_available', true);
             menuItems = data || [];
+            renderCategoriesDropdown();
             renderMenu(menuItems.filter(i => i.is_popular));
-            renderCategories();
         }
 
-        function renderCategories() {
-            const container = document.getElementById('categoryContainer');
+        function renderCategoriesDropdown() {
+            const dropdown = document.getElementById('categoryDropdown');
             const categories = [...new Set(menuItems.map(i => i.category))];
-            container.innerHTML = `<button onclick="renderMenu(menuItems.filter(i => i.is_popular))" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold whitespace-nowrap">Top 15 Popular</button>`;
+            
+            let optionsHTML = `<option value="popular">Top 15 Popular Items</option>`;
             categories.forEach(cat => {
-                container.innerHTML += `<button onclick="filterCategory('${cat}')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold whitespace-nowrap">${cat}</button>`;
+                optionsHTML += `<option value="${cat}">${cat}</option>`;
             });
+            dropdown.innerHTML = optionsHTML;
         }
 
-        function filterCategory(cat) {
-            document.getElementById('menuTitle').innerText = cat;
-            renderMenu(menuItems.filter(i => i.category === cat));
+        function filterByCategoryDropdown(val) {
+            document.getElementById('menuSearchInput').value = '';
+            if(val === 'popular') {
+                document.getElementById('menuTitle').innerText = 'Top 15 Popular Items';
+                renderMenu(menuItems.filter(i => i.is_popular));
+            } else {
+                document.getElementById('menuTitle').innerText = val;
+                renderMenu(menuItems.filter(i => i.category === val));
+            }
         }
 
-        function renderMenu(items) {
+        function searchMenuItems(query) {
+            const searchTerm = query.toLowerCase().trim();
+            if(searchTerm === '') {
+                const currentCat = document.getElementById('categoryDropdown').value;
+                filterByCategoryDropdown(currentCat);
+                return;
+            }
+
+            document.getElementById('menuTitle').innerText = `Search Results for "${query}"`;
+            const filtered = menuItems.filter(i => {
+                let name = i.name_en || i.name || '';
+                return name.toLowerCase().includes(searchTerm);
+            });
+            renderMenu(filtered);
+        }
+
+        async function renderMenu(items) {
             const container = document.getElementById('menuContainer');
-            container.innerHTML = '';
+            container.innerHTML = '<p class="text-gray-500 col-span-3">Loading menu items...</p>';
+            
             if(items.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 col-span-3">No items found.</p>';
                 return;
             }
-            items.forEach(item => {
+
+            let htmlContent = '';
+            for (let item of items) {
                 let price = currentOrderType === 'takeaway' && item.takeaway_price ? item.takeaway_price : item.price;
-                let itemName = currentLang === 'bn' && item.name_bn ? item.name_bn : item.name_en;
-                container.innerHTML += `
+                let originalName = item.name_en || item.name || "Item";
+                
+                let displayName = originalName;
+                if (currentLang !== 'en') {
+                    displayName = await translateText(originalName, currentLang);
+                }
+
+                htmlContent += `
                     <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm flex flex-col justify-between">
                         <div>
-                            <h4 class="font-bold text-lg text-gray-800">${itemName}</h4>
+                            <h4 class="font-bold text-lg text-gray-800">${displayName}</h4>
                             <p class="text-blue-600 font-semibold mb-4">৳${price}</p>
                         </div>
                         <button onclick="addToCart(${item.id}, ${price})" class="bg-green-600 hover:bg-green-700 text-white w-full py-2 rounded-lg font-semibold transition">Add to Cart</button>
                     </div>
                 `;
-            });
+            }
+            container.innerHTML = htmlContent;
         }
 
         function addToCart(id, price) {
@@ -636,7 +498,7 @@
                 container.innerHTML = '<p class="text-center text-gray-500 py-4">Your cart is empty.</p>';
             } else {
                 container.innerHTML = cart.map((i, index) => {
-                    let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
+                    let name = i.name_en || i.name || "Item";
                     return `
                         <div class="flex justify-between items-center border-b pb-2">
                             <div>
@@ -655,22 +517,17 @@
             document.getElementById('cartModal').classList.remove('hidden');
         }
 
-        function closeCartModal() {
-            document.getElementById('cartModal').classList.add('hidden');
-        }
+        function closeCartModal() { document.getElementById('cartModal').classList.add('hidden'); }
 
         function changeCartQty(index, delta) {
             cart[index].quantity += delta;
-            if(cart[index].quantity <= 0) {
-                cart.splice(index, 1);
-            }
+            if(cart[index].quantity <= 0) { cart.splice(index, 1); }
             updateCartBar();
             openCartModal();
-            if(cart.length === 0) {
-                closeCartModal();
-            }
-            }
-                    function proceedToCheckout() {
+            if(cart.length === 0) { closeCartModal(); }
+        }
+
+        function proceedToCheckout() {
             if(!loggedInCustomer) {
                 closeCartModal();
                 openLoginModal();
@@ -710,7 +567,7 @@
 
             const list = document.getElementById('checkoutItemsList');
             list.innerHTML = cart.map(i => {
-                let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
+                let name = i.name_en || i.name || "Item";
                 return `<div class="flex justify-between text-sm"><span>${name} x ${i.quantity}</span><span>৳${(i.price*i.quantity).toFixed(2)}</span></div>`;
             }).join('');
             
