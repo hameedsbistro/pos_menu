@@ -1,201 +1,121 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cashier POS - Hameeds Bistro</title>
+    <title>হামিদ বিস্ট - ক্যাশিয়ার প্যানেল</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Library CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col justify-between">
+<body class="bg-gray-100 font-sans overflow-hidden">
 
-    <!-- হেডার সেকশন -->
-    <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center print:hidden">
-        <div class="flex items-center gap-3">
-            <img src="images/logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover">
-            <h1 class="text-xl font-bold uppercase tracking-wider">Cashier POS - Hameeds Bistro</h1>
-        </div>
-        <a href="index.html" class="bg-white text-blue-900 px-4 py-1 rounded font-bold text-sm">Customer View</a>
-    </header>
-
-    <!-- মূল ক্যাশিয়ার কন্টেন্ট -->
-    <main class="p-6 max-w-7xl mx-auto flex-grow w-full print:p-0">
-        <h2 class="text-2xl font-bold mb-6 print:hidden">Order Billing & Payment</h2>
+    <div class="flex h-screen w-screen">
         
-        <!-- টেবিল ভিউ (যেখানে বিলগুলো দেখা যাবে) -->
-        <div class="overflow-x-auto bg-white rounded shadow border print:hidden">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b bg-gray-100">
-                        <th class="p-3">Order ID</th>
-                        <th class="p-3">Table No.</th>
-                        <th class="p-3">Section</th>
-                        <th class="p-3">Total Amount</th>
-                        <th class="p-3">Kitchen Status</th>
-                        <th class="p-3">Payment Status</th>
-                        <th class="p-3 text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="cashierTableBody">
-                    <!-- লাইভ অর্ডার ডেটা এখানে লোড হবে -->
-                </tbody>
-            </table>
+        <!-- মূল প্যানেল (Current Orders + Header) -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden">
+            
+            <!-- হেডার প্যানেল -->
+            <header class="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center">
+                
+                <!-- বাম দিক: লোগো, নাম, ওয়েলকাম ও রোল -->
+                <div class="flex items-center space-x-4">
+                    <!-- লোগো -->
+                    <img src="images/logo.png" alt="Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-600" onerror="this.src='https://via.placeholder.com/50'">
+                    
+                    <div class="flex flex-col">
+                        <!-- দোকানের নাম -->
+                        <h1 class="font-bold text-lg text-gray-900 leading-tight">হামিদ বিস্ট</h1>
+                        
+                        <!-- প্রথম লাইন: ওয়েলকাম ও ক্যাশিয়ারের নাম -->
+                        <div class="flex items-center space-x-2 mt-0.5">
+                            <span class="text-xs text-gray-500 font-medium">ওয়েলকাম:</span>
+                            <span id="cashierName" class="text-xs font-bold text-emerald-700">ক্যাশিয়ার নাম</span>
+                        </div>
+                        
+                        <!-- দ্বিতীয় লাইন: সোজাসুজি নিচে রোল -->
+                        <div class="flex items-center space-x-2 mt-0.5">
+                            <span class="text-xs text-gray-500 font-medium">রোল:</span>
+                            <span id="cashierRole" class="text-xs uppercase font-bold text-blue-600">Cashier</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ডান দিক: চেক-ইন, চেক-আউট, রিফ্রেশ ও অ্যাডমিন বাটন -->
+                <div class="flex items-center space-x-2">
+                    <!-- কলাম আকারে সাজানো চেক-ইন ও চেক-আউট বাটন যাতে ওয়েলকাম ও রোলের সোজাসুজি থাকে -->
+                    <div class="flex flex-col space-y-1">
+                        <button id="checkInBtn" onclick="doCheckIn()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">
+                            Check-In
+                        </button>
+                        <button id="checkOutBtn" onclick="doCheckOut()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">
+                            Check-Out
+                        </button>
+                    </div>
+
+                    <!-- সিস্টেম রিফ্রেশ বাটন -->
+                    <button onclick="refreshCashierSystem()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center" title="সিস্টেম রিফ্রেশ">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+
+                    <!-- অ্যাডমিন বাটন -->
+                    <button onclick="checkAdminAccess()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Admin
+                    </button>
+                </div>
+            </header>
+
+            <!-- মেইন প্যানেল (Current Orders) -->
+            <main class="flex-1 p-6 bg-gray-50 overflow-y-auto">
+                <div class="mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Current Orders</h2>
+                </div>
+                <!-- অর্ডার কার্ড কন্টেইনার -->
+                <div id="pendingOrdersContainer" class="space-y-3">
+                    <!-- ডাইনামিক অর্ডার কার্ড এখানে লোড হবে -->
+                </div>
+            </main>
         </div>
 
-        <!-- প্রিন্টেবল ইনভয়েস (হিডেন থাকবে, শুধু প্রিন্ট করার সময় শো করবে) -->
-        <div id="invoiceSection" class="hidden bg-white p-6 rounded shadow border mx-auto max-w-md mt-6 print:block print:shadow-none print:border-none print:w-full">
-            <div class="text-center mb-6">
-                <img src="images/logo.png" alt="Logo" class="h-16 w-16 mx-auto rounded-full grayscale">
-                <h2 class="text-xl font-bold uppercase tracking-wider mt-2">Restoran Hameeds Bistro</h2>
-                <p class="text-sm text-gray-500">Receipt / Invoice</p>
-            </div>
+        <!-- ডানপাশের সাইডবার প্যানেল (১৪ ইঞ্চি ডিসপ্লের জন্য প্রায় ২-আড়াই ইঞ্চি চওড়া) -->
+        <aside class="w-56 bg-gray-900 text-white flex flex-col p-4 justify-start space-y-3 shadow-xl flex-shrink-0">
+            <div class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Quick Actions</div>
             
-            <div class="flex justify-between mb-4 pb-2 border-b text-sm">
-                <span id="invTableNo" class="font-bold">Table: --</span>
-                <span id="invDate">Date: --</span>
-            </div>
+            <!-- নিউ অর্ডার বাটন -->
+            <button class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
+                NEW ORDER
+            </button>
 
-            <ul id="invItemsList" class="mb-4 text-sm space-y-2 border-b pb-4">
-                <!-- আইটেম লিস্ট -->
-            </ul>
+            <!-- ইনভয়েস লিস্ট বাটন -->
+            <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
+                INVOICE LIST
+            </button>
 
-            <div class="flex justify-between font-bold text-lg">
-                <span>Total:</span>
-                <span id="invTotalAmount">৳0.00</span>
-            </div>
-            
-            <p class="text-center text-xs text-gray-500 mt-6 italic">Thank you for dining with us!</p>
-        </div>
-    </main>
+            <!-- লাস্ট রিসিভ বাটন -->
+            <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
+                LAST RECEIPT
+            </button>
+        </aside>
 
-    <!-- ফুটার সেকশন -->
-    <footer class="bg-gray-900 text-gray-300 text-center py-4 border-t border-gray-800 print:hidden">
-        <p class="text-sm font-medium tracking-wide">
-            Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
-        </p>
-    </footer>
+    </div>
 
-    <!-- স্ক্রিপ্ট লজিক -->
     <script>
-        const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        async function initCashier() {
-            await fetchAllOrders();
-
-            // রিয়েল-টাইম আপডেট (নতুন অর্ডার এলে অটো রিফ্রেশ হবে)
-            _supabase.channel('public:orders_cashier')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-                    fetchAllOrders();
-                })
-                .subscribe();
+        function doCheckIn() {
+            alert("সফলভাবে চেক-ইন করা হয়েছে!");
         }
-
-        async function fetchAllOrders() {
-            const { data: orders, error } = await _supabase.from('orders')
-                .select(`
-                    id, table_id, section, total_amount, status, payment_status, created_at,
-                    order_items (
-                        quantity, price,
-                        menu_items ( name_en )
-                    )
-                `)
-                .order('created_at', { ascending: false });
-
-            const tbody = document.getElementById('cashierTableBody');
-            tbody.innerHTML = '';
-
-            if (error || !orders || orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">কোনো অর্ডার পাওয়া যায়নি।</td></tr>`;
-                return;
-            }
-
-            orders.forEach(order => {
-                let statusColor = order.status === 'ready' ? 'text-green-600' : 'text-orange-500';
-                let paymentColor = order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 text-sm text-gray-500">#${order.id}</td>
-                        <td class="p-3 font-bold text-blue-900">${order.table_id}</td>
-                        <td class="p-3 capitalize">${order.section.replace('_', ' ')}</td>
-                        <td class="p-3 font-bold">৳${order.total_amount}</td>
-                        <td class="p-3 capitalize font-semibold ${statusColor}">${order.status}</td>
-                        <td class="p-3">
-                            <span class="px-2 py-1 rounded text-xs font-bold uppercase ${paymentColor}">
-                                ${order.payment_status}
-                            </span>
-                        </td>
-                        <td class="p-3 text-right">
-                            ${order.payment_status === 'unpaid' 
-                                ? `<button onclick="markAsPaid(${order.id})" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 mr-2">Pay</button>` 
-                                : ''}
-                            <button onclick='printInvoice(${JSON.stringify(order)})' class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Print</button>
-                        </td>
-                    </tr>
-                `;
-            });
+        function doCheckOut() {
+            alert("চেক-আউট করা হয়েছে!");
         }
-
-        async function markAsPaid(orderId) {
-            if (!confirm('আপনি কি নিশ্চিত যে পেমেন্ট গ্রহণ করা হয়েছে?')) return;
-            const { error } = await _supabase.from('orders')
-                .update({ payment_status: 'paid', status: 'completed' })
-                .eq('id', orderId);
-            
-            if (error) alert('পেমেন্ট আপডেট করতে সমস্যা হয়েছে!');
-            else fetchAllOrders();
+        function refreshCashierSystem() {
+            alert("সিস্টেম ডেটা রিফ্রেশ করা হয়েছে!");
         }
-
-        function printInvoice(order) {
-            // ইনভয়েস ডেটা সেট করা
-            document.getElementById('invTableNo').innerText = `Table: ${order.table_id}`;
-            document.getElementById('invDate').innerText = `Date: ${new Date(order.created_at).toLocaleDateString()}`;
-            document.getElementById('invTotalAmount').innerText = `৳${order.total_amount}`;
-
-            const itemsList = document.getElementById('invItemsList');
-            itemsList.innerHTML = '';
-            
-            order.order_items.forEach(item => {
-                let name = item.menu_items ? item.menu_items.name_en : 'Item';
-                itemsList.innerHTML += `
-                    <li class="flex justify-between">
-                        <span>${name} <span class="text-xs text-gray-500">x${item.quantity}</span></span>
-                        <span>৳${item.price * item.quantity}</span>
-                    </li>
-                `;
-            });
-
-            // প্রিন্ট ডায়ালগ কল করা
-            document.getElementById('invoiceSection').classList.remove('hidden');
-            window.print();
-            document.getElementById('invoiceSection').classList.add('hidden');
+        function checkAdminAccess() {
+            alert("অ্যাডমিন প্যানেল পাসওয়ার্ড প্রম্পট এখানে আসবে।");
         }
-
-        initCashier();
     </script>
-
-    <style>
-        /* প্রিন্ট করার সময় শুধু ইনভয়েস শো করার জন্য স্পেশাল CSS */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #invoiceSection, #invoiceSection * {
-                visibility: visible;
-            }
-            #invoiceSection {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 20px;
-            }
-        }
-    </style>
 </body>
 </html>
