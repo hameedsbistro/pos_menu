@@ -1,48 +1,50 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>হামিদ বিস্ট - ক্যাশিয়ার প্যানেল</title>
+    <title>Hamid Beast - Cashier Panel</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-100 font-sans overflow-hidden">
 
     <div class="flex h-screen w-screen">
         
-        <!-- মূল প্যানেল (Current Orders + Header) -->
+        <!-- Main Panel (Current Orders + Header) -->
         <div class="flex-1 flex flex-col h-full overflow-hidden">
             
-            <!-- হেডার প্যানেল -->
+            <!-- Header Panel -->
             <header class="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center">
                 
-                <!-- বাম দিক: লোগো, নাম, ওয়েলকাম ও রোল -->
+                <!-- Left Side: Logo, Name, Welcome & Role -->
                 <div class="flex items-center space-x-4">
-                    <!-- লোগো -->
+                    <!-- Logo -->
                     <img src="images/logo.png" alt="Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-600" onerror="this.src='https://via.placeholder.com/50'">
                     
                     <div class="flex flex-col">
-                        <!-- দোকানের নাম -->
-                        <h1 class="font-bold text-lg text-gray-900 leading-tight">হামিদ বিস্ট</h1>
+                        <!-- Store Name -->
+                        <h1 class="font-bold text-lg text-gray-900 leading-tight">Hamid Beast</h1>
                         
-                        <!-- প্রথম লাইন: ওয়েলকাম ও ক্যাশিয়ারের নাম -->
+                        <!-- First Line: Welcome & Cashier Name -->
                         <div class="flex items-center space-x-2 mt-0.5">
-                            <span class="text-xs text-gray-500 font-medium">ওয়েলকাম:</span>
-                            <span id="cashierName" class="text-xs font-bold text-emerald-700">ক্যাশিয়ার নাম</span>
+                            <span class="text-xs text-gray-500 font-medium">Welcome:</span>
+                            <span id="cashierName" class="text-xs font-bold text-emerald-700">Cashier Name</span>
                         </div>
                         
-                        <!-- দ্বিতীয় লাইন: সোজাসুজি নিচে রোল -->
+                        <!-- Second Line: Role -->
                         <div class="flex items-center space-x-2 mt-0.5">
-                            <span class="text-xs text-gray-500 font-medium">রোল:</span>
+                            <span class="text-xs text-gray-500 font-medium">Role:</span>
                             <span id="cashierRole" class="text-xs uppercase font-bold text-blue-600">Cashier</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- ডান দিক: চেক-ইন, চেক-আউট, রিফ্রেশ ও অ্যাডমিন বাটন -->
+                <!-- Right Side: Check-In, Check-Out, Notification, Refresh & Admin Buttons -->
                 <div class="flex items-center space-x-2">
-                    <!-- কলাম আকারে সাজানো চেক-ইন ও চেক-আউট বাটন যাতে ওয়েলকাম ও রোলের সোজাসুজি থাকে -->
+                    <!-- Check-In & Check-Out Buttons -->
                     <div class="flex flex-col space-y-1">
                         <button id="checkInBtn" onclick="doCheckIn()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">
                             Check-In
@@ -52,14 +54,25 @@
                         </button>
                     </div>
 
-                    <!-- সিস্টেম রিফ্রেশ বাটন -->
-                    <button onclick="refreshCashierSystem()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center" title="সিস্টেম রিফ্রেশ">
+                    <!-- New Order Notification Button with Badge -->
+                    <div class="relative">
+                        <button onclick="openNotificationModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center relative" title="New Order Notifications">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <!-- Notification Count Badge -->
+                            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hidden">0</span>
+                        </button>
+                    </div>
+
+                    <!-- System Refresh Button -->
+                    <button onclick="refreshCashierSystem()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center" title="Refresh System">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                     </button>
 
-                    <!-- অ্যাডমিন বাটন -->
+                    <!-- Admin Button -->
                     <button onclick="checkAdminAccess()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -69,33 +82,28 @@
                 </div>
             </header>
 
-            <!-- মেইন প্যানেল (Current Orders) -->
+            <!-- Main Panel (Current Orders) -->
             <main class="flex-1 p-6 bg-gray-50 overflow-y-auto">
                 <div class="mb-4">
                     <h2 class="text-xl font-bold text-gray-800">Current Orders</h2>
                 </div>
-                <!-- অর্ডার কার্ড কন্টেইনার -->
+                <!-- Order Cards Container -->
                 <div id="pendingOrdersContainer" class="space-y-3">
-                    <!-- ডাইনামিক অর্ডার কার্ড এখানে লোড হবে -->
+                    <!-- Dynamic order cards will load here -->
                 </div>
             </main>
         </div>
 
-        <!-- ডানপাশের সাইডবার প্যানেল (১৪ ইঞ্চি ডিসপ্লের জন্য প্রায় ২-আড়াই ইঞ্চি চওড়া) -->
+        <!-- Right Sidebar Panel (~2 to 2.5 inches width for 14-inch display) -->
         <aside class="w-56 bg-gray-900 text-white flex flex-col p-4 justify-start space-y-3 shadow-xl flex-shrink-0">
             <div class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Quick Actions</div>
             
-            <!-- নিউ অর্ডার বাটন -->
             <button class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
                 NEW ORDER
             </button>
-
-            <!-- ইনভয়েস লিস্ট বাটন -->
             <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
                 INVOICE LIST
             </button>
-
-            <!-- লাস্ট রিসিভ বাটন -->
             <button class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">
                 LAST RECEIPT
             </button>
@@ -103,18 +111,90 @@
 
     </div>
 
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-lg w-full shadow-2xl relative mx-4 max-h-[80vh] flex flex-col">
+            <button onclick="closeNotificationModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            
+            <h3 class="font-bold text-xl text-gray-800 mb-2">New Customer Order Notifications</h3>
+            <p class="text-xs text-gray-500 mb-4">New customer orders are shown below. Accepting will send them to the kitchen display.</p>
+
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1" id="incomingOrdersList">
+                <!-- Dynamic incoming orders list will load here -->
+            </div>
+
+            <div class="mt-4 pt-3 border-t flex justify-end">
+                <button onclick="closeNotificationModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        function doCheckIn() {
-            alert("সফলভাবে চেক-ইন করা হয়েছে!");
+        function doCheckIn() { alert("Checked-in successfully!"); }
+        function doCheckOut() { alert("Checked-out successfully!"); }
+        function refreshCashierSystem() { alert("System data refreshed successfully!"); }
+        function checkAdminAccess() { alert("Admin password prompt will appear here."); }
+
+        function openNotificationModal() {
+            document.getElementById('notificationModal').classList.remove('hidden');
+            fetchIncomingOrders();
         }
-        function doCheckOut() {
-            alert("চেক-আউট করা হয়েছে!");
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').classList.add('hidden');
         }
-        function refreshCashierSystem() {
-            alert("সিস্টেম ডেটা রিফ্রেশ করা হয়েছে!");
+
+        async function fetchIncomingOrders() {
+            const container = document.getElementById('incomingOrdersList');
+            container.innerHTML = '<p class="text-gray-500 text-sm">Loading...</p>';
+
+            const { data, error } = await _supabase
+                .from('orders')
+                .select('*')
+                .eq('status', 'Pending Customer Order')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = '<p class="text-red-500 text-sm">Failed to load orders.</p>';
+                return;
+            }
+
+            const badge = document.getElementById('notificationBadge');
+            if (data && data.length > 0) {
+                badge.innerText = data.length;
+                badge.classList.remove('hidden');
+                
+                container.innerHTML = data.map(order => `
+                    <div class="border border-gray-200 p-4 rounded-xl bg-gray-50 flex justify-between items-center">
+                        <div>
+                            <span class="font-bold text-gray-800 text-sm">Order ID: #${order.id}</span>
+                            <p class="text-xs text-gray-600">Table: ${order.table_id || 'N/A'} | Total: RM${Number(order.total_amount).toFixed(2)}</p>
+                            <p class="text-[10px] text-gray-400 mt-1">${new Date(order.created_at).toLocaleString()}</p>
+                        </div>
+                        <button onclick="acceptOrder(${order.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow transition">
+                            Accept & Send to Kitchen
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                badge.classList.add('hidden');
+                container.innerHTML = '<p class="text-gray-500 text-sm">No new orders available.</p>';
+            }
         }
-        function checkAdminAccess() {
-            alert("অ্যাডমিন প্যানেল পাসওয়ার্ড প্রম্পট এখানে আসবে।");
+
+        async function acceptOrder(orderId) {
+            const { error } = await _supabase
+                .from('orders')
+                .update({ status: 'Sent to Kitchen' }) 
+                .eq('id', orderId);
+
+            if (error) {
+                alert('Failed to accept order!');
+                console.error(error);
+                return;
+            }
+
+            alert(`Order #${orderId} accepted successfully and sent to Kitchen Display!`);
+            fetchIncomingOrders();
         }
     </script>
 </body>
