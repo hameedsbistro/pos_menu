@@ -9,51 +9,155 @@
     <!-- Supabase JS Library CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col justify-between">
+<body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans">
 
-    <!-- হেডার সেকশন (লোগো ও নাম) -->
-    <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
+    <!-- হেডার সেকশন -->
+    <header class="bg-blue-900 text-white p-4 shadow-lg flex justify-between items-center relative">
         <div class="flex items-center gap-3">
-            <img src="images/logo.png" alt="Restoran Hameeds Bistro Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover">
-            <h1 class="text-xl font-bold uppercase tracking-wider">Restoran Hameeds Bistro</h1>
+            <button onclick="toggleSidebar()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <img src="images/logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover">
+            <div>
+                <h1 class="text-lg font-bold uppercase tracking-wider">Restoran Hameeds Bistro</h1>
+                <p class="text-xs text-yellow-300">Dine-In & Takeaway Ordering System</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button onclick="openLoginModal()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition flex items-center gap-1 text-sm font-semibold">
+                <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span id="loginBtnText">Login</span>
+            </button>
+            <button onclick="openChat()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition">
+                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            </button>
         </div>
     </header>
 
-    <!-- মূল কন্টেন্ট ও অর্ডারিং সেকশন -->
+    <!-- বাঁ দিকের স্লাইডিং মেনু/সাইডবার -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
+        <div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Menu & Profile</h2>
+                <button onclick="toggleSidebar()" class="text-gray-500 hover:text-black font-bold text-xl">✕</button>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Select Language</label>
+                <select id="langSelect" onchange="changeLanguage(this.value)" class="w-full border p-2 rounded-lg text-sm">
+                    <option value="en">English</option>
+                    <option value="bn">বাংলা (Bengali)</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="ta">தமிழ் (Tamil)</option>
+                    <option value="ar">العربية (Arabic)</option>
+                    <option value="zh">中文 (Chinese)</option>
+                </select>
+            </div>
+            <div id="sidebarProfile" class="mb-6 p-4 bg-gray-50 rounded-lg border hidden">
+                <h3 class="font-bold text-gray-800" id="profileName">Guest</h3>
+                <p class="text-xs text-gray-500" id="profileEmail">-</p>
+                <button onclick="logoutCustomer()" class="mt-2 text-xs text-red-600 font-bold hover:underline">Logout</button>
+            </div>
+            <ul class="space-y-3 font-semibold text-gray-700">
+                <li><a href="#" onclick="toggleSidebar(); showHome();" class="hover:text-blue-600">Home</a></li>
+                <li><a href="#" onclick="toggleSidebar(); showOrderHistory();" class="hover:text-blue-600">Order History</a></li>
+            </ul>
+        </div>
+        <div class="text-xs text-gray-400 text-center">Hameeds Bistro v2.0</div>
+    </div>
+
+    <!-- মূল কন্টেন্ট সেকশন -->
     <main class="p-6 max-w-4xl mx-auto flex-grow w-full">
-        <h2 class="text-2xl font-bold mb-4">Customer Ordering System</h2>
-
-        <!-- সেকশন ও টেবিল সিলেকশন (প্রতিটি সেকশনে ৩০টি করে টেবিল: A, B, C সিরিজ) -->
-        <div class="grid grid-cols-2 gap-4 bg-white p-4 rounded shadow mb-6 border">
-            <div>
-                <label class="block font-semibold mb-1">Select Section</label>
-                <select id="sectionSelect" onchange="updateTables()" class="w-full border p-2 rounded">
-                    <option value="indoor">Indoor (A-Series: 1-30)</option>
-                    <option value="outdoor">Outdoor (B-Series: 1-30)</option>
-                    <option value="first_floor">First Floor (C-Series: 1-30)</option>
-                </select>
-            </div>
-            <div>
-                <label class="block font-semibold mb-1">Select Table Number</label>
-                <select id="tableSelect" class="w-full border p-2 rounded">
-                    <!-- ডাইনামিক টেবিল অপশন জাভাস্ক্রিপ্ট দিয়ে ১ থেকে ৩০ পর্যন্ত আসবে -->
-                </select>
+        <div id="homeView" class="bg-white p-8 rounded-2xl shadow-md text-center border border-gray-200">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to Hameeds Bistro</h2>
+            <p class="text-gray-600 mb-8">Please choose your dining method to start ordering</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
+                <button onclick="startOrder('dine_in')" class="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-xl font-bold text-xl shadow-lg transition">🍽️ Dine-In</button>
+                <button onclick="startOrder('takeaway')" class="bg-green-600 hover:bg-green-700 text-white p-6 rounded-xl font-bold text-xl shadow-lg transition">🛍️ Takeaway</button>
             </div>
         </div>
 
-        <!-- মেনু লিস্ট ডিসপ্লে -->
-        <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-20">
-            <!-- মেনু আইটেমগুলো ডাটাবেস থেকে এখানে লোড হবে -->
+        <div id="orderView" class="hidden">
+            <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 flex justify-between items-center">
+                <div>
+                    <span id="selectedOrderType" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full uppercase">Dine-In</span>
+                    <h3 id="locationInfo" class="text-lg font-bold text-gray-800 mt-1">Indoor - Table A1</h3>
+                </div>
+                <button onclick="showHome()" class="text-sm text-gray-600 underline hover:text-black">Change Type</button>
+            </div>
+            <div class="mb-6 flex gap-3 overflow-x-auto pb-2" id="categoryContainer"></div>
+            <h3 class="text-2xl font-bold mb-4 text-gray-800" id="menuTitle">Top 15 Popular Items</h3>
+            <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24"></div>
         </div>
+                </main>
+                    <!-- কার্ট ও চেকআউট বার -->
+    <div id="cartBar" class="hidden fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
+        <div>
+            <span id="cartCount" class="font-bold text-lg text-gray-800">0 Items</span>
+            <span class="text-blue-600 font-bold block text-sm" id="cartSubtotal">Subtotal: ৳0.00</span>
+        </div>
+        <button onclick="openCheckoutModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow transition">Proceed to Checkout</button>
+    </div>
 
-        <!-- কার্ট ও চেকআউট বার -->
-        <div id="cartBar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg flex justify-between items-center max-w-4xl mx-auto rounded-t-xl">
-            <span id="cartCount" class="font-bold">0 Items</span>
-            <button onclick="placeOrder()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">
-                Confirm Order (Pay at Counter)
-            </button>
+    <!-- চেকআউট মোডাল -->
+    <div id="checkoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Order Summary & Checkout</h3>
+            <div id="checkoutItemsList" class="max-h-40 overflow-y-auto mb-4 border-b pb-2 space-y-2"></div>
+            <div class="space-y-1 mb-4 text-sm text-gray-700">
+                <div class="flex justify-between"><span>Subtotal:</span> <span id="modalSubtotal">৳0.00</span></div>
+                <div class="flex justify-between"><span>SST Tax (6%):</span> <span id="modalTax">৳0.00</span></div>
+                <div class="flex justify-between font-bold text-lg text-black border-t pt-1"><span>Total:</span> <span id="modalTotal">৳0.00</span></div>
+            </div>
+            <div class="space-y-3 mb-6">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600">Customer Name</label>
+                    <input type="text" id="checkoutName" class="w-full border p-2 rounded-lg text-sm" placeholder="Your Name">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600">Phone Number</label>
+                    <input type="text" id="checkoutPhone" class="w-full border p-2 rounded-lg text-sm" placeholder="Phone Number">
+                </div>
+                <div id="tableSelectionBox">
+                    <label class="block text-xs font-semibold text-gray-600">Select Section & Table</label>
+                    <div class="grid grid-cols-2 gap-2 mt-1">
+                        <select id="checkoutSection" onchange="updateCheckoutTables()" class="border p-2 rounded-lg text-sm">
+                            <option value="indoor">Indoor (A1-A30)</option>
+                            <option value="outdoor">Outdoor (B1-B30)</option>
+                            <option value="first_floor">First Floor (C1-C30)</option>
+                        </select>
+                        <select id="checkoutTableId" class="border p-2 rounded-lg text-sm"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeCheckoutModal()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2.5 rounded-xl font-semibold">Cancel</button>
+                <button onclick="submitOrder()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold">Place Order</button>
+            </div>
         </div>
-    </main>
+    </div>
+
+    <!-- লগইন ও রেজিস্ট্রেশন মোডাল -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-bold text-gray-800 mb-4" id="authTitle">Customer Login</h3>
+            <div id="loginForm" class="space-y-3">
+                <input type="email" id="loginEmail" placeholder="Email Address" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="password" id="loginPassword" placeholder="Password" class="w-full border p-2.5 rounded-lg text-sm">
+                <button onclick="loginCustomer()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold">Login</button>
+                <p class="text-xs text-center text-gray-500 mt-2">Don't have an account? <span onclick="toggleAuthMode('register')" class="text-blue-600 cursor-pointer font-bold">Register here</span></p>
+            </div>
+            <div id="registerForm" class="space-y-3 hidden">
+                <input type="text" id="regName" placeholder="Full Name" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="text" id="regPhone" placeholder="Phone Number" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="email" id="regEmail" placeholder="Email (Username)" class="w-full border p-2.5 rounded-lg text-sm">
+                <input type="password" id="regPassword" placeholder="Password" class="w-full border p-2.5 rounded-lg text-sm">
+                <button onclick="registerCustomer()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-semibold">Register Account</button>
+                <p class="text-xs text-center text-gray-500 mt-2">Already have an account? <span onclick="toggleAuthMode('login')" class="text-blue-600 cursor-pointer font-bold">Login here</span></p>
+            </div>
+            <button onclick="closeLoginModal()" class="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-xl text-sm font-semibold">Close</button>
+        </div>
+    </div>
 
     <!-- ফুটার সেকশন (বাধ্যতামূলক কপিরাইট) -->
     <footer class="bg-gray-900 text-gray-300 text-center py-4 border-t border-gray-800">
@@ -61,121 +165,171 @@
             Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
         </p>
     </footer>
-
-    <!-- জাভাস্ক্রিপ্ট লজিক -->
-    <script>
-        // আপনার Supabase প্রজেক্টের সঠিক URL এবং Anon Key এখানে বসাবেন
-        const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+        <script>
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let currentOrderType = 'dine_in';
         let menuItems = [];
         let cart = [];
+        let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
 
-        // প্রতিটি সেকশনের জন্য ১ থেকে ৩০ পর্যন্ত টেবিল জেনারেট করার ফাংশন (A, B, C সিরিজ)
-        function updateTables() {
-            const section = document.getElementById('sectionSelect').value;
-            const tableSelect = document.getElementById('tableSelect');
-            tableSelect.innerHTML = '';
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLoginUI();
+            updateCheckoutTables();
+        });
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        }
+
+        function startOrder(type) {
+            currentOrderType = type;
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('orderView').classList.remove('hidden');
+            document.getElementById('selectedOrderType').innerText = type === 'dine_in' ? 'Dine-In' : 'Takeaway';
             
-            let prefix = '';
-            if (section === 'indoor') prefix = 'A';      // A1 থেকে A30
-            if (section === 'outdoor') prefix = 'B';     // B1 থেকে B30
-            if (section === 'first_floor') prefix = 'C'; // C1 থেকে C30
+            if(type === 'takeaway') {
+                document.getElementById('locationInfo').innerText = 'Takeaway Order (Auto ID)';
+                document.getElementById('tableSelectionBox').classList.add('hidden');
+            } else {
+                document.getElementById('tableSelectionBox').classList.remove('hidden');
+                document.getElementById('locationInfo').innerText = 'Indoor - Table A1';
+            }
+            fetchMenu();
+        }
 
-            for (let i = 1; i <= 30; i++) {
-                let tableId = prefix + i;
+        function showHome() {
+            document.getElementById('homeView').classList.remove('hidden');
+            document.getElementById('orderView').classList.add('hidden');
+            document.getElementById('cartBar').classList.add('hidden');
+            cart = [];
+        }
+
+        function updateCheckoutTables() {
+            const section = document.getElementById('checkoutSection').value;
+            const tableSelect = document.getElementById('checkoutTableId');
+            tableSelect.innerHTML = '';
+            let prefix = section === 'indoor' ? 'A' : (section === 'outdoor' ? 'B' : 'C');
+            for(let i=1; i<=30; i++) {
                 let opt = document.createElement('option');
-                opt.value = tableId;
-                opt.innerText = tableId;
+                opt.value = prefix + i;
+                opt.innerText = `Table ${prefix}${i}`;
                 tableSelect.appendChild(opt);
             }
         }
 
-        // Supabase থেকে মেনু ফেচ করা
         async function fetchMenu() {
-            const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
-            if (error) {
-                console.error('Error fetching menu:', error);
-                return;
-            }
+            const { data } = await _supabase.from('menu_items').select('*').eq('is_available', true);
             menuItems = data || [];
-            renderMenu();
+            renderMenu(menuItems.filter(i => i.is_popular));
+            renderCategories();
         }
 
-        // স্ক্রিনে মেনু রেন্ডার করা
-        function renderMenu() {
+        function renderCategories() {
+            const container = document.getElementById('categoryContainer');
+            const categories = [...new Set(menuItems.map(i => i.category))];
+            container.innerHTML = `<button onclick="renderMenu(menuItems.filter(i => i.is_popular))" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold whitespace-nowrap">Top 15 Popular</button>`;
+            categories.forEach(cat => {
+                container.innerHTML += `<button onclick="filterCategory('${cat}')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold whitespace-nowrap">${cat}</button>`;
+            });
+        }
+
+        function filterCategory(cat) {
+            document.getElementById('menuTitle').innerText = cat;
+            renderMenu(menuItems.filter(i => i.category === cat));
+        }
+
+        function renderMenu(items) {
             const container = document.getElementById('menuContainer');
             container.innerHTML = '';
-            
-            if (menuItems.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 col-span-3">কোনো মেনু আইটেম পাওয়া যায়নি। দয়া করে অ্যাডমিন প্যানেল থেকে মেনু যুক্ত করুন।</p>';
+            if(items.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 col-span-3">No items found.</p>';
                 return;
             }
-
-            menuItems.forEach(item => {
+            items.forEach(item => {
+                let price = currentOrderType === 'takeaway' && item.takeaway_price ? item.takeaway_price : item.price;
                 container.innerHTML += `
-                    <div class="bg-white border p-4 rounded shadow flex flex-col justify-between">
+                    <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm flex flex-col justify-between">
                         <div>
-                            <h3 class="font-bold text-lg">${item.name_en}</h3>
-                            <p class="text-gray-600 mb-3">৳${item.price}</p>
+                            <h4 class="font-bold text-lg text-gray-800">${item.name_en}</h4>
+                            <p class="text-blue-600 font-semibold mb-4">৳${price}</p>
                         </div>
-                        <button onclick="addToCart(${item.id})" class="bg-green-600 text-white w-full py-1 rounded font-semibold hover:bg-green-700">
-                            Add to Cart
-                        </button>
+                        <button onclick="addToCart(${item.id}, ${price})" class="bg-green-600 hover:bg-green-700 text-white w-full py-2 rounded-lg font-semibold transition">Add to Cart</button>
                     </div>
                 `;
             });
         }
 
-        // কার্টে আইটেম যোগ করা
-        function addToCart(id) {
+        function addToCart(id, price) {
             const item = menuItems.find(m => m.id === id);
             const exist = cart.find(c => c.id === id);
-            if (exist) {
-                exist.quantity += 1;
-            } else {
-                cart.push({ ...item, quantity: 1 });
-            }
+            if(exist) { exist.quantity += 1; }
+            else { cart.push({ ...item, price, quantity: 1 }); }
             updateCartBar();
         }
 
-        // কার্ট বার আপডেট করা
         function updateCartBar() {
             const bar = document.getElementById('cartBar');
-            const count = document.getElementById('cartCount');
             const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
-            
-            if (totalQty > 0) {
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            if(totalQty > 0) {
                 bar.classList.remove('hidden');
-                count.innerText = `${totalQty} Items in Cart`;
+                document.getElementById('cartCount').innerText = `${totalQty} Items`;
+                document.getElementById('cartSubtotal').innerText = `Subtotal: ৳${subtotal.toFixed(2)}`;
             } else {
                 bar.classList.add('hidden');
             }
         }
 
-        // অর্ডার প্লেস করা (সুপাবেস ডাটাবেসে সেভ হবে)
-        async function placeOrder() {
-            const section = document.getElementById('sectionSelect').value;
-            const tableId = document.getElementById('tableSelect').value;
-            const totalAmount = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+        function openCheckoutModal() {
+            if(loggedInCustomer) {
+                document.getElementById('checkoutName').value = loggedInCustomer.full_name;
+                document.getElementById('checkoutPhone').value = loggedInCustomer.phone;
+            }
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            const tax = subtotal * 0.06;
+            const total = subtotal + tax;
 
-            // ১. মূল অর্ডার টেবিলে ডেটা সেভ
-            const { data: orderData, error: orderError } = await _supabase.from('orders').insert([{
-                order_type: 'dine_in',
-                section: section,
+            document.getElementById('modalSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
+            document.getElementById('modalTax').innerText = `৳${tax.toFixed(2)}`;
+            document.getElementById('modalTotal').innerText = `৳${total.toFixed(2)}`;
+
+            const list = document.getElementById('checkoutItemsList');
+            list.innerHTML = cart.map(i => `<div class="flex justify-between text-sm"><span>${i.name_en} x ${i.quantity}</span><span>৳${(i.price*i.quantity).toFixed(2)}</span></div>`).join('');
+            
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+
+        async function submitOrder() {
+            const name = document.getElementById('checkoutName').value;
+            const phone = document.getElementById('checkoutPhone').value;
+            const section = document.getElementById('checkoutSection').value;
+            const tableId = currentOrderType === 'dine_in' ? document.getElementById('checkoutTableId').value : 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
+
+            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            const tax = subtotal * 0.06;
+            const total = subtotal + tax;
+
+            const { data: orderData, error } = await _supabase.from('orders').insert([{
+                customer_id: loggedInCustomer ? loggedInCustomer.id : null,
+                customer_name: name,
+                customer_phone: phone,
+                order_type: currentOrderType,
+                section: currentOrderType === 'dine_in' ? section : 'takeaway',
                 table_id: tableId,
-                total_amount: totalAmount,
+                subtotal: subtotal,
+                sst_tax: tax,
+                total_amount: total,
                 status: 'pending',
                 payment_status: 'unpaid'
             }]).select().single();
 
-            if (orderError) {
-                alert('অর্ডার করতে সমস্যা হয়েছে!');
-                return;
-            }
+            if(error) { alert('Order failed!'); return; }
 
-            // ২. অর্ডার আইটেম টেবিলে ডেটা সেভ
             const orderItems = cart.map(i => ({
                 order_id: orderData.id,
                 menu_item_id: i.id,
@@ -184,15 +338,74 @@
             }));
 
             await _supabase.from('order_items').insert(orderItems);
-
-            alert('অর্ডার সফলভাবে সম্পন্ন হয়েছে! অনুগ্রহ করে কাউন্টারে পেমেন্ট করুন।');
-            cart = [];
-            updateCartBar();
+            alert('Order placed successfully! Pending Cashier verification.');
+            closeCheckoutModal();
+            showHome();
         }
 
-        // পেজ লোড হওয়ার সাথে সাথে টেবিল জেনারেট এবং মেনু লোড হবে
-        updateTables();
-        fetchMenu();
+        function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+        function toggleAuthMode(mode) {
+            if(mode === 'register') {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+                document.getElementById('authTitle').innerText = 'Customer Register';
+            } else {
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('authTitle').innerText = 'Customer Login';
+            }
+        }
+
+        async function registerCustomer() {
+            const full_name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            const { data, error } = await _supabase.from('customers').insert([{ full_name, phone, email, password }]).select().single();
+            if(error) { alert('Registration failed or email already exists.'); return; }
+            alert('Registration successful! Please login.');
+            toggleAuthMode('login');
+        }
+
+        async function loginCustomer() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const { data, error } = await _supabase.from('customers').select('*').eq('email', email).eq('password', password).single();
+            if(error || !data) { alert('Invalid email or password.'); return; }
+
+            loggedInCustomer = data;
+            localStorage.setItem('hameeds_customer', JSON.stringify(data));
+            updateLoginUI();
+            closeLoginModal();
+            alert('Login successful!');
+        }
+
+        function logoutCustomer() {
+            loggedInCustomer = null;
+            localStorage.removeItem('hameeds_customer');
+            updateLoginUI();
+            alert('Logged out successfully.');
+        }
+
+        function updateLoginUI() {
+            const profileDiv = document.getElementById('sidebarProfile');
+            if(loggedInCustomer) {
+                document.getElementById('loginBtnText').innerText = loggedInCustomer.full_name.split(' ')[0];
+                profileDiv.classList.remove('hidden');
+                document.getElementById('profileName').innerText = loggedInCustomer.full_name;
+                document.getElementById('profileEmail').innerText = loggedInCustomer.email;
+            } else {
+                document.getElementById('loginBtnText').innerText = 'Login';
+                profileDiv.classList.add('hidden');
+            }
+        }
+
+        function openChat() { alert('Live chat feature opening soon!'); }
+        function showOrderHistory() { alert('Order history feature loading...'); }
+        function changeLanguage(lang) { alert('Language changed to: ' + lang); }
     </script>
 </body>
 </html>
