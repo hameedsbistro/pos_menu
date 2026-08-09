@@ -391,30 +391,44 @@
             }
         }
 
-        async function fetchMenu() {
-            const { data } = await _supabase.from('menu_items').select('*').eq('is_available', true);
-            menuItems = data || [];
-            renderCategoriesDropdown();
-            renderMenu(menuItems.filter(i => i.is_popular));
-        }
+        
+                 async function fetchMenu() {
+    // সুপাবেজ থেকে সব মেনু আইটেম আনছি
+    const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
+    
+    if(error) {
+        console.error("Error fetching menu:", error);
+        return;
+    }
+
+    menuItems = data || [];
+    
+    // ১. প্রথমে ড্রপডাউন পপুলেট করছি
+    renderCategoriesDropdown();
+    
+    // ২. ডিফল্টভাবে পপুলার আইটেম দেখাচ্ছি
+    renderMenu(menuItems.filter(i => i.is_popular));
+                 }
+        
 
                 function renderCategoriesDropdown() {
-            const dropdown = document.getElementById('categoryDropdown');
-            if (!dropdown) return;
-            
-            // সব ইউনিক ক্যাটাগরি বের করা
-            const categories = [...new Set(menuItems.map(i => i.category))];
-            
-            let optionsHTML = `<option value="popular">Top 15 Popular Items</option>`;
-            optionsHTML += `<option value="all">All Items</option>`; // সব আইটেম দেখার অপশন
-            
-            categories.forEach(cat => {
-                if (cat) {
-                    optionsHTML += `<option value="${cat}">${cat}</option>`;
-                }
-            });
-            dropdown.innerHTML = optionsHTML;
-                }
+    const dropdown = document.getElementById('categoryDropdown');
+    if (!dropdown) return;
+
+    // মেনু আইটেম থেকে ক্যাটাগরিগুলো বের করছি
+    const categories = [...new Set(menuItems.map(i => i.category).filter(cat => cat !== null && cat !== undefined))];
+    
+    let optionsHTML = `<option value="popular">Top 15 Popular Items</option>`;
+    optionsHTML += `<option value="all">All Items</option>`;
+    
+    categories.forEach(cat => {
+        optionsHTML += `<option value="${cat}">${cat}</option>`;
+    });
+    
+    dropdown.innerHTML = optionsHTML;
+    console.log("Categories loaded:", categories); // এটি কনসোলে চেক করতে পারবেন
+}
+
         
 
                 function filterByCategoryDropdown(val) {
