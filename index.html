@@ -126,7 +126,7 @@
             <span class="bg-yellow-400 text-black px-3 py-1 rounded-full font-bold text-sm" id="cartCount">0 Items</span>
             <div>
                 <span class="text-xs text-yellow-300 block" data-i18n="subtotal">Subtotal:</span>
-                <span class="font-bold text-lg" id="cartSubtotal">৳0.00</span>
+                <span class="font-bold text-lg" id="cartSubtotal">RM0.00</span>
             </div>
         </div>
         <button onclick="openCartModal()" class="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl font-bold shadow transition flex items-center gap-2">
@@ -647,32 +647,33 @@
         }
 
         function openCartModal() {
-            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-            document.getElementById('cartModalSubtotal').innerText = `RM${subtotal.toFixed(2)}`;
+    const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    document.getElementById('cartModalSubtotal').innerText = `RM${subtotal.toFixed(2)}`;
 
-            const container = document.getElementById('cartItemsListContainer');
-            if(cart.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 py-4">Your cart is empty.</p>';
-            } else {
-                container.innerHTML = cart.map((i, index) => {
-                    let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
-                    return `
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <div>
-                                <h4 class="font-bold text-sm text-gray-800">${name}</h4>
-                                <p class="text-xs text-gray-500">৳${i.price} x ${i.quantity}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="changeCartQty(${index}, -1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">-</button>
-                                <span class="text-sm font-bold">${i.quantity}</span>
-                                <button onclick="changeCartQty(${index}, 1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">+</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-            document.getElementById('cartModal').classList.remove('hidden');
-        }
+    const container = document.getElementById('cartItemsListContainer');
+    if(cart.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-4">Your cart is empty.</p>';
+    } else {
+        container.innerHTML = cart.map((i, index) => {
+            let name = currentLang === 'bn' && i.name_bn ? i.name_bn : i.name_en;
+            return `
+                <div class="flex justify-between items-center border-b pb-2">
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800">${name}</h4>
+                        <!-- এখানে i.price এর সাথে .toFixed(2) যুক্ত করা হয়েছে -->
+                        <p class="text-xs text-gray-500">RM${Number(i.price).toFixed(2)} x ${i.quantity}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeCartQty(${index}, -1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">-</button>
+                        <span class="text-sm font-bold">${i.quantity}</span>
+                        <button onclick="changeCartQty(${index}, 1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">+</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    document.getElementById('cartModal').classList.remove('hidden');
+}
 
         function closeCartModal() {
             document.getElementById('cartModal').classList.add('hidden');
