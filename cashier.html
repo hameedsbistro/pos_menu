@@ -286,6 +286,25 @@
         }
 
         // এই ফাংশনটি কোডের ভেতর যেখানে আছে, সেখানে এটি বসান
+        // মেনু লিস্ট লোড করার ফাংশনে নাম দেখানোর জন্য এটি ব্যবহার করুন
+async function loadMenuForAddingItems() {
+    const { data: menuItems, error } = await _supabase
+        .from('menu_items')
+        .select('id, name_en, price'); // এখানে name_en ব্যবহার করা হয়েছে
+
+    if (error) {
+        console.error('Error loading menu:', error);
+        return;
+    }
+
+    // ড্রপডাউন বা লিস্টে দেখানোর সময় item.name_en ব্যবহার করুন
+    const selectElement = document.getElementById('extraItemSelect'); // আপনার এলেমেন্টের আইডি অনুযায়ী পরিবর্তন করে নেবেন
+    if (selectElement) {
+        selectElement.innerHTML = menuItems.map(item => `
+            <option value="${item.id}">${item.name_en} - RM${item.price}</option>
+        `).join('');
+    }
+}
 
 
         async function renderModalItems(orderId) {
