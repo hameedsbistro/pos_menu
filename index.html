@@ -593,9 +593,29 @@
             showHome();
         }
 
+                // আগের handleAuthClick ফাংশনটি মুছে এটা বসিয়ে দিন
         function handleAuthClick() {
-            alert('Login feature triggered. (You can integrate Supabase Auth here)');
+            let userName = prompt("Please enter your name for login:", "Customer");
+            if (userName) {
+                let userPhone = prompt("Please enter your phone number:", "0123456789");
+                if (userPhone) {
+                    currentUser = { name: userName, phone: userPhone };
+                    
+                    // হেডার বাটন টেক্সট পরিবর্তন করে ইউজারের নাম দেখানো
+                    const loginBtnText = document.getElementById('loginBtnText');
+                    if(loginBtnText) loginBtnText.innerText = currentUser.name;
+
+                    // চেকআউট ফর্মে অটো নাম ও ফোন বসিয়ে দেওয়া
+                    const checkoutName = document.getElementById('checkoutName');
+                    const checkoutPhone = document.getElementById('checkoutPhone');
+                    if(checkoutName) checkoutName.value = currentUser.name;
+                    if(checkoutPhone) checkoutPhone.value = currentUser.phone;
+
+                    alert("Logged in successfully as " + currentUser.name);
+                }
+            }
         }
+
 
         function showOrderHistory() {
             document.getElementById('homeView').classList.add('hidden');
