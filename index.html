@@ -627,29 +627,94 @@
         }
 
                 // আগের handleAuthClick ফাংশনটি মুছে এটা বসিয়ে দিন
+                let isRegisterMode = false;
+
+        // হেডার বাটন ক্লিক করলে লগইন মোডাল ওপেন হবে
         function handleAuthClick() {
-            let userName = prompt("Please enter your name for login:", "Customer");
-            if (userName) {
-                let userPhone = prompt("Please enter your phone number:", "0123456789");
-                if (userPhone) {
-                    currentUser = { name: userName, phone: userPhone };
-                    
-                    // হেডার বাটন টেক্সট পরিবর্তন করে ইউজারের নাম দেখানো
-                    const loginBtnText = document.getElementById('loginBtnText');
-                    if(loginBtnText) loginBtnText.innerText = currentUser.name;
+            isRegisterMode = false;
+            document.getElementById('authModalTitle').innerText = "Customer Login";
+            document.getElementById('authSubmitBtn').innerText = "Login";
+            document.getElementById('registerNameGroup').classList.add('hidden');
+            document.getElementById('authSwitchText').innerHTML = `Don't have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-bold underline">Register here</button>`;
+            document.getElementById('authModal').classList.remove('hidden');
+        }
 
-                    // চেকআউট ফর্মে অটো নাম ও ফোন বসিয়ে দেওয়া
-                    const checkoutName = document.getElementById('checkoutName');
-                    const checkoutPhone = document.getElementById('checkoutPhone');
-                    if(checkoutName) checkoutName.value = currentUser.name;
-                    if(checkoutPhone) checkoutPhone.value = currentUser.phone;
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
 
-                    alert("Logged in successfully as " + currentUser.name);
-                }
+        // লগইন এবং রেজিস্টার মোড পরিবর্তন করার টগল
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            const title = document.getElementById('authModalTitle');
+            const btn = document.getElementById('authSubmitBtn');
+            const nameGroup = document.getElementById('registerNameGroup');
+            const switchText = document.getElementById('authSwitchText');
+
+            if (isRegisterMode) {
+                title.innerText = "Create Account (Register)";
+                btn.innerText = "Register";
+                nameGroup.classList.remove('hidden');
+                switchText.innerHTML = `Already have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-bold underline">Login here</button>`;
+            } else {
+                title.innerText = "Customer Login";
+                btn.innerText = "Login";
+                nameGroup.classList.add('hidden');
+                switchText.innerHTML = `Don't have an account? <button onclick="toggleAuthMode()" class="text-blue-600 font-bold underline">Register here</button>`;
             }
         }
 
+        // সুপাবেজ ব্যবহার করে সাইন আপ বা সাইন ইন প্রসেস
+        async function handleAuthSubmit() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const name = document.getElementById('authName').value.trim();
 
+            if (!email || !password) {
+                alert("Please fill in all required fields.");
+                return;
+            }
+
+            if (isRegisterMode) {
+                // সুপাবেজ রেজিস্টার (Sign Up)
+                const { data, error } = await _supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: { full_name: name }
+                    }
+                });
+
+                if (error) {
+                    alert("Registration Error: " + error.message);
+                } else {
+                    alert("Registration successful! You can now log in with your ID and password.");
+                    toggleAuthMode(); // লগইন মোডে ফিরে যাওয়া
+                }
+            } else {
+                // সুপাবেজ লগইন (Sign In)
+                const { data, error } = await _supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    alert("Login Failed: " + error.message);
+                } else {
+                    currentUser = data.user;
+                    alert("Login successful!");
+                    
+                    // হেডার বাটনে ইউজারের ইমেল বা নাম দেখানো
+                    document.getElementById('loginBtnText').innerText = currentUser.email.split('@')[0];
+                    
+                    // চেকআউট ফর্মে অটো বসিয়ে দেওয়া
+                    document.getElementById('checkoutEmail').value = currentUser.email;
+                    
+                    closeAuthModal();
+                }
+            }
+        }
+            
         function showOrderHistory() {
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('orderView').classList.add('hidden');
