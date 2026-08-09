@@ -530,24 +530,50 @@
         }
 
         async function showOrderHistory() {
-            if(!loggedInCustomer) {
-                alert('Please login first to view order history.');
-                openLoginModal();
-                return;
-            }
-            document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('orderView').classList.add('hidden');
-            document.getElementById('historyView').classList.remove('hidden');
-            document.getElementById('cartBar').classList.add('hidden');
+    if(!loggedInCustomer) {
+        alert('Please login first to view order history.');
+        openLoginModal();
+        return;
+    }
+    document.getElementById('homeView').classList.add('hidden');
+    document.getElementById('orderView').classList.add('hidden');
+    document.getElementById('historyView').classList.remove('hidden');
+    document.getElementById('cartBar').classList.add('hidden');
 
-            const container = document.getElementById('orderHistoryContainer');
-            container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
+    const container = document.getElementById('orderHistoryContainer');
+    container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
 
-            const { data, error } = await _supabase.from('orders').select('*').eq('customer_id', loggedInCustomer.id).order('created_at', { ascending: false });
-            if(error || !data || data.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">No past orders found.</p>';
-                return;
-            }
+    console.log("Searching history for Customer ID:", loggedInCustomer.id);
+
+    const { data, error } = await _supabase.from('orders').select('*').eq('customer_id', loggedInCustomer.id).order('created_at', { ascending: false });
+    
+    if(error) {
+        console.error("History Fetch Error:", error);
+        container.innerHTML = `<p class="text-red-500">Error loading history: ${error.message}</p>`;
+        return;
+    }
+
+    console.log("Fetched History Data:", data);
+
+    if(!data || data.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No past orders found.</p>';
+        return;
+    }
+
+    container.innerHTML = data.map(o => `
+        <div class="bg-white border p-4 rounded-xl shadow-sm flex justify-between items-center">
+            <div>
+                <p class="font-bold text-gray-800">Order ID: #${o.id}</p>
+                <p class="text-xs text-gray-500">Type: ${(o.order_type || '').toUpperCase()} | Table/Loc: ${o.table_id || o.table_no || 'N/A'}</p>
+                <p class="text-xs text-gray-500">Status: <span class="font-semibold text-blue-600">${o.status}</span></p>
+            </div>
+            <div class="text-right">
+                <p class="font-bold text-lg text-blue-600">RM${Number(o.total_amount || 0).toFixed(2)}</p>
+                <p class="text-xs text-gray-400">${o.created_at ? new Date(o.created_at).toLocaleString() : ''}</p>
+            </div>
+        </div>
+    `).join('');
+}
 
             container.innerHTML = data.map(o => `
                 <div class="bg-white border p-4 rounded-xl shadow-sm flex justify-between items-center">
