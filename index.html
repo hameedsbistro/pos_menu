@@ -37,7 +37,7 @@
 
                 <!-- লগইন / প্রফাইল বাটন -->
                 <button onclick="handleAuthClick()" class="bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-bold text-xs px-3 py-1.5 rounded-lg transition shadow">
-                    <span id="loginBtnText">Login</span>
+                    <span id="loginBtnText" data-i18n="login">Login</span>
                 </button>
             </div>
         </div>
@@ -50,7 +50,6 @@
                 <button onclick="toggleSidebar()" class="text-white text-xl font-bold">×</button>
             </div>
             
-            <!-- লগইন করা থাকলে প্রোফাইল ইনফো -->
             <div id="sidebarProfile" class="hidden p-4 bg-blue-50 border-b">
                 <p class="font-bold text-blue-900 text-sm" id="profileName">User Name</p>
                 <p class="text-xs text-gray-600" id="profileEmail">user@email.com</p>
@@ -82,14 +81,12 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <!-- ডাইন-ইন কার্ড -->
             <div onclick="startOrder('dine_in')" class="bg-white border-2 border-blue-100 hover:border-blue-600 p-6 rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer text-center flex flex-col items-center">
                 <div class="bg-blue-50 text-blue-600 p-4 rounded-full text-3xl mb-4">🍽️</div>
                 <h3 class="font-bold text-xl text-gray-800 mb-1" data-i18n="dineIn">Dine-In</h3>
                 <p class="text-xs text-gray-500" data-i18n="dineInDesc">Enjoy your meal at our restaurant tables</p>
             </div>
 
-            <!-- টেকঅ্যাওয়ে কার্ড -->
             <div onclick="startOrder('takeaway')" class="bg-white border-2 border-blue-100 hover:border-blue-600 p-6 rounded-2xl shadow-sm hover:shadow-md transition cursor-pointer text-center flex flex-col items-center">
                 <div class="bg-yellow-50 text-yellow-600 p-4 rounded-full text-3xl mb-4">🛍️</div>
                 <h3 class="font-bold text-xl text-gray-800 mb-1" data-i18n="takeaway">Takeaway</h3>
@@ -97,16 +94,15 @@
             </div>
         </div>
     </main>
-        <!-- অর্ডার ভিউ (মেনু ও ক্যাটাগরি) -->
+
+    <!-- অর্ডার ও মেনু ভিউ (যা শুরুতে লুকানো থাকে) -->
     <main id="orderView" class="max-w-7xl mx-auto px-4 py-6 hidden">
-        <!-- টপ বার: ব্যাক ও টেবিল সিলেকশন -->
         <div class="flex flex-wrap justify-between items-center mb-6 gap-4 bg-white p-4 rounded-xl shadow-sm border">
             <div class="flex items-center gap-3">
                 <button onclick="showHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-sm transition">← Back</button>
                 <h3 class="font-bold text-lg text-blue-900" id="selectedOrderType">Dine-In</h3>
             </div>
             
-            <!-- ডাইন-ইন হলে টেবিল সিলেকশন অপশন -->
             <div id="tableChangeContainer" class="flex items-center gap-2">
                 <select id="activeSectionSelect" onchange="updateActiveTableDropdown()" class="border p-2 rounded-lg text-xs font-semibold bg-gray-50">
                     <option value="indoor">Indoor</option>
@@ -114,7 +110,6 @@
                     <option value="vip">VIP</option>
                 </select>
                 <select id="activeTableSelect" class="border p-2 rounded-lg text-xs font-semibold bg-gray-50">
-                    <!-- ডাইনামিক টেবিল অপশন -->
                 </select>
             </div>
         </div>
@@ -132,14 +127,12 @@
             </div>
         </div>
 
-        <!-- মেনু সেকশন টাইটেল -->
         <div class="mb-4">
             <h3 id="menuTitle" class="font-bold text-xl text-gray-900">Top 15 Popular Items</h3>
         </div>
 
         <!-- মেনু আইটেম গ্রিড -->
         <div id="menuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- ডাইনামিক মেনু কার্ড এখানে লোড হবে -->
         </div>
     </main>
 
@@ -159,7 +152,6 @@
             <button onclick="showHome()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-sm transition">Back to Home</button>
         </div>
         <div id="orderHistoryContainer" class="space-y-4">
-            <!-- ডাইনামিক হিস্ট্রি আইটেম -->
         </div>
     </main>
         <!-- কার্ট মোডাল -->
@@ -170,7 +162,6 @@
                 <button onclick="closeCartModal()" class="text-white hover:text-yellow-400 text-xl font-bold">×</button>
             </div>
             <div id="cartItemsListContainer" class="p-4 overflow-y-auto space-y-3 flex-grow">
-                <!-- ডাইনামিক কার্ট আইটেম -->
             </div>
             <div class="p-4 bg-gray-50 border-t space-y-3">
                 <div class="flex justify-between font-bold text-base">
@@ -197,11 +188,11 @@
                 
                 <div class="space-y-2">
                     <label class="block text-xs font-semibold text-gray-600" data-i18n="fullName">Full Name</label>
-                    <input type="text" id="checkoutName" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" readonly>
+                    <input type="text" id="checkoutName" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" placeholder="Customer Name">
                 </div>
                 <div class="space-y-2">
                     <label class="block text-xs font-semibold text-gray-600" data-i18n="phone">Phone Number</label>
-                    <input type="text" id="checkoutPhone" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" readonly>
+                    <input type="text" id="checkoutPhone" class="w-full border p-2.5 rounded-lg text-sm bg-gray-50" placeholder="Phone Number">
                 </div>
 
                 <div class="border-t pt-3">
@@ -220,19 +211,16 @@
             </div>
         </div>
     </div>
-        <!-- জাভাস্ক্রিপ্ট লজিক শুরু -->
-    <script>
-        // Supabase Configuration
+        <script>
+        // আপনার সঠিক Supabase URL এবং Anon Key এখানে বসিয়ে দিন
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU'; 
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // গ্লোবাল ভেরিয়েবলস
         let menuItems = [];
         let cart = [];
         let currentOrderType = 'dine_in';
         let currentLanguage = 'en';
-        let currentUser = null;
 
         // মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি
         const translations = {
@@ -243,6 +231,7 @@
                 orderHistory: "Order History",
                 liveChat: "Live Chat",
                 logout: "Logout",
+                login: "Login",
                 welcomeMsg: "Welcome to Hameed's Restaurant",
                 selectOrderTypePrompt: "Please select your dining method to start ordering",
                 dineIn: "Dine-In",
@@ -257,7 +246,7 @@
                 fullName: "Full Name",
                 phone: "Phone Number",
                 orderItems: "Order Items",
-                placeOrder: "Place Order (Cashier Verification)"
+                placeOrder: "Place Order"
             },
             ms: {
                 brandName: "Restoran Hameed",
@@ -266,6 +255,7 @@
                 orderHistory: "Sejarah Pesanan",
                 liveChat: "Sembang Langsung",
                 logout: "Log Keluar",
+                login: "Log Masuk",
                 welcomeMsg: "Selamat Datang ke Restoran Hameed",
                 selectOrderTypePrompt: "Sila pilih cara makan anda untuk mula memesan",
                 dineIn: "Makan di Sini",
@@ -280,7 +270,7 @@
                 fullName: "Nama Penuh",
                 phone: "Nombor Telefon",
                 orderItems: "Item Pesanan",
-                placeOrder: "Buat Pesanan (Pengesahan Juruwang)"
+                placeOrder: "Buat Pesanan"
             },
             bn: {
                 brandName: "হামিদস রেস্টুরেন্ট",
@@ -289,6 +279,7 @@
                 orderHistory: "অর্ডার হিস্ট্রি",
                 liveChat: "লাইভ চ্যাট",
                 logout: "লগআউট",
+                login: "লগইন",
                 welcomeMsg: "হামিদস রেস্টুরেন্টে স্বাগতম",
                 selectOrderTypePrompt: "অর্ডার শুরু করতে আপনার ডাইনিং পদ্ধতি নির্বাচন করুন",
                 dineIn: "ডাইন-ইন",
@@ -303,7 +294,7 @@
                 fullName: "पूরা নাম",
                 phone: "মোবাইল নম্বর",
                 orderItems: "অর্ডারের আইটেমসমূহ",
-                placeOrder: "অর্ডার প্লেস করুন (ক্যাশিয়ার ভেরিফিকেশন)"
+                placeOrder: "অর্ডার প্লেস করুন"
             },
             ta: {
                 brandName: "ஹமீத் உணவகம்",
@@ -312,6 +303,7 @@
                 orderHistory: "ஆர்டர் வரலாறு",
                 liveChat: "நேரலை அரட்டை",
                 logout: "வெளியேறு",
+                login: "உள்நுழை",
                 welcomeMsg: "ஹமீத் உணவகத்திற்கு உங்களை வரவேற்கிறோம்",
                 selectOrderTypePrompt: "ஆர்டர் செய்ய உங்கள் முறையைத் தேர்ந்தெடுக்கவும்",
                 dineIn: "உணவகத்தில் உண்ண",
@@ -335,6 +327,7 @@
                 orderHistory: "订单历史",
                 liveChat: "在线客服",
                 logout: "登出",
+                login: "登录",
                 welcomeMsg: "欢迎光临哈米德餐厅",
                 selectOrderTypePrompt: "请选择您的用餐方式开始点餐",
                 dineIn: "堂食",
@@ -353,7 +346,6 @@
             }
         };
 
-        // ভাষা পরিবর্তনের ফাংশন (যা সমস্ত [data-i18n] ট্যাগ আপডেট করবে)
         function changeLanguage(lang) {
             currentLanguage = lang;
             const elements = document.querySelectorAll('[data-i18n]');
@@ -364,13 +356,10 @@
                 }
             });
         }
-                // সাইডবার টগল করার ফাংশন
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
+                    function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
         }
 
-        // হোম পেজে যাওয়ার ফাংশন
         function showHome() {
             document.getElementById('homeView').classList.remove('hidden');
             document.getElementById('orderView').classList.add('hidden');
@@ -378,7 +367,6 @@
             document.getElementById('cartBar').classList.add('hidden');
         }
 
-        // অর্ডার শুরু করার ফাংশন
         function startOrder(type) {
             currentOrderType = type;
             document.getElementById('homeView').classList.add('hidden');
@@ -400,21 +388,25 @@
             fetchMenu();
         }
 
-        // সুপাবেজ থেকে মেনু লোড করার ফাংশন
+        // সুপাবেজ থেকে মেনু ডেটা ফেচ করা
         async function fetchMenu() {
+            console.log("Fetching menu from Supabase...");
             const { data, error } = await _supabase.from('menu_items').select('*').eq('is_available', true);
             
             if(error) {
-                console.error("Error fetching menu:", error);
+                console.error("Error fetching menu:", error.message);
+                alert("Database Error: " + error.message);
                 return;
             }
 
             menuItems = data || [];
+            console.log("Loaded items:", menuItems.length);
+            
             renderCategoriesDropdown();
             filterByCategoryDropdown('popular');
         }
 
-        // ক্যাটাগরি ড্রপডাউন পপুলেট করা
+        // ক্যাটাগরি ড্রপডাউন ডাইনামিক তৈরি করা
         function renderCategoriesDropdown() {
             const dropdown = document.getElementById('categoryDropdown');
             if (!dropdown) return;
@@ -432,7 +424,7 @@
             dropdown.innerHTML = optionsHTML;
         }
 
-        // ক্যাটাগরি অনুযায়ী ফিল্টার করা
+        // ড্রপডাউন বা ক্যাটাগরি ফিল্টার
         function filterByCategoryDropdown(val) {
             const menuTitle = document.getElementById('menuTitle');
             const searchInput = document.getElementById('menuSearchInput');
@@ -454,7 +446,7 @@
             renderMenu(filteredItems);
         }
 
-        // সার্চ ফাংশন
+        // মেনু সার্চ করা
         function searchMenuItems(query) {
             const searchTerm = query.toLowerCase().trim();
             const menuTitle = document.getElementById('menuTitle');
@@ -472,8 +464,9 @@
             });
 
             renderMenu(filtered);
-            }
-                // মেনু কার্ড স্ক্রিনে রেন্ডার করার ফাংশন
+        }
+
+        // স্ক্রিনে মেনু কার্ড রেন্ডার করা
         function renderMenu(items) {
             const container = document.getElementById('menuContainer');
             if (!container) return;
@@ -490,13 +483,13 @@
                     <div class="bg-white border rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                         <div>
                             <div class="flex justify-between items-start gap-2 mb-2">
-                                <h4 class="font-bold text-gray-800 text-base">${item.name_en}</h4>
-                                <span class="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">${item.category}</span>
+                                <h4 class="font-bold text-gray-800 text-base">${item.name_en || item.name}</h4>
+                                <span class="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">${item.category || 'General'}</span>
                             </div>
                             <p class="text-xs text-gray-500 mb-4">Fresh & Delicious</p>
                         </div>
                         <div class="flex justify-between items-center mt-2 pt-3 border-t">
-                            <span class="font-bold text-blue-900 text-base">৳${Number(price).toFixed(2)}</span>
+                            <span class="font-bold text-blue-900 text-base">৳${Number(price || 0).toFixed(2)}</span>
                             <button onclick="addToCart(${item.id})" class="bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs px-3 py-2 rounded-xl transition shadow">
                                 + Add
                             </button>
@@ -507,7 +500,6 @@
             container.innerHTML = html;
         }
 
-        // কার্টে আইটেম যোগ করা
         function addToCart(itemId) {
             const item = menuItems.find(i => i.id === itemId);
             if(!item) return;
@@ -520,15 +512,14 @@
             } else {
                 cart.push({
                     id: item.id,
-                    name_en: item.name_en,
-                    price: Number(price),
+                    name_en: item.name_en || item.name,
+                    price: Number(price || 0),
                     quantity: 1
                 });
             }
             updateCartUI();
         }
 
-        // কার্ট UI আপডেট করা
         function updateCartUI() {
             const countEl = document.getElementById('cartCount');
             const subtotalEl = document.getElementById('cartSubtotal');
@@ -547,14 +538,12 @@
             subtotalEl.innerText = `৳${subtotal.toFixed(2)}`;
         }
 
-        // ডেমো টেবিল পপুলেট ফাংশন
         function populateTables() {
             const tableSelect = document.getElementById('activeTableSelect');
             if(!tableSelect) return;
             tableSelect.innerHTML = `<option value="Table 1">Table 1</option><option value="Table 2">Table 2</option><option value="Table 3">Table 3</option>`;
         }
 
-        // অন্যান্য প্লেসহোল্ডার ফাংশন (দরকার অনুযায়ী এক্সপ্যান্ড করতে পারেন)
         function openCartModal() {
             const listContainer = document.getElementById('cartItemsListContainer');
             let html = '';
@@ -605,7 +594,7 @@
         }
 
         function handleAuthClick() {
-            alert('Login feature triggered.');
+            alert('Login feature triggered. (You can integrate Supabase Auth here)');
         }
 
         function showOrderHistory() {
