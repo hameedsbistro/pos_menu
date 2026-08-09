@@ -68,6 +68,7 @@
 
     <!-- মূল কন্টেন্ট সেকশন -->
     <main class="p-6 max-w-4xl mx-auto flex-grow w-full">
+        <!-- হোম পেজ -->
         <div id="homeView" class="bg-white p-8 rounded-2xl shadow-md text-center border border-gray-200">
             <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to Hameeds Bistro</h2>
             <p class="text-gray-600 mb-8">Please choose your dining method to start ordering</p>
@@ -77,26 +78,47 @@
             </div>
         </div>
 
+        <!-- অর্ডার পেজ (হোম, টেবিল ড্রপডাউন সহ) -->
         <div id="orderView" class="hidden">
-            <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 flex justify-between items-center">
-                <div>
-                    <span id="selectedOrderType" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full uppercase">Dine-In</span>
-                    <h3 id="locationInfo" class="text-lg font-bold text-gray-800 mt-1">Indoor - Table A1</h3>
+            <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <button onclick="showHome()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition">
+                        🏠 Home
+                    </button>
+                    <div>
+                        <span id="selectedOrderType" class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded uppercase">Dine-In</span>
+                        <p class="text-xs text-gray-500">Current Order Location</p>
+                    </div>
                 </div>
-                <button onclick="showHome()" class="text-sm text-gray-600 underline hover:text-black">Change Type</button>
+
+                <!-- মেনু পেজ থেকেই টেবিল ও সেকশন পরিবর্তনের ড্রপডাউন -->
+                <div id="tableChangeContainer" class="flex items-center gap-2">
+                    <select id="activeSectionSelect" onchange="updateActiveTableDropdown()" class="border p-2 rounded-lg text-sm font-semibold bg-gray-50">
+                        <option value="indoor">Indoor (A)</option>
+                        <option value="outdoor">Outdoor (B)</option>
+                        <option value="first_floor">First Floor (C)</option>
+                    </select>
+                    <select id="activeTableSelect" class="border p-2 rounded-lg text-sm font-semibold bg-gray-50"></select>
+                </div>
             </div>
+
             <div class="mb-6 flex gap-3 overflow-x-auto pb-2" id="categoryContainer"></div>
             <h3 class="text-2xl font-bold mb-4 text-gray-800" id="menuTitle">Top 15 Popular Items</h3>
             <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24"></div>
         </div>
-                </main>
-                    <!-- কার্ট ও চেকআউট বার -->
-    <div id="cartBar" class="hidden fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
-        <div>
-            <span id="cartCount" class="font-bold text-lg text-gray-800">0 Items</span>
-            <span class="text-blue-600 font-bold block text-sm" id="cartSubtotal">Subtotal: ৳0.00</span>
+    </main>
+        <!-- কার্ট ও চেকআউট বার -->
+    <div id="cartBar" class="hidden fixed bottom-16 left-0 right-0 bg-blue-900 text-white border-t border-blue-800 p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
+        <div class="flex items-center gap-3">
+            <span class="bg-yellow-400 text-black px-3 py-1 rounded-full font-bold text-sm" id="cartCount">0 Items</span>
+            <div>
+                <span class="text-xs text-yellow-300 block">Subtotal:</span>
+                <span class="font-bold text-lg" id="cartSubtotal">৳0.00</span>
+            </div>
         </div>
-        <button onclick="openCheckoutModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow transition">Proceed to Checkout</button>
+        <button onclick="openCheckoutModal()" class="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-xl font-bold shadow transition flex items-center gap-2">
+            🛒 View Cart & Checkout
+        </button>
     </div>
 
     <!-- চেকআউট মোডাল -->
@@ -117,17 +139,6 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-600">Phone Number</label>
                     <input type="text" id="checkoutPhone" class="w-full border p-2 rounded-lg text-sm" placeholder="Phone Number">
-                </div>
-                <div id="tableSelectionBox">
-                    <label class="block text-xs font-semibold text-gray-600">Select Section & Table</label>
-                    <div class="grid grid-cols-2 gap-2 mt-1">
-                        <select id="checkoutSection" onchange="updateCheckoutTables()" class="border p-2 rounded-lg text-sm">
-                            <option value="indoor">Indoor (A1-A30)</option>
-                            <option value="outdoor">Outdoor (B1-B30)</option>
-                            <option value="first_floor">First Floor (C1-C30)</option>
-                        </select>
-                        <select id="checkoutTableId" class="border p-2 rounded-lg text-sm"></select>
-                    </div>
                 </div>
             </div>
             <div class="flex gap-3">
@@ -164,10 +175,10 @@
         <p class="text-sm font-medium tracking-wide">
             Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
         </p>
-    </footer>
-        <script>
-        const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+                    </footer>
+                        <script>
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentOrderType = 'dine_in';
@@ -177,7 +188,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             updateLoginUI();
-            updateCheckoutTables();
         });
 
         function toggleSidebar() {
@@ -191,11 +201,10 @@
             document.getElementById('selectedOrderType').innerText = type === 'dine_in' ? 'Dine-In' : 'Takeaway';
             
             if(type === 'takeaway') {
-                document.getElementById('locationInfo').innerText = 'Takeaway Order (Auto ID)';
-                document.getElementById('tableSelectionBox').classList.add('hidden');
+                document.getElementById('tableChangeContainer').classList.add('hidden');
             } else {
-                document.getElementById('tableSelectionBox').classList.remove('hidden');
-                document.getElementById('locationInfo').innerText = 'Indoor - Table A1';
+                document.getElementById('tableChangeContainer').classList.remove('hidden');
+                updateActiveTableDropdown();
             }
             fetchMenu();
         }
@@ -207,9 +216,9 @@
             cart = [];
         }
 
-        function updateCheckoutTables() {
-            const section = document.getElementById('checkoutSection').value;
-            const tableSelect = document.getElementById('checkoutTableId');
+        function updateActiveTableDropdown() {
+            const section = document.getElementById('activeSectionSelect').value;
+            const tableSelect = document.getElementById('activeTableSelect');
             tableSelect.innerHTML = '';
             let prefix = section === 'indoor' ? 'A' : (section === 'outdoor' ? 'B' : 'C');
             for(let i=1; i<=30; i++) {
@@ -277,7 +286,7 @@
             if(totalQty > 0) {
                 bar.classList.remove('hidden');
                 document.getElementById('cartCount').innerText = `${totalQty} Items`;
-                document.getElementById('cartSubtotal').innerText = `Subtotal: ৳${subtotal.toFixed(2)}`;
+                document.getElementById('cartSubtotal').innerText = `৳${subtotal.toFixed(2)}`;
             } else {
                 bar.classList.add('hidden');
             }
@@ -307,8 +316,13 @@
         async function submitOrder() {
             const name = document.getElementById('checkoutName').value;
             const phone = document.getElementById('checkoutPhone').value;
-            const section = document.getElementById('checkoutSection').value;
-            const tableId = currentOrderType === 'dine_in' ? document.getElementById('checkoutTableId').value : 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
+            let section = 'takeaway';
+            let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
+
+            if(currentOrderType === 'dine_in') {
+                section = document.getElementById('activeSectionSelect').value;
+                tableId = document.getElementById('activeTableSelect').value;
+            }
 
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
             const tax = subtotal * 0.06;
@@ -319,7 +333,7 @@
                 customer_name: name,
                 customer_phone: phone,
                 order_type: currentOrderType,
-                section: currentOrderType === 'dine_in' ? section : 'takeaway',
+                section: section,
                 table_id: tableId,
                 subtotal: subtotal,
                 sst_tax: tax,
