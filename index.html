@@ -398,43 +398,68 @@
             renderMenu(menuItems.filter(i => i.is_popular));
         }
 
-        function renderCategoriesDropdown() {
+                function renderCategoriesDropdown() {
             const dropdown = document.getElementById('categoryDropdown');
+            if (!dropdown) return;
+            
+            // সব ইউনিক ক্যাটাগরি বের করা
             const categories = [...new Set(menuItems.map(i => i.category))];
             
             let optionsHTML = `<option value="popular">Top 15 Popular Items</option>`;
+            optionsHTML += `<option value="all">All Items</option>`; // সব আইটেম দেখার অপশন
+            
             categories.forEach(cat => {
-                optionsHTML += `<option value="${cat}">${cat}</option>`;
+                if (cat) {
+                    optionsHTML += `<option value="${cat}">${cat}</option>`;
+                }
             });
             dropdown.innerHTML = optionsHTML;
-        }
+                }
+        
 
-        function filterByCategoryDropdown(val) {
-            document.getElementById('menuSearchInput').value = '';
+                function filterByCategoryDropdown(val) {
+            const searchInput = document.getElementById('menuSearchInput');
+            if (searchInput) searchInput.value = '';
+
+            const menuTitle = document.getElementById('menuTitle');
+
             if(val === 'popular') {
-                document.getElementById('menuTitle').innerText = 'Top 15 Popular Items';
+                if (menuTitle) menuTitle.innerText = 'Top 15 Popular Items';
                 renderMenu(menuItems.filter(i => i.is_popular));
+            } else if(val === 'all') {
+                if (menuTitle) menuTitle.innerText = 'All Menu Items';
+                renderMenu(menuItems);
             } else {
-                document.getElementById('menuTitle').innerText = val;
+                if (menuTitle) menuTitle.innerText = val;
                 renderMenu(menuItems.filter(i => i.category === val));
             }
-        }
+                }
+        
 
-        function searchMenuItems(query) {
+                function searchMenuItems(query) {
             const searchTerm = query.toLowerCase().trim();
+            const menuTitle = document.getElementById('menuTitle');
+            const dropdown = document.getElementById('categoryDropdown');
+
+            // যদি সার্চ বক্স খালি থাকে, তাহলে ড্রপডাউনের বর্তমান সিলেকশন অনুযায়ী মেনু দেখাবে
             if(searchTerm === '') {
-                const currentCat = document.getElementById('categoryDropdown').value;
-                filterByCategoryDropdown(currentCat);
+                filterByCategoryDropdown(dropdown.value);
                 return;
             }
 
-            document.getElementById('menuTitle').innerText = `Search Results for "${query}"`;
+            // সার্চ করার সময় টাইটেল আপডেট
+            if (menuTitle) menuTitle.innerText = `Search Results for "${query}"`;
+
+            // মেনু থেকে ফিল্টার করা (নামের সাথে মিল থাকলে)
             const filtered = menuItems.filter(i => {
-                let name = i.name_en || i.name || '';
-                return name.toLowerCase().includes(searchTerm);
+                let name = i.name_en ? i.name_en.toLowerCase() : '';
+                return name.includes(searchTerm);
             });
+
+            // রেজাল্ট রেন্ডার করা
             renderMenu(filtered);
-        }
+                }
+        
 
         async function renderMenu(items) {
             const container = document.getElementById('menuContainer');
