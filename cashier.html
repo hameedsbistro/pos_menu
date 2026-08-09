@@ -292,7 +292,7 @@
     const itemsContainer = document.getElementById('modalOrderItemsList');
     itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
 
-    // order_items টেবিলের সাথে মেনু টেবিল জয়েন করা হচ্ছে
+    // order_items টেবিলের সাথে সঠিক 'menu_items' টেবিল এবং 'name_en' কলাম জয়েন করা হলো
     const { data: items, error } = await _supabase
         .from('order_items')
         .select(`
@@ -301,7 +301,7 @@
             quantity,
             price,
             menu_item_id,
-            menus ( name )
+            menu_items ( name_en )
         `)
         .eq('order_id', orderId);
     
@@ -311,8 +311,8 @@
     }
 
     itemsContainer.innerHTML = items.map(item => {
-        // menus টেবিল থেকে নাম বের করা, যদি 'name' কলাম না থাকে তবে সরাসরি নাম বা ID দেখাবে
-        const itemName = item.menus?.name || item.name || `Item ID: ${item.menu_item_id}`;
+        // menu_items টেবিল থেকে name_en ফেচ করা হচ্ছে
+        const itemName = item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
 
         return `
             <div class="flex justify-between items-center py-1.5 border-b text-xs">
