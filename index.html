@@ -769,48 +769,51 @@
         function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
 
         async function submitOrder() {
-            const name = document.getElementById('checkoutName').value;
-            const phone = document.getElementById('checkoutPhone').value;
-            let section = 'takeaway';
-            let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
+    const name = document.getElementById('checkoutName').value;
+    const phone = document.getElementById('checkoutPhone').value;
+    let section = 'takeaway';
+    let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
 
-            if(currentOrderType === 'dine_in') {
-                section = document.getElementById('activeSectionSelect').value;
-                tableId = document.getElementById('activeTableSelect').value;
-            }
+    if(currentOrderType === 'dine_in') {
+        section = document.getElementById('activeSectionSelect').value;
+        tableId = document.getElementById('activeTableSelect').value;
+    }
 
-            const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-            const tax = subtotal * 0.06;
-            const total = subtotal + tax;
+    const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const tax = subtotal * 0.06;
+    const total = subtotal + tax;
 
-            const { data: orderData, error } = await _supabase.from('orders').insert([{
-                customer_id: loggedInCustomer ? loggedInCustomer.id : null,
-                customer_name: name,
-                customer_phone: phone,
-                order_type: currentOrderType,
-                section: section,
-                table_id: tableId,
-                subtotal: subtotal,
-                sst_tax: tax,
-                total_amount: total,
-                status: 'pending',
-                payment_status: 'unpaid'
-            }]).select().single();
+    const { data: orderData, error } = await _supabase.from('orders').insert([{
+        customer_name: name,
+        customer_phone: phone,
+        order_type: currentOrderType,
+        section: section,
+        table_id: tableId,
+        subtotal: subtotal,
+        sst_tax: tax,
+        total_amount: total,
+        status: 'pending',
+        payment_status: 'unpaid'
+    }]).select().single();
 
-            if(error) { alert('Order failed!'); return; }
+    if(error) { 
+        console.error("Supabase Error Details:", error);
+        alert('Order failed! Check console.'); 
+        return; 
+    }
 
-            const orderItems = cart.map(i => ({
-                order_id: orderData.id,
-                menu_item_id: i.id,
-                quantity: i.quantity,
-                price: i.price
-            }));
+    const orderItems = cart.map(i => ({
+        order_id: orderData.id,
+        menu_item_id: i.id,
+        quantity: i.quantity,
+        price: i.price
+    }));
 
-            await _supabase.from('order_items').insert(orderItems);
-            alert('Order placed successfully! Pending Cashier verification.');
-            closeCheckoutModal();
-            showHome();
-        }
+    await _supabase.from('order_items').insert(orderItems);
+    alert('Order placed successfully! Pending Cashier verification.');
+    closeCheckoutModal();
+    showHome();
+}
 
         function handleAuthClick() {
             if (loggedInCustomer) {
