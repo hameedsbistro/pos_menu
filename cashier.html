@@ -286,12 +286,13 @@
         }
 
         // এই ফাংশনটি কোডের ভেতর যেখানে আছে, সেখানে এটি বসান
+
+
         async function renderModalItems(orderId) {
     const itemsContainer = document.getElementById('modalOrderItemsList');
     itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
 
-    // order_items এর সাথে menu টেবিল জয়েন করে নাম আনার কোয়েরি
-    // (যদি আপনার মেনু টেবিলের নাম 'menus' বা 'menu_items' হয়, সেটি নিচের প্রথম লাইনে বসাবেন)
+    // order_items টেবিলের সাথে মেনু টেবিল জয়েন করা হচ্ছে
     const { data: items, error } = await _supabase
         .from('order_items')
         .select(`
@@ -310,8 +311,8 @@
     }
 
     itemsContainer.innerHTML = items.map(item => {
-        // menus টেবিল থেকে নাম বের করে আনা, না পেলে Fallback দেখাবে
-        const itemName = item.menus?.name || `Item ID: ${item.menu_item_id}`;
+        // menus টেবিল থেকে নাম বের করা, যদি 'name' কলাম না থাকে তবে সরাসরি নাম বা ID দেখাবে
+        const itemName = item.menus?.name || item.name || `Item ID: ${item.menu_item_id}`;
 
         return `
             <div class="flex justify-between items-center py-1.5 border-b text-xs">
