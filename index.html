@@ -37,6 +37,7 @@
             </button>
         </div>
     </header>
+
     <!-- বাঁ দিকের স্লাইডিং মেনু/সাইডবার -->
     <div id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6">
         <div>
@@ -68,6 +69,7 @@
         </div>
         <div class="text-xs text-gray-400 text-center">Hameeds Bistro v2.0</div>
     </div>
+
     <!-- মূল কন্টেন্ট সেকশন -->
     <main class="p-6 max-w-4xl mx-auto flex-grow w-full">
         <!-- হোম পেজ -->
@@ -79,6 +81,7 @@
                 <button onclick="startOrder('takeaway')" class="bg-green-600 hover:bg-green-700 text-white p-6 rounded-xl font-bold text-xl shadow-lg transition" data-i18n="takeawayBtn">🛍️ Takeaway</button>
             </div>
         </div>
+
         <!-- অর্ডার পেজ -->
         <div id="orderView" class="hidden">
             <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200 flex flex-wrap justify-between items-center gap-4">
@@ -116,6 +119,7 @@
             <div id="orderHistoryContainer" class="space-y-4"></div>
         </div>
     </main>
+
     <!-- কার্ট ও চেকআউট বার -->
     <div id="cartBar" class="hidden fixed bottom-16 left-0 right-0 bg-blue-900 text-white border-t border-blue-800 p-4 shadow-2xl flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-40">
         <div class="flex items-center gap-3">
@@ -149,7 +153,6 @@
             <button onclick="closeCheckoutModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black font-bold text-xl">✕</button>
             <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="orderSummary">Order Summary & Checkout</h3>
             
-            <!-- অর্ডার টাইপ ও টেবিল/লোকেশন ইনফো -->
             <div class="bg-blue-50 p-3 rounded-lg mb-4 text-xs text-blue-900 space-y-1 font-semibold">
                 <div class="flex justify-between"><span>Order Type:</span> <span id="summaryOrderType" class="uppercase">Takeaway</span></div>
                 <div class="flex justify-between"><span>Table / Location:</span> <span id="summaryTableLocation">TAKEAWAY</span></div>
@@ -206,6 +209,7 @@
             Copyright &copy; 2026 by রুদ্রাংশী (Rudranshi). All Rights Reserved.
         </p>
     </footer>
+
     <script>
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
@@ -217,7 +221,6 @@
         let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
         let currentLang = localStorage.getItem('hameeds_lang') || 'en';
 
-        // ৭টি ভাষার মাল্টি-ল্যাঙ্গুয়েজ ডিকশনারি
         const translations = {
             en: {
                 subtitle: "Dine-In & Takeaway Ordering System",
@@ -290,7 +293,7 @@
                 close: "Tutup"
             },
             bn: {
-                subtitle: "ডাইন-ইন ও টেকঅ্যাওয়ে অর্ডার সিস্টেম",
+                subtitle: "ডাইন-ইন ও টেকঅ্যাওয়ে অর্ডার সিস্টেম",
                 login: "লগইন",
                 liveChat: "লাইভ চ্যাট",
                 menuAndProfile: "মেনু ও প্রোফাইল",
@@ -301,12 +304,12 @@
                 welcomeTitle: "হামিদস বিস্ট্রোতে স্বাগতম",
                 welcomeSubtitle: "অর্ডার শুরু করতে আপনার ডাইনিং পদ্ধতি বেছে নিন",
                 dineInBtn: "🍽️ ডাইন-ইন",
-                takeawayBtn: "🛍️ টেকঅ্যাওয়ে",
+                takeawayBtn: "🛍️ টেকঅ্যাওয়ে",
                 currentLocation: "বর্তমান অর্ডারের অবস্থান",
                 indoor: "ইনডোর (এ)",
                 outdoor: "আউটডোর (বি)",
                 firstFloor: "প্রথম তলা (সি)",
-                topPopular: "সেরা ১৫টি জনপ্রিয় খাবার",
+                topPopular: "সেরা ১৫টি জনপ্রিয় খাবার",
                 subtotal: "সাবটোটাল:",
                 viewCartCheckout: "কার্ট দেখুন ও চেকআউট",
                 orderSummary: "অর্ডার সারাংশ ও চেকআউট",
@@ -491,6 +494,7 @@
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
         }
+
         function startOrder(type) {
             currentOrderType = type;
             document.getElementById('homeView').classList.add('hidden');
@@ -573,10 +577,15 @@
         function renderCategories() {
             const container = document.getElementById('categoryContainer');
             const categories = [...new Set(menuItems.map(i => i.category))];
-            container.innerHTML = `<button onclick="renderMenu(menuItems.filter(i => i.is_popular))" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold whitespace-nowrap">Top 15 Popular</button>`;
+            container.innerHTML = `<button onclick="renderTopPopular()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold whitespace-nowrap">Top 15 Popular</button>`;
             categories.forEach(cat => {
                 container.innerHTML += `<button onclick="filterCategory('${cat}')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold whitespace-nowrap">${cat}</button>`;
             });
+        }
+
+        function renderTopPopular() {
+            document.getElementById('menuTitle').innerText = "Top 15 Popular Items";
+            renderMenu(menuItems.filter(i => i.is_popular));
         }
 
         function filterCategory(cat) {
@@ -670,6 +679,7 @@
                 closeCartModal();
             }
         }
+
         function proceedToCheckout() {
             if(!loggedInCustomer) {
                 closeCartModal();
