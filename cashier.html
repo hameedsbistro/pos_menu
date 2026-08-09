@@ -193,7 +193,7 @@
         let currentActiveOrderId = null;
         let activeOrderData = null;
 
-        // Load Pending Orders for Current Orders Panel
+        // Load Pending Orders for Current Orders Panel (Fixed status to 'pending')
         async function loadPendingOrders() {
             const container = document.getElementById('pendingOrdersContainer');
             container.innerHTML = '<p class="text-gray-500 text-sm">Loading current orders...</p>';
@@ -201,7 +201,7 @@
             const { data, error } = await _supabase
                 .from('orders')
                 .select('*')
-                .eq('status', 'Pending')
+                .eq('status', 'pending') // ছোট হাতের 'pending' দেওয়া হলো
                 .order('created_at', { ascending: false });
 
             if(error) {
@@ -220,9 +220,9 @@
                     <div>
                         <div class="flex items-center gap-2 mb-1">
                             <span class="font-bold text-gray-800 text-base">Order ID: #${order.id}</span>
-                            <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">${order.status}</span>
+                            <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase">${order.status}</span>
                         </div>
-                        <p class="text-xs text-gray-600">Table / Location: <span class="font-semibold text-gray-800">${order.table_id || 'N/A'}</span></p>
+                        <p class="text-xs text-gray-600">Customer: <span class="font-semibold text-gray-800">${order.customer_name || 'N/A'}</span> | Table: <span class="font-semibold text-gray-800">${order.table_id || 'N/A'}</span></p>
                         <p class="text-[10px] text-gray-400 mt-0.5">${new Date(order.created_at).toLocaleString()}</p>
                     </div>
 
@@ -340,7 +340,7 @@
         async function completePayment(method) {
             const { error } = await _supabase
                 .from('orders')
-                .update({ status: 'Completed', payment_status: 'Paid' })
+                .update({ status: 'completed', payment_status: 'paid' })
                 .eq('id', currentActiveOrderId);
 
             if(error) {
@@ -365,7 +365,7 @@
             const { data } = await _supabase
                 .from('orders')
                 .select('id')
-                .eq('status', 'Pending Customer Order');
+                .eq('status', 'pending_customer_order');
             
             const badge = document.getElementById('notificationBadge');
             if (data && data.length > 0) {
@@ -392,7 +392,7 @@
             const { data, error } = await _supabase
                 .from('orders')
                 .select('*')
-                .eq('status', 'Pending Customer Order')
+                .eq('status', 'pending_customer_order')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -423,7 +423,7 @@
         async function acceptNotificationOrder(orderId) {
             const { error } = await _supabase
                 .from('orders')
-                .update({ status: 'Pending' })
+                .update({ status: 'pending' })
                 .eq('id', orderId);
 
             if (error) {
