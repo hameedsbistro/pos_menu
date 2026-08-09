@@ -285,28 +285,34 @@
             document.getElementById('orderDetailModal').classList.remove('hidden');
         }
 
-        async function renderModalItems(orderId) {
-            const itemsContainer = document.getElementById('modalOrderItemsList');
-            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
+        // এই ফাংশনটি কোডের ভেতর যেখানে আছে, সেখানে এটি বসান
+async function renderModalItems(orderId) {
+    const itemsContainer = document.getElementById('modalOrderItemsList');
+    itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
 
-            const { data: orderItems } = await _supabase.from('order_items').select('*').eq('order_id', orderId);
-            
-            if(!orderItems || orderItems.length === 0) {
-                itemsContainer.innerHTML = '<p class="text-gray-500 text-xs">No items found.</p>';
-                return;
-            }
+    const { data: items } = await _supabase.from('order_items').select('*').eq('order_id', orderId);
+    
+    if (!items || items.length === 0) {
+        itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items in this order.</p>';
+        return;
+    }
 
-            itemsContainer.innerHTML = orderItems.map(i => `
-                <div class="flex justify-between items-center text-xs py-1.5 border-b">
-                    <div>
-                        <span class="font-medium text-gray-800">${i.item_name}</span>
-                        <span class="text-gray-500 ml-2">x${i.quantity} (RM${Number(i.price * i.quantity).toFixed(2)})</span>
-                    </div>
-                    <!-- আইটেম ডিলিট/রিমুভ বাটন -->
-                    <button onclick="removeItemFromOrder(${i.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 bg-red-50 rounded text-xs">✕ Remove</button>
+    itemsContainer.innerHTML = items.map(item => {
+        // এখানে item.item_name এর বদলে আপনার টেবিলের সঠিক কলামের নাম দিন 
+        // যদি কলামের নাম 'name' হয়, তবে item.name লিখুন
+        const displayName = item.item_name || item.name || 'Unknown Item'; 
+        
+        return `
+            <div class="flex justify-between items-center py-1.5 border-b text-xs">
+                <div>
+                    <span class="font-medium text-gray-800">${displayName}</span>
+                    <span class="text-gray-500 ml-2">x${item.quantity || 1}</span>
                 </div>
-            `).join('');
-        }
+                <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 bg-red-50 rounded text-xs">✕ Remove</button>
+            </div>
+        `;
+    }).join('');
+}
 
         async function removeItemFromOrder(itemId, orderId) {
             const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
