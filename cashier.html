@@ -440,24 +440,7 @@
             return Math.round(amount / 0.05) * 0.05;
         }
 
-        async function handleLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            const errorDiv = document.getElementById('loginError');
-            errorDiv.classList.add('hidden');
-
-            try {
-                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                if (data && data.user) {
-                    checkUserSession();
-                }
-            } catch (err) {
-                errorDiv.textContent = err.message || 'Login failed. Please check credentials.';
-                errorDiv.classList.remove('hidden');
-            }
-        }
+        async function handleLogin
 
         async function handleLogout() {
             await _supabase.auth.signOut();
