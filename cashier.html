@@ -122,8 +122,8 @@
             </div>
             <div class="flex justify-end space-x-3 mt-4 pt-3 border-t">
                 <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
-                <!-- Send to Kitchen Button added here -->
-                <button onclick="sendOrderToKitchen()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Accept & Send to Kitchen</button>
+                <!-- Cancel Order button replaces Accept & Send to Kitchen -->
+                <button onclick="promptDeclineOrder(currentActiveOrderId)" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Cancel Order</button>
                 <button onclick="proceedToPaymentFromModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Proceed to Payment</button>
             </div>
         </div>
@@ -165,12 +165,12 @@
 
     <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
-            <h3 class="font-bold text-lg text-gray-800 mb-2">Decline Order</h3>
-            <p class="text-xs text-gray-500 mb-3">Please provide a reason for declining this order:</p>
+            <h3 class="font-bold text-lg text-gray-800 mb-2">Decline / Cancel Order</h3>
+            <p class="text-xs text-gray-500 mb-3">Please provide a reason for cancelling this order:</p>
             <textarea id="declineReasonInput" rows="3" class="w-full border p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4" placeholder="Type reason here..."></textarea>
             <div class="flex justify-end space-x-2">
-                <button onclick="closeDeclineModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Cancel</button>
-                <button onclick="submitDeclineOrder()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Confirm Decline</button>
+                <button onclick="closeDeclineModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Back</button>
+                <button onclick="submitDeclineOrder()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Confirm Cancel</button>
             </div>
         </div>
     </div>
@@ -234,7 +234,6 @@
             const container = document.getElementById('pendingOrdersContainer');
             container.innerHTML = '<p class="text-gray-500 text-sm">Loading current orders...</p>';
 
-            // এখন শুধুমাত্র সেসব অর্ডার দেখাবে যেগুলোর status 'accepted' বা কিচেনে পাঠানো হয়েছে
             const { data, error } = await _supabase
                 .from('orders')
                 .select('*')
@@ -345,6 +344,12 @@
             await renderModalItems(currentActiveOrderId);
         }
 
+        function proceedToPaymentFromModal() {
+            if (!activeOrderData) return;
+            closeOrderModal();
+            openPaymentModalFromList(activeOrderData);
+        }
+
         function openPaymentModalFromList(order) {
             currentActiveOrderId = order.id;
             document.getElementById('paymentOrderInfo').innerText = `Order ID: #${order.id}`;
@@ -365,31 +370,6 @@
             fetchIncomingOrders();
         }
 
-        async function sendOrderToKitchen() {
-            if (!currentActiveOrderId) {
-                alert('No active order selected.');
-                return;
-            }
-
-            // অর্ডার স্ট্যাটাস 'accepted' করা হলো, যাতে এটি কিচেন ডিসপ্লে এবং কারেন্ট অর্ডারে দেখায়
-            const { error } = await _supabase
-                .from('orders')
-                .update({ 
-                    status: 'accepted' 
-                })
-                .eq('id', currentActiveOrderId);
-
-            if (!error) {
-                alert('Order accepted and sent successfully to Kitchen and Current Orders!');
-                closeOrderModal();
-                await loadPendingOrders();
-                await fetchIncomingOrders();
-            } else {
-                console.error("Send order error:", error);
-                alert('Failed to send order. Please check database permissions.');
-            }
-        }
-
         function openNotificationModal() {
             document.getElementById('notificationModal').classList.remove('hidden');
             fetchIncomingOrders();
@@ -400,7 +380,6 @@
         }
 
         async function fetchIncomingOrders() {
-            // শুধুমাত্র নতুন নোটিফিকেশন দেখাবে যেগুলোর status 'pending'
             const { data, error } = await _supabase
                 .from('orders')
                 .select('*')
@@ -454,7 +433,7 @@
         async function submitDeclineOrder() {
             const reason = document.getElementById('declineReasonInput').value.trim();
             if(!reason) {
-                alert('Please type a reason for declining.');
+                alert('Please type a reason for declining/cancelling.');
                 return;
             }
 
@@ -464,12 +443,13 @@
                 .eq('id', orderToDeclineId);
 
             if(!error) {
-                alert('Order declined successfully.');
+                alert('Order cancelled successfully.');
                 closeDeclineModal();
+                closeOrderModal();
                 fetchIncomingOrders();
                 loadPendingOrders();
             } else {
-                alert('Failed to decline order.');
+                alert('Failed to cancel order.');
             }
         }
 
