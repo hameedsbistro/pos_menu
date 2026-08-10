@@ -854,16 +854,39 @@
         }
 
         async function registerCustomer() {
-            const full_name = document.getElementById('regName').value;
-            const phone = document.getElementById('regPhone').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
+    const full_name = document.getElementById('regName').value;
+    const phone = document.getElementById('regPhone').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
 
-            const { data, error } = await _supabase.from('customers').insert([{ full_name, phone, email, password }]).select().single();
-            if(error) { alert('Registration failed or email already exists.'); return; }
-            alert('Registration successful! Please login.');
-            toggleAuthMode('login');
-        }
+    // ১. প্রথমে Supabase Auth এ ইউজার ক্রিয়েট করুন
+    const { data: authData, error: authError } = await _supabase.auth.signUp({
+        email: email,
+        password: password
+    });
+
+    if (authError) {
+        alert('Authentication failed: ' + authError.message);
+        return;
+    }
+
+    // ২. সফলভাবে Auth এ ক্রিয়েট হলে এবার আপনার customers টেবিলে ইনফরমেশন সেভ করুন
+    const { error: dbError } = await _supabase.from('customers').insert([{ 
+        full_name, 
+        phone, 
+        email, 
+        password // যদি টেবিলে পাসওয়ার্ড রাখতে চান
+    }]);
+
+    if(dbError) { 
+        alert('Database save failed: ' + dbError.message); 
+        return; 
+    }
+
+    alert('Registration successful! Please login.');
+    toggleAuthMode('login');
+}
+
 
         async function loginCustomer() {
             const email = document.getElementById('loginEmail').value;
