@@ -854,15 +854,26 @@
         }
 
         async function registerCustomer() {
-    const full_name = document.getElementById('regName').value.trim();
-    const phone = document.getElementById('regPhone').value.trim();
-    const email = document.getElementById('regEmail').value.trim(); // .trim() দিয়ে স্পেস মুছে ফেলা হচ্ছে
-    const password = document.getElementById('regPassword').value.trim();
+    // ইনপুট ফিল্ড থেকে ভ্যালুগুলো সঠিকভাবে সংগ্রহ করা হচ্ছে
+    const full_nameInput = document.getElementById('regName');
+    const phoneInput = document.getElementById('regPhone');
+    const emailInput = document.getElementById('regEmail');
+    const passwordInput = document.getElementById('regPassword');
 
-    // সিম্পল ইমেল ভ্যালিডেশন চেক
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        alert('Please enter a valid email address (e.g., example@gmail.com)');
+    // যদি ইনপুট ফিল্ড না পাওয়া যায়, তবে কনসোলে এরর দেখাবে
+    if (!emailInput || !passwordInput) {
+        alert('Registration form inputs not found!');
+        return;
+    }
+
+    const full_name = full_nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    // বেসিক চেক
+    if (!email || !password) {
+        alert('Please fill in both email and password.');
         return;
     }
 
@@ -877,7 +888,7 @@
         return;
     }
 
-    // ২. Auth সফল হলে এবার আপনার 'customers' টেবিলে ডাটা সেভ করুন
+    // ২. Auth সফল হলে 'customers' টেবিলে ডাটা সেভ করুন
     const { error: dbError } = await _supabase.from('customers').insert([{ 
         id: authData.user ? authData.user.id : undefined, 
         full_name, 
