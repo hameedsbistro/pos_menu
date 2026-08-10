@@ -343,29 +343,27 @@
         }
 
         async function sendOrderToKitchen() {
-            if (!currentActiveOrderId) {
-                alert('No active order selected.');
-                return;
-            }
+    if (!currentActiveOrderId) {
+        alert('No active order selected.');
+        return;
+    }
 
-            // অর্ডার সেন্ড করার পর এর স্ট্যাটাস 'pending' করা হলো যাতে কারেন্ট অর্ডার প্যানেলে দেখায়
-            const { error } = await _supabase
-                .from('orders')
-                .update({ 
-                    status: 'pending' 
-                })
-                .eq('id', currentActiveOrderId);
+    // স্ট্যাটাস pending এ আপডেট করা হলো যাতে Current Orders প্যানেলে দেখায়
+    const { error } = await _supabase
+        .from('orders')
+        .update({ status: 'pending' })
+        .eq('id', currentActiveOrderId);
 
-            if (!error) {
-                alert('Order sent successfully to Kitchen and Current Orders!');
-                closeOrderModal();
-                await loadPendingOrders();
-                await fetchIncomingOrders();
-            } else {
-                console.error("Send order error:", error);
-                alert('Failed to send order. Please check database permissions.');
-            }
-        }
+    if (!error) {
+        alert('Order sent successfully to Kitchen and Current Orders!');
+        closeOrderModal();
+        await loadPendingOrders();
+        await fetchIncomingOrders();
+    } else {
+        console.error("Send order error:", error);
+        alert('Failed to send order.');
+    }
+}
 
         function openPaymentModalFromList(order) {
             currentActiveOrderId = order.id;
@@ -471,15 +469,22 @@
         }
 
         function setupRealtimeSubscription() {
-            _supabase.channel('public:orders')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
-                    if(payload.new && (payload.new.status === 'new' || payload.new.status === 'pending')) {
-                        fetchIncomingOrders();
-                        loadPendingOrders();
-                    }
-                })
-                .subscribe();
-        }
+    _supabase.channel('public:orders')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
+            if (payload.new) {
+                // নতুন অর্ডার আসলে ইনকামিং ফেচ করবে
+                fetchIncomingOrders();
+                loadPendingOrders();
+            }
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
+            if (payload.new) {
+                fetchIncomingOrders();
+                loadPendingOrders();
+            }
+        })
+        .subscribe();
+}
 
         function doCheckIn() { alert("Checked-in!"); }
         function doCheckOut() { alert("Checked-out!"); }
