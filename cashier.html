@@ -348,6 +348,7 @@
                 return;
             }
 
+            // অর্ডার সেন্ড করার পর এর স্ট্যাটাস 'pending' করা হলো যাতে কারেন্ট অর্ডার প্যানেলে দেখায়
             const { error } = await _supabase
                 .from('orders')
                 .update({ 
@@ -396,10 +397,11 @@
         }
 
         async function fetchIncomingOrders() {
+            // নতুন অর্ডারগুলো যেগুলোর স্ট্যাটাস 'new' বা 'incoming' হিসেবে আসে সেগুলো ফিল্টার করা হলো
             const { data, error } = await _supabase
                 .from('orders')
                 .select('*')
-                .eq('status', 'pending')
+                .eq('status', 'new') 
                 .order('created_at', { ascending: false });
 
             if(error) return;
@@ -432,7 +434,6 @@
 
         async function handleNotificationOpen(order) {
             closeNotificationModal();
-            await loadPendingOrders();
             openOrderDetails(order);
         }
 
@@ -472,7 +473,7 @@
         function setupRealtimeSubscription() {
             _supabase.channel('public:orders')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
-                    if(payload.new && payload.new.status === 'pending') {
+                    if(payload.new && (payload.new.status === 'new' || payload.new.status === 'pending')) {
                         fetchIncomingOrders();
                         loadPendingOrders();
                     }
