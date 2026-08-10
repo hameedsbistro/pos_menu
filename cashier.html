@@ -12,7 +12,7 @@
     <style>
         .z-9999 { z-index: 9999 !important; }
 
-        /* Print Specific Styling: Only receipt content will print, buttons & modal backgrounds will hide */
+        /* Print Specific Styling Fixes */
         @media print {
             body * {
                 visibility: hidden;
@@ -25,12 +25,35 @@
                 left: 0;
                 top: 0;
                 width: 100%;
+                max-width: 100% !important;
                 border: none !important;
-                padding: 0 !important;
+                padding: 10px !important;
                 margin: 0 !important;
                 background: white !important;
+                color: black !important;
             }
-            #lastReceiptModal, #lastReceiptModal > div > div:last-child {
+            #lastReceiptModal {
+                background: transparent !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
+            #lastReceiptModal > div {
+                box-shadow: none !important;
+                border: none !important;
+                background: white !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            /* Hide modal header/footer buttons during print */
+            #lastReceiptModal h3, 
+            #lastReceiptModal p.text-xs.text-gray-500, 
+            #lastReceiptModal button,
+            #lastReceiptModal .absolute {
                 display: none !important;
             }
         }
@@ -805,19 +828,19 @@
             const sst = subtotal * 0.06;
             const finalTotal = subtotal + sst;
 
-            let itemsHtml = '<div class="border-t border-b py-2 my-2 space-y-1">';
+            let itemsHtml = '<div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 6px 0; margin: 6px 0;" class="space-y-1">';
             if (items && items.length > 0) {
                 items.forEach(item => {
                     let itemName = item.item_name || menuMap[item.menu_item_id] || `Menu Item #${item.menu_item_id || 'N/A'}`;
                     itemsHtml += `
-                        <div class="flex justify-between">
+                        <div style="display: flex; justify-content: space-between;">
                             <span>${itemName} (x${item.quantity})</span>
                             <span>RM${(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
                         </div>
                     `;
                 });
             } else {
-                itemsHtml += '<p>No item details available.</p>';
+                itemsHtml += '<div>No item details available.</div>';
             }
             itemsHtml += '</div>';
 
@@ -828,19 +851,19 @@
                 <div style="text-align: center; border-bottom: 2px dashed #333; padding-bottom: 8px; margin-bottom: 8px;">
                     <h2 style="font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0; color: #111;">Hameeds Bistro</h2>
                 </div>
-                <div class="text-center text-gray-500 text-[10px] mb-1">Invoice #${data.id} (Order #${data.order_id}) | Table: ${data.table_id || 'N/A'}</div>
-                <div class="text-center text-gray-500 text-[10px] mb-1">Date: ${new Date(data.created_at).toLocaleString()}</div>
-                <div class="text-center text-gray-500 text-[10px] mb-1">Cashier: ${cashierLabel} | Method: ${data.payment_method || 'N/A'}</div>
+                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 2px;">Invoice #${data.id} (Order #${data.order_id}) | Table: ${data.table_id || 'N/A'}</div>
+                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 2px;">Date: ${new Date(data.created_at).toLocaleString()}</div>
+                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 6px;">Cashier: ${cashierLabel} | Method: ${data.payment_method || 'N/A'}</div>
                 ${itemsHtml}
-                <div class="space-y-1 text-xs pt-1">
-                    <div class="flex justify-between text-gray-600"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
-                    <div class="flex justify-between text-gray-600"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
-                    <div class="flex justify-between font-bold text-gray-800 pt-1 border-t">
+                <div style="space-y: 2px; font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between; color: #444;"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; color: #444;"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; color: #111; padding-top: 4px; border-top: 1px solid #ddd;">
                         <span>Total Paid:</span>
-                        <span class="text-emerald-600">RM${finalTotal.toFixed(2)}</span>
+                        <span style="color: #059669;">RM${finalTotal.toFixed(2)}</span>
                     </div>
                 </div>
-                <div class="text-center text-emerald-700 font-semibold mt-2 text-[10px]">STATUS: PAID</div>
+                <div style="text-align: center; color: #059669; font-weight: bold; margin-top: 8px; font-size: 11px;">STATUS: PAID</div>
             `;
         }
 
