@@ -1,226 +1,130 @@
+<!-- ========================================== -->
+<!-- FULLY INTEGRATED HAMEEDS BISTRO CASHIER APP -->
+<!-- ========================================== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hameeds Bistro - Cashier Login & Panel</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase CDN -->
+    <title>Hameeds Bistro - Cashier System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="icon" href="https://your-image-url.com/icon.png" type="image/x-icon">
-    <style>
-        .z-9999 { z-index: 9999 !important; }
-
-        /* Print Specific Styling Fixes */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #lastReceiptContent, #lastReceiptContent * {
-                visibility: visible;
-            }
-            #lastReceiptContent {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                max-width: 100% !important;
-                border: none !important;
-                padding: 10px !important;
-                margin: 0 !important;
-                background: white !important;
-                color: black !important;
-            }
-            #lastReceiptModal {
-                background: transparent !important;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-            }
-            #lastReceiptModal > div {
-                box-shadow: none !important;
-                border: none !important;
-                background: white !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            #lastReceiptModal h3, 
-            #lastReceiptModal p.text-xs.text-gray-500, 
-            #lastReceiptModal button,
-            #lastReceiptModal .absolute {
-                display: none !important;
-            }
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 font-sans overflow-hidden">
+<body class="bg-gray-100 font-sans antialiased">
 
-    <!-- ==================== LOGIN SECTION ==================== -->
-    <div id="loginSection" class="flex h-screen w-screen items-center justify-center bg-gray-900 absolute inset-0 z-50">
-        <div class="bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
-            <div class="text-center mb-6">
-                <img src="images/logo.png" alt="Logo" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-600 mx-auto mb-2" onerror="this.src='https://via.placeholder.com/60'">
-                <h1 class="font-bold text-2xl text-gray-900">Hameeds Bistro</h1>
-                <p class="text-xs text-gray-500 mt-1">Cashier Panel Login</p>
-            </div>
-
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+    <!-- Login Section -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Cashier Login</h2>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
-                    <input type="email" id="loginEmail" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="cashier@bistro.com">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+                    <input type="email" id="loginEmail" required class="w-full border p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Enter email">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="loginPassword" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full border p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Enter password">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow transition">
-                    Login to Panel
-                </button>
+                <div id="loginError" class="text-red-500 text-xs hidden"></div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold text-sm transition">Login</button>
             </form>
-            <div id="loginError" class="text-red-500 text-xs text-center mt-3 hidden"></div>
         </div>
     </div>
 
-    <!-- ==================== MAIN CASHIER PANEL ==================== -->
-    <div id="mainPanel" class="flex h-screen w-screen hidden">
-        
-        <div class="flex-1 flex flex-col h-full overflow-hidden">
-            <!-- Header Panel -->
-            <header class="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center">
-                <div class="flex items-center space-x-4">
-                    <img src="images/logo.png" alt="Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-600" onerror="this.src='https://via.placeholder.com/50'">
-                    <div class="flex flex-col">
-                        <h1 class="font-bold text-lg text-gray-900 leading-tight">Hameeds Bistro</h1>
-                        <div class="flex items-center space-x-2 mt-0.5">
-                            <span class="text-xs text-gray-500 font-medium">Welcome:</span>
-                            <span id="cashierName" class="text-xs font-bold text-emerald-700">Cashier</span>
-                        </div>
-                        <div class="flex items-center space-x-2 mt-0.5">
-                            <span class="text-xs text-gray-500 font-medium">Role:</span>
-                            <span id="cashierRole" class="text-xs uppercase font-bold text-blue-600">Cashier</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-center space-x-2">
-                    <div class="flex flex-col space-y-1">
-                        <button onclick="doCheckIn()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">Check-In</button>
-                        <button onclick="doCheckOut()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">Check-Out</button>
-                    </div>
-
-                    <div class="relative">
-                        <button onclick="openNotificationModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center relative" title="New Order Notifications">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hidden">0</span>
-                        </button>
-                    </div>
-
-                    <button onclick="refreshCashierSystem()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center" title="Refresh System">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                    </button>
-
-                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">Logout</button>
-                </div>
-            </header>
-
-            <!-- Main Content -->
-            <main class="flex-1 p-6 bg-gray-50 overflow-y-auto">
-                <div class="mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Current Orders</h2>
-                </div>
-                <div id="pendingOrdersContainer" class="space-y-3"></div>
-            </main>
-        </div>
-
-        <!-- Right Sidebar Panel -->
-        <aside class="w-80 bg-gray-900 text-white flex flex-col p-4 justify-between space-y-3 shadow-xl flex-shrink-0 overflow-y-auto">
-            <div>
-                <div class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Quick Actions & Terminal</div>
-                <div class="space-y-2 mb-4">
-                    <button onclick="alert('New Order feature coming soon!')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow transition text-center">NEW ORDER</button>
-                    <button onclick="openInvoiceListModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow transition text-center">INVOICE LIST</button>
-                    <button onclick="openLastReceiptModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow transition text-center">LAST RECEIPT</button>
-                </div>
-
-                <!-- Integrated Payment Terminal Panel -->
-                <div id="terminalPaymentContainer" class="bg-gray-800 border border-gray-700 p-3 rounded-xl hidden space-y-3">
-                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
-                        <span class="text-xs font-bold text-emerald-400">Payment Terminal</span>
-                        <span id="termOrderIdDisplay" class="text-[11px] text-gray-400">#0</span>
-                    </div>
-
-                    <div>
-                        <div class="text-[11px] text-gray-400">Total Due:</div>
-                        <div id="termTotalDue" class="text-lg font-bold text-white">RM0.00</div>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="block text-[11px] font-medium text-gray-300">Payment Method:</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="selectTerminalMethod('Cash')" id="termBtnCash" class="border border-emerald-500 bg-emerald-900/40 text-emerald-300 py-1.5 rounded-lg font-semibold text-xs transition">Cash</button>
-                            <button onclick="selectTerminalMethod('QR / Online')" id="termBtnQR" class="border border-gray-600 bg-gray-700 text-gray-300 py-1.5 rounded-lg font-semibold text-xs transition">QR / Online</button>
-                        </div>
-                    </div>
-
-                    <div id="cashPaymentSection" class="space-y-2 pt-1">
-                        <div>
-                            <label class="block text-[10px] text-gray-400 mb-0.5">Amount Tendered (RM):</label>
-                            <input type="number" id="termAmountTendered" oninput="calculateChange()" class="w-full bg-gray-900 border border-gray-700 px-2.5 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="0.00">
-                        </div>
-                        <div class="flex justify-between text-xs bg-gray-900 p-2 rounded-lg border border-gray-700">
-                            <span class="text-gray-400">Change Due:</span>
-                            <span id="termChangeDue" class="font-bold text-emerald-400">RM0.00</span>
-                        </div>
-                    </div>
-
-                    <div class="pt-1 space-y-2">
-                        <button onclick="processTerminalPayment()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold shadow transition">Confirm & Complete Payment</button>
-                        <button onclick="cancelTerminalPayment()" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 py-1.5 rounded-xl text-xs font-medium">Cancel / Close</button>
-                    </div>
-                </div>
+    <!-- Main Panel -->
+    <div id="mainPanel" class="min-h-screen flex flex-col hidden">
+        <!-- Top Navigation / Header -->
+        <header class="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-gray-800">Hameeds Bistro POS</h1>
+                <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold" id="cashierRole">Role</span>
             </div>
-
-            <div class="text-center text-[10px] text-gray-500 pt-2 border-t border-gray-800">
-                Hameeds Bistro POS v2.6
+            <div class="flex items-center space-x-4">
+                <span class="text-sm font-medium text-gray-700" id="cashierName">User</span>
+                <button onclick="openNotificationModal()" class="relative bg-gray-100 hover:bg-gray-200 p-2 rounded-xl text-gray-700">
+                    🔔 <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold hidden">0</span>
+                </button>
+                <button onclick="openInvoiceListModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-medium">Invoices</button>
+                <button onclick="openLastReceiptModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-medium">Last Receipt</button>
+                <button onclick="handleLogout()" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-xs font-medium">Logout</button>
             </div>
-        </aside>
+        </header>
+
+        <!-- Content Area -->
+        <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-gray-800">Current Active Orders</h2>
+                <button onclick="refreshCashierSystem()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-medium">Refresh</button>
+            </div>
+            <div id="pendingOrdersContainer" class="space-y-3">
+                <p class="text-gray-500 text-sm">Loading current orders...</p>
+            </div>
+        </main>
     </div>
 
-    <!-- Modals -->
-    <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
-        <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
+    <!-- Order Detail Modal -->
+    <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
             <button onclick="closeOrderModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            <h3 id="modalOrderTitle" class="font-bold text-xl text-gray-800 mb-1">Order Details</h3>
-            <p id="modalOrderMeta" class="text-xs text-gray-500 mb-4"></p>
+            <h3 class="font-bold text-xl text-gray-800 mb-1" id="modalOrderTitle">Order Details</h3>
+            <p class="text-xs text-gray-500 mb-4" id="modalOrderMeta">Table info...</p>
             
-            <div class="border rounded-xl p-3 mb-4 max-h-48 overflow-y-auto bg-gray-50 space-y-2" id="modalOrderItemsList"></div>
-            
-            <div id="extraItemSectionContainer" class="border-t pt-3 flex-1 flex flex-col">
-                <h4 class="font-semibold text-gray-700 text-sm mb-2">Add Extra Item from Menu:</h4>
-                <div class="flex gap-2 mb-3">
-                    <select id="extraMenuItemSelect" class="flex-1 border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
-                    <button onclick="addExtraItemToOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Add</button>
+            <div class="flex-1 overflow-y-auto space-y-2 pr-1 border-t border-b py-3" id="modalOrderItemsList">
+                <!-- Items loaded dynamically -->
+            </div>
+
+            <!-- Extra Item / Note Section -->
+            <div id="extraItemSectionContainer" class="mt-4 pt-3 border-t space-y-3">
+                <!-- Single Category Dropdown defaulting to Top 15 Items -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Category / Selection</label>
+                    <select id="categoryDropdown" class="w-full border p-2 rounded-xl text-xs bg-white mb-2">
+                        <option value="top_15" selected>Top 15 Items</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <select id="extraMenuItemSelect" class="flex-1 border p-2 rounded-xl text-xs bg-white">
+                        <!-- Loaded via loadMenuForDropdown -->
+                    </select>
+                    <button onclick="addExtraItemToOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-medium">Add Item</button>
                 </div>
             </div>
 
-            <div class="flex justify-between items-center mt-4 pt-3 border-t" id="modalFooterContainer">
-                <div>
-                    <button id="modalDeclineBtn" onclick="promptDeclineOrderFromModal()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium">Cancel Order</button>
+            <!-- Modal Action Buttons -->
+            <div class="mt-4 pt-3 border-t flex justify-between items-center">
+                <button id="modalDeclineBtn" onclick="promptDeclineOrderFromModal()" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-medium">Decline Order</button>
+                <div class="flex space-x-2" id="modalActionButtonsContainer">
+                    <!-- Dynamically injected action buttons -->
                 </div>
-                <div class="flex space-x-3" id="modalActionButtonsContainer"></div>
             </div>
         </div>
     </div>
 
+    <!-- Full-Screen Payment Modal (Switching mechanism) -->
+    <div id="paymentModal" class="fixed inset-0 bg-white z-50 hidden flex flex-col">
+        <div class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm">
+            <div>
+                <h3 class="font-bold text-2xl text-gray-800">Secure Payment Gateway</h3>
+                <p class="text-xs text-gray-500" id="paymentOrderInfo">Order ID: #000</p>
+            </div>
+            <button onclick="closePaymentModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-xl font-bold text-sm">✕ Exit Payment</button>
+        </div>
+        <div class="flex-1 max-w-3xl w-full mx-auto p-8 flex flex-col justify-center space-y-6">
+            <div class="bg-gray-50 border p-6 rounded-2xl text-center space-y-2">
+                <span class="text-sm font-medium text-gray-500">Total Payable Amount (incl. SST & Rounding)</span>
+                <div class="text-4xl font-extrabold text-emerald-600" id="paymentTotalAmount">RM0.00</div>
+            </div>
+            <h4 class="font-bold text-gray-700 text-sm text-center">Select Payment Method</h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button onclick="completePayment('Cash')" class="bg-emerald-600 hover:bg-emerald-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">Cash</button>
+                <button onclick="completePayment('QR Pay')" class="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">QR Pay</button>
+                <button onclick="completePayment('Credit Card')" class="bg-indigo-600 hover:bg-indigo-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">Credit Card</button>
+                <button onclick="completePayment('E-Wallet')" class="bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">E-Wallet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
     <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[85vh] flex flex-col">
             <button onclick="closeNotificationModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
@@ -233,6 +137,7 @@
         </div>
     </div>
 
+    <!-- Decline Modal -->
     <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
             <h3 class="font-bold text-lg text-gray-800 mb-2">Decline Order</h3>
@@ -278,6 +183,7 @@
         </div>
     </div>
 
+    <!-- JavaScript Application Logic -->
     <script>
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
@@ -287,8 +193,6 @@
         let currentActiveOrderId = null;
         let activeOrderData = null;
         let orderToDeclineId = null;
-        let selectedTerminalPaymentMethod = 'Cash';
-        let currentTerminalTotal = 0;
 
         // Malaysian Standard 5 Sen Rounding Helper Function
         function roundToNearest5Sen(amount) {
@@ -337,7 +241,7 @@
         async function handleLogout() {
             localStorage.removeItem('cashier_session');
             document.getElementById('mainPanel').classList.add('hidden');
-            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
         }
 
         async function loadPendingOrders() {
@@ -372,7 +276,7 @@
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-base text-emerald-600 mr-2">RM${Number(order.total_amount || 0).toFixed(2)}</span>
                         <button onclick='openOrderDetailsById(${order.id}, "current")' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
-                        <button onclick='openTerminalPayment(${order.id}, ${order.total_amount || 0})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
+                        <button onclick='openPaymentModalFromListId(${order.id}, ${order.total_amount || 0})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
                     </div>
                 </div>
             `).join('');
@@ -458,7 +362,7 @@
             
             if (error || !items || items.length === 0) {
                 itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
-                if (editable) await recalulateAndUpdateOrderTotal(orderId);
+                await recalulateAndUpdateOrderTotal(orderId);
                 return;
             }
 
@@ -474,22 +378,28 @@
                 }
 
                 const itemDiv = document.createElement('div');
-                itemDiv.className = "flex justify-between items-center py-2 border-b text-xs";
+                itemDiv.className = "py-2 border-b text-xs space-y-2";
                 
                 if (editable) {
                     itemDiv.innerHTML = `
-                        <div class="flex-1 pr-2">
-                            <span class="font-medium text-gray-800 block">${itemName}</span>
-                            <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="flex items-center border rounded-lg overflow-hidden bg-white">
-                                <button type="button" class="decrease-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
-                                <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
-                                <button type="button" class="increase-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1 pr-2">
+                                <span class="font-medium text-gray-800 block">${itemName}</span>
+                                <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
                             </div>
-                            <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
-                            <button type="button" class="remove-btn text-red-600 hover:text-red-800 font-bold px-2.5 py-1 bg-red-50 rounded">✕</button>
+                            <div class="flex items-center space-x-2">
+                                <div class="flex items-center border rounded-lg overflow-hidden bg-white">
+                                    <button type="button" class="decrease-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
+                                    <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
+                                    <button type="button" class="increase-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
+                                </div>
+                                <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
+                                <button type="button" class="remove-btn text-red-600 hover:text-red-800 font-bold px-2.5 py-1 bg-red-50 rounded">✕</button>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <input type="text" class="item-note-input flex-1 border px-2.5 py-1 rounded-lg text-xs bg-gray-50 focus:bg-white focus:ring-1 focus:ring-emerald-500" placeholder="Add note (e.g. Less spicy, No onion)..." value="${item.note || ''}">
+                            <button type="button" class="save-note-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-lg text-xs font-medium">Save Note</button>
                         </div>
                     `;
 
@@ -502,13 +412,20 @@
                     itemDiv.querySelector('.remove-btn').addEventListener('click', async () => {
                         await removeItemFromOrder(item.id, orderId);
                     });
+                    itemDiv.querySelector('.save-note-btn').addEventListener('click', async () => {
+                        const noteVal = itemDiv.querySelector('.item-note-input').value.trim();
+                        await updateItemNote(item.id, noteVal, orderId);
+                    });
                 } else {
                     itemDiv.innerHTML = `
-                        <div class="flex-1 pr-2">
-                            <span class="font-medium text-gray-800 block">${itemName} (x${item.quantity})</span>
-                            <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1 pr-2">
+                                <span class="font-medium text-gray-800 block">${itemName} (x${item.quantity})</span>
+                                <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
+                                ${item.note ? `<p class="text-emerald-700 italic mt-0.5">Note: ${item.note}</p>` : ''}
+                            </div>
+                            <div class="font-bold text-emerald-600 text-right">RM${(item.price * item.quantity).toFixed(2)}</div>
                         </div>
-                        <div class="font-bold text-emerald-600 text-right">RM${(item.price * item.quantity).toFixed(2)}</div>
                     `;
                 }
 
@@ -552,9 +469,12 @@
             itemsContainer.innerHTML = items.map(item => {
                 let itemName = item.item_name || menuMap[item.menu_item_id] || `Menu Item #${item.menu_item_id}`;
                 return `
-                    <div class="flex justify-between items-center py-1.5 border-b text-xs">
-                        <span class="font-medium text-gray-800">${itemName} (x${item.quantity})</span>
-                        <span class="font-bold text-gray-700">RM${(item.price * item.quantity).toFixed(2)}</span>
+                    <div class="py-1.5 border-b text-xs space-y-0.5">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-gray-800">${itemName} (x${item.quantity})</span>
+                            <span class="font-bold text-gray-700">RM${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                        ${item.note ? `<p class="text-emerald-700 italic">Note: ${item.note}</p>` : ''}
                     </div>
                 `;
             }).join('') + `
@@ -581,6 +501,20 @@
                 await renderModalItems(orderId, true);
             } else {
                 alert('Failed to update quantity.');
+            }
+        }
+
+        async function updateItemNote(itemId, noteText, orderId) {
+            const { error } = await _supabase
+                .from('order_items')
+                .update({ note: noteText })
+                .eq('id', itemId);
+
+            if (!error) {
+                alert('Note saved successfully!');
+                await renderModalItems(orderId, true);
+            } else {
+                alert('Failed to save item note.');
             }
         }
 
@@ -644,67 +578,23 @@
             await renderModalItems(currentActiveOrderId, true);
         }
 
-        // Terminal Payment Panel Handlers
-        function openTerminalPayment(orderId, totalAmount) {
+        function openPaymentModalFromListId(orderId, totalAmount) {
             currentActiveOrderId = orderId;
-            currentTerminalTotal = Number(totalAmount || 0);
-            
-            document.getElementById('termOrderIdDisplay').innerText = `Order #${orderId}`;
-            document.getElementById('termTotalDue').innerText = `RM${currentTerminalTotal.toFixed(2)}`;
-            document.getElementById('termAmountTendered').value = '';
-            document.getElementById('termChangeDue').innerText = 'RM0.00';
-            
-            selectTerminalMethod('Cash');
-            document.getElementById('terminalPaymentContainer').classList.remove('hidden');
-        }
-
-        function cancelTerminalPayment() {
-            document.getElementById('terminalPaymentContainer').classList.add('hidden');
-            currentActiveOrderId = null;
-        }
-
-        function selectTerminalMethod(method) {
-            selectedTerminalPaymentMethod = method;
-            const btnCash = document.getElementById('termBtnCash');
-            const btnQR = document.getElementById('termBtnQR');
-            const cashSec = document.getElementById('cashPaymentSection');
-
-            if (method === 'Cash') {
-                btnCash.className = "border border-emerald-500 bg-emerald-900/40 text-emerald-300 py-1.5 rounded-lg font-semibold text-xs transition";
-                btnQR.className = "border border-gray-600 bg-gray-700 text-gray-300 py-1.5 rounded-lg font-semibold text-xs transition";
-                cashSec.classList.remove('hidden');
-            } else {
-                btnQR.className = "border border-emerald-500 bg-emerald-900/40 text-emerald-300 py-1.5 rounded-lg font-semibold text-xs transition";
-                btnCash.className = "border border-gray-600 bg-gray-700 text-gray-300 py-1.5 rounded-lg font-semibold text-xs transition";
-                cashSec.classList.add('hidden');
-            }
-        }
-
-        function calculateChange() {
-            const tendered = parseFloat(document.getElementById('termAmountTendered').value) || 0;
-            const change = tendered - currentTerminalTotal;
-            document.getElementById('termChangeDue').innerText = change >= 0 ? `RM${change.toFixed(2)}` : 'RM0.00';
+            document.getElementById('paymentOrderInfo').innerText = `Order ID: #${orderId}`;
+            document.getElementById('paymentTotalAmount').innerText = `RM${Number(totalAmount || 0).toFixed(2)}`;
+            document.getElementById('paymentModal').classList.remove('hidden');
         }
 
         function proceedToPaymentFromModal() {
             closeOrderModal();
-            openTerminalPayment(activeOrderData.id, activeOrderData.total_amount);
+            openPaymentModalFromListId(activeOrderData.id, activeOrderData.total_amount);
         }
 
-        async function processTerminalPayment() {
-            if (!currentActiveOrderId) {
-                alert('No active order selected in terminal.');
-                return;
-            }
+        function closePaymentModal() { 
+            document.getElementById('paymentModal').classList.add('hidden'); 
+        }
 
-            if (selectedTerminalPaymentMethod === 'Cash') {
-                const tendered = parseFloat(document.getElementById('termAmountTendered').value) || 0;
-                if (tendered < currentTerminalTotal) {
-                    alert('Amount tendered is less than total due.');
-                    return;
-                }
-            }
-
+        async function completePayment(method) {
             const { data: orderItems } = await _supabase.from('order_items').select('*').eq('order_id', currentActiveOrderId);
             const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
             const menuMap = {};
@@ -743,7 +633,7 @@
                     order_id: orderData.id,
                     table_id: orderData.table_id || 'N/A',
                     total_amount: orderData.total_amount || 0,
-                    payment_method: selectedTerminalPaymentMethod
+                    payment_method: method
                 }]);
 
                 if(invError) {
@@ -752,8 +642,8 @@
                 }
             }
 
-            alert(`Payment completed via ${selectedTerminalPaymentMethod} and saved successfully!`);
-            cancelTerminalPayment();
+            alert(`Payment completed via ${method} and successfully saved to Invoices table!`);
+            closePaymentModal();
             closeOrderModal();
             loadPendingOrders();
             fetchIncomingOrders();
@@ -933,6 +823,7 @@
                             <span>${itemName} (x${item.quantity})</span>
                             <span>RM${(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
                         </div>
+                        ${item.note ? `<div style="font-size: 10px; color: #047857; font-style: italic;">Note: ${item.note}</div>` : ''}
                     `;
                 });
             } else {
