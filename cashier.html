@@ -49,7 +49,6 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            /* Hide modal header/footer buttons during print */
             #lastReceiptModal h3, 
             #lastReceiptModal p.text-xs.text-gray-500, 
             #lastReceiptModal button,
@@ -143,11 +142,56 @@
         </div>
 
         <!-- Right Sidebar Panel -->
-        <aside class="w-56 bg-gray-900 text-white flex flex-col p-4 justify-start space-y-3 shadow-xl flex-shrink-0">
-            <div class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Quick Actions</div>
-            <button onclick="alert('New Order feature coming soon!')" class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">NEW ORDER</button>
-            <button onclick="openInvoiceListModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">INVOICE LIST</button>
-            <button onclick="openLastReceiptModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">LAST RECEIPT</button>
+        <aside class="w-80 bg-gray-900 text-white flex flex-col p-4 justify-between space-y-3 shadow-xl flex-shrink-0 overflow-y-auto">
+            <div>
+                <div class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Quick Actions & Terminal</div>
+                <div class="space-y-2 mb-4">
+                    <button onclick="alert('New Order feature coming soon!')" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow transition text-center">NEW ORDER</button>
+                    <button onclick="openInvoiceListModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow transition text-center">INVOICE LIST</button>
+                    <button onclick="openLastReceiptModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs shadow transition text-center">LAST RECEIPT</button>
+                </div>
+
+                <!-- Integrated Payment Terminal Panel -->
+                <div id="terminalPaymentContainer" class="bg-gray-800 border border-gray-700 p-3 rounded-xl hidden space-y-3">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="text-xs font-bold text-emerald-400">Payment Terminal</span>
+                        <span id="termOrderIdDisplay" class="text-[11px] text-gray-400">#0</span>
+                    </div>
+
+                    <div>
+                        <div class="text-[11px] text-gray-400">Total Due:</div>
+                        <div id="termTotalDue" class="text-lg font-bold text-white">RM0.00</div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-medium text-gray-300">Payment Method:</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="selectTerminalMethod('Cash')" id="termBtnCash" class="border border-emerald-500 bg-emerald-900/40 text-emerald-300 py-1.5 rounded-lg font-semibold text-xs transition">Cash</button>
+                            <button onclick="selectTerminalMethod('QR / Online')" id="termBtnQR" class="border border-gray-600 bg-gray-700 text-gray-300 py-1.5 rounded-lg font-semibold text-xs transition">QR / Online</button>
+                        </div>
+                    </div>
+
+                    <div id="cashPaymentSection" class="space-y-2 pt-1">
+                        <div>
+                            <label class="block text-[10px] text-gray-400 mb-0.5">Amount Tendered (RM):</label>
+                            <input type="number" id="termAmountTendered" oninput="calculateChange()" class="w-full bg-gray-900 border border-gray-700 px-2.5 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="0.00">
+                        </div>
+                        <div class="flex justify-between text-xs bg-gray-900 p-2 rounded-lg border border-gray-700">
+                            <span class="text-gray-400">Change Due:</span>
+                            <span id="termChangeDue" class="font-bold text-emerald-400">RM0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-1 space-y-2">
+                        <button onclick="processTerminalPayment()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl text-xs font-bold shadow transition">Confirm & Complete Payment</button>
+                        <button onclick="cancelTerminalPayment()" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 py-1.5 rounded-xl text-xs font-medium">Cancel / Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center text-[10px] text-gray-500 pt-2 border-t border-gray-800">
+                Hameeds Bistro POS v2.6
+            </div>
         </aside>
     </div>
 
@@ -174,28 +218,6 @@
                 </div>
                 <div class="flex space-x-3" id="modalActionButtonsContainer"></div>
             </div>
-        </div>
-    </div>
-
-    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
-            <button onclick="closePaymentModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            <h3 class="font-bold text-xl text-gray-800 mb-1">Complete Payment</h3>
-            <p id="paymentOrderInfo" class="text-xs text-gray-500 mb-4"></p>
-            <div class="bg-gray-50 p-4 rounded-xl border mb-4">
-                <div class="flex justify-between mb-2">
-                    <span class="text-gray-600">Total Amount:</span>
-                    <span id="paymentTotalAmount" class="font-bold text-lg text-emerald-600">RM0.00</span>
-                </div>
-            </div>
-            <div class="space-y-3 mb-5">
-                <label class="block text-sm font-medium text-gray-700">Select Payment Method:</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="completePayment('Cash')" class="border-2 border-emerald-500 bg-emerald-50 text-emerald-700 py-3 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition">Cash</button>
-                    <button onclick="completePayment('QR / Online')" class="border-2 border-blue-500 bg-blue-50 text-blue-700 py-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition">QR / Online</button>
-                </div>
-            </div>
-            <button onclick="closePaymentModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium">Cancel</button>
         </div>
     </div>
 
@@ -265,6 +287,8 @@
         let currentActiveOrderId = null;
         let activeOrderData = null;
         let orderToDeclineId = null;
+        let selectedTerminalPaymentMethod = 'Cash';
+        let currentTerminalTotal = 0;
 
         // Malaysian Standard 5 Sen Rounding Helper Function
         function roundToNearest5Sen(amount) {
@@ -313,7 +337,7 @@
         async function handleLogout() {
             localStorage.removeItem('cashier_session');
             document.getElementById('mainPanel').classList.add('hidden');
-            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('loginSection').classList.add('hidden');
         }
 
         async function loadPendingOrders() {
@@ -348,7 +372,7 @@
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-base text-emerald-600 mr-2">RM${Number(order.total_amount || 0).toFixed(2)}</span>
                         <button onclick='openOrderDetailsById(${order.id}, "current")' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
-                        <button onclick='openPaymentModalFromListId(${order.id}, ${order.total_amount || 0})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
+                        <button onclick='openTerminalPayment(${order.id}, ${order.total_amount || 0})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
                     </div>
                 </div>
             `).join('');
@@ -434,7 +458,7 @@
             
             if (error || !items || items.length === 0) {
                 itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
-                await recalulateAndUpdateOrderTotal(orderId);
+                if (editable) await recalulateAndUpdateOrderTotal(orderId);
                 return;
             }
 
@@ -620,23 +644,67 @@
             await renderModalItems(currentActiveOrderId, true);
         }
 
-        function openPaymentModalFromListId(orderId, totalAmount) {
+        // Terminal Payment Panel Handlers
+        function openTerminalPayment(orderId, totalAmount) {
             currentActiveOrderId = orderId;
-            document.getElementById('paymentOrderInfo').innerText = `Order ID: #${orderId}`;
-            document.getElementById('paymentTotalAmount').innerText = `RM${Number(totalAmount || 0).toFixed(2)}`;
-            document.getElementById('paymentModal').classList.remove('hidden');
+            currentTerminalTotal = Number(totalAmount || 0);
+            
+            document.getElementById('termOrderIdDisplay').innerText = `Order #${orderId}`;
+            document.getElementById('termTotalDue').innerText = `RM${currentTerminalTotal.toFixed(2)}`;
+            document.getElementById('termAmountTendered').value = '';
+            document.getElementById('termChangeDue').innerText = 'RM0.00';
+            
+            selectTerminalMethod('Cash');
+            document.getElementById('terminalPaymentContainer').classList.remove('hidden');
+        }
+
+        function cancelTerminalPayment() {
+            document.getElementById('terminalPaymentContainer').classList.add('hidden');
+            currentActiveOrderId = null;
+        }
+
+        function selectTerminalMethod(method) {
+            selectedTerminalPaymentMethod = method;
+            const btnCash = document.getElementById('termBtnCash');
+            const btnQR = document.getElementById('termBtnQR');
+            const cashSec = document.getElementById('cashPaymentSection');
+
+            if (method === 'Cash') {
+                btnCash.className = "border border-emerald-500 bg-emerald-900/40 text-emerald-300 py-1.5 rounded-lg font-semibold text-xs transition";
+                btnQR.className = "border border-gray-600 bg-gray-700 text-gray-300 py-1.5 rounded-lg font-semibold text-xs transition";
+                cashSec.classList.remove('hidden');
+            } else {
+                btnQR.className = "border border-emerald-500 bg-emerald-900/40 text-emerald-300 py-1.5 rounded-lg font-semibold text-xs transition";
+                btnCash.className = "border border-gray-600 bg-gray-700 text-gray-300 py-1.5 rounded-lg font-semibold text-xs transition";
+                cashSec.classList.add('hidden');
+            }
+        }
+
+        function calculateChange() {
+            const tendered = parseFloat(document.getElementById('termAmountTendered').value) || 0;
+            const change = tendered - currentTerminalTotal;
+            document.getElementById('termChangeDue').innerText = change >= 0 ? `RM${change.toFixed(2)}` : 'RM0.00';
         }
 
         function proceedToPaymentFromModal() {
             closeOrderModal();
-            openPaymentModalFromListId(activeOrderData.id, activeOrderData.total_amount);
+            openTerminalPayment(activeOrderData.id, activeOrderData.total_amount);
         }
 
-        function closePaymentModal() { 
-            document.getElementById('paymentModal').classList.add('hidden'); 
-        }
+        async function processTerminalPayment() {
+            if (!currentActiveOrderId) {
+                alert('No active order selected in terminal.');
+                return;
+            }
 
-        async function completePayment(method) {
+            if (selectedTerminalPaymentMethod === 'Cash') {
+                const tendered = parseFloat(document.getElementById('termAmountTendered').value) || 0;
+                if (tendered < currentTerminalTotal) {
+                    alert('Amount tendered is less than total due.');
+                    return;
+                }
+            }
+
             const { data: orderItems } = await _supabase.from('order_items').select('*').eq('order_id', currentActiveOrderId);
             const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
             const menuMap = {};
@@ -675,7 +743,7 @@
                     order_id: orderData.id,
                     table_id: orderData.table_id || 'N/A',
                     total_amount: orderData.total_amount || 0,
-                    payment_method: method
+                    payment_method: selectedTerminalPaymentMethod
                 }]);
 
                 if(invError) {
@@ -684,8 +752,8 @@
                 }
             }
 
-            alert(`Payment completed via ${method} and successfully saved to Invoices table!`);
-            closePaymentModal();
+            alert(`Payment completed via ${selectedTerminalPaymentMethod} and saved successfully!`);
+            cancelTerminalPayment();
             closeOrderModal();
             loadPendingOrders();
             fetchIncomingOrders();
