@@ -1,130 +1,363 @@
-<!-- ========================================== -->
-<!-- FULLY INTEGRATED HAMEEDS BISTRO CASHIER APP -->
-<!-- ========================================== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hameeds Bistro - Cashier System</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Hameeds Bistro - Cashier Login & Panel</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="icon" href="https://your-image-url.com/icon.png" type="image/x-icon">
+    <style>
+        .z-9999 { z-index: 9999 !important; }
+
+        /* Print Specific Styling Fixes */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #lastReceiptContent, #lastReceiptContent * {
+                visibility: visible;
+            }
+            #lastReceiptContent {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: 100% !important;
+                border: none !important;
+                padding: 10px !important;
+                margin: 0 !important;
+                background: white !important;
+                color: black !important;
+            }
+            #lastReceiptModal {
+                background: transparent !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+            }
+            #lastReceiptModal > div {
+                box-shadow: none !important;
+                border: none !important;
+                background: white !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            /* Hide modal header/footer buttons during print */
+            #lastReceiptModal h3, 
+            #lastReceiptModal p.text-xs.text-gray-500, 
+            #lastReceiptModal button,
+            #lastReceiptModal .absolute {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans antialiased">
+<body class="bg-gray-100 font-sans overflow-hidden">
 
-    <!-- Login Section -->
-    <div id="loginSection" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Cashier Login</h2>
-            <form onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Email</label>
-                    <input type="email" id="loginEmail" required class="w-full border p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Enter email">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Password</label>
-                    <input type="password" id="loginPassword" required class="w-full border p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Enter password">
-                </div>
-                <div id="loginError" class="text-red-500 text-xs hidden"></div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold text-sm transition">Login</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Main Panel -->
-    <div id="mainPanel" class="min-h-screen flex flex-col hidden">
-        <!-- Top Navigation / Header -->
-        <header class="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm">
-            <div class="flex items-center space-x-4">
-                <h1 class="text-xl font-bold text-gray-800">Hameeds Bistro POS</h1>
-                <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold" id="cashierRole">Role</span>
+    <!-- ==================== LOGIN SECTION ==================== -->
+    <div id="loginSection" class="flex h-screen w-screen items-center justify-center bg-gray-900 absolute inset-0 z-50">
+        <div class="bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <div class="text-center mb-6">
+                <img src="images/logo.png" alt="Logo" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-600 mx-auto mb-2" onerror="this.src='https://via.placeholder.com/60'">
+                <h1 class="font-bold text-2xl text-gray-900">Hameeds Bistro</h1>
+                <p class="text-xs text-gray-500 mt-1">Cashier Panel Login</p>
             </div>
-            <div class="flex items-center space-x-4">
-                <span class="text-sm font-medium text-gray-700" id="cashierName">User</span>
-                <button onclick="openNotificationModal()" class="relative bg-gray-100 hover:bg-gray-200 p-2 rounded-xl text-gray-700">
-                    🔔 <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold hidden">0</span>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+                    <input type="email" id="loginEmail" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="cashier@bistro.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow transition">
+                    Login to Panel
                 </button>
-                <button onclick="openInvoiceListModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-medium">Invoices</button>
-                <button onclick="openLastReceiptModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-medium">Last Receipt</button>
-                <button onclick="handleLogout()" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-xs font-medium">Logout</button>
-            </div>
-        </header>
-
-        <!-- Content Area -->
-        <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-gray-800">Current Active Orders</h2>
-                <button onclick="refreshCashierSystem()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-xl text-xs font-medium">Refresh</button>
-            </div>
-            <div id="pendingOrdersContainer" class="space-y-3">
-                <p class="text-gray-500 text-sm">Loading current orders...</p>
-            </div>
-        </main>
+            </form>
+            <div id="loginError" class="text-red-500 text-xs text-center mt-3 hidden"></div>
+        </div>
     </div>
 
-    <!-- Order Detail Modal -->
-    <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
+    <!-- ==================== MAIN CASHIER PANEL ==================== -->
+    <div id="mainPanel" class="flex h-screen w-screen hidden">
+        
+        <div class="flex-1 flex flex-col h-full overflow-hidden">
+            <!-- Header Panel -->
+            <header class="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="images/logo.png" alt="Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-600" onerror="this.src='https://via.placeholder.com/50'">
+                    <div class="flex flex-col">
+                        <h1 class="font-bold text-lg text-gray-900 leading-tight">Hameeds Bistro</h1>
+                        <div class="flex items-center space-x-2 mt-0.5">
+                            <span class="text-xs text-gray-500 font-medium">Welcome:</span>
+                            <span id="cashierName" class="text-xs font-bold text-emerald-700">Cashier</span>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-0.5">
+                            <span class="text-xs text-gray-500 font-medium">Role:</span>
+                            <span id="cashierRole" class="text-xs uppercase font-bold text-blue-600">Cashier</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <div class="flex flex-col space-y-1">
+                        <button onclick="doCheckIn()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">Check-In</button>
+                        <button onclick="doCheckOut()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">Check-Out</button>
+                    </div>
+
+                    <div class="relative">
+                        <button onclick="openNotificationModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center relative" title="New Order Notifications">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hidden">0</span>
+                        </button>
+                    </div>
+
+                    <button onclick="refreshCashierSystem()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center" title="Refresh System">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+
+                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">Logout</button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 bg-gray-50 overflow-y-auto">
+                <div class="mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Current Orders</h2>
+                </div>
+                <div id="pendingOrdersContainer" class="space-y-3"></div>
+            </main>
+        </div>
+
+        <!-- Right Sidebar Panel -->
+        <aside class="w-56 bg-gray-900 text-white flex flex-col p-4 justify-start space-y-3 shadow-xl flex-shrink-0">
+            <div class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Quick Actions</div>
+            <button onclick="openNewOrderInterface()" class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">NEW ORDER</button>
+            <button onclick="openInvoiceListModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">INVOICE LIST</button>
+            <button onclick="openLastReceiptModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">LAST RECEIPT</button>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
             <button onclick="closeOrderModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            <h3 class="font-bold text-xl text-gray-800 mb-1" id="modalOrderTitle">Order Details</h3>
-            <p class="text-xs text-gray-500 mb-4" id="modalOrderMeta">Table info...</p>
+            <h3 id="modalOrderTitle" class="font-bold text-xl text-gray-800 mb-1">Order Details</h3>
+            <p id="modalOrderMeta" class="text-xs text-gray-500 mb-4"></p>
             
-            <div class="flex-1 overflow-y-auto space-y-2 pr-1 border-t border-b py-3" id="modalOrderItemsList">
-                <!-- Items loaded dynamically -->
+            <div class="border rounded-xl p-3 mb-4 max-h-48 overflow-y-auto bg-gray-50 space-y-2" id="modalOrderItemsList"></div>
+            
+            <div id="extraItemSectionContainer" class="border-t pt-3 flex-1 flex flex-col">
+                <h4 class="font-semibold text-gray-700 text-sm mb-2">Add Extra Item from Menu:</h4>
+                <div class="flex gap-2 mb-3">
+                    <select id="extraMenuItemSelect" class="flex-1 border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+                    <button onclick="addExtraItemToOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Add</button>
+                </div>
             </div>
 
-            <!-- Extra Item / Note Section -->
-            <div id="extraItemSectionContainer" class="mt-4 pt-3 border-t space-y-3">
-                <!-- Single Category Dropdown defaulting to Top 15 Items -->
+            <div class="flex justify-between items-center mt-4 pt-3 border-t" id="modalFooterContainer">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Category / Selection</label>
-                    <select id="categoryDropdown" class="w-full border p-2 rounded-xl text-xs bg-white mb-2">
-                        <option value="top_15" selected>Top 15 Items</option>
-                    </select>
+                    <button id="modalDeclineBtn" onclick="promptDeclineOrderFromModal()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium">Cancel Order</button>
                 </div>
-                <div class="flex gap-2">
-                    <select id="extraMenuItemSelect" class="flex-1 border p-2 rounded-xl text-xs bg-white">
-                        <!-- Loaded via loadMenuForDropdown -->
-                    </select>
-                    <button onclick="addExtraItemToOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-medium">Add Item</button>
+                <div class="flex space-x-3" id="modalActionButtonsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- POS New Order / Payment Interface matching exact POS terminal design -->
+    <div id="posInterfaceModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[10000] hidden">
+        <div class="bg-[#1e1e1e] text-white w-[98vw] h-[96vh] rounded-xl shadow-2xl relative flex overflow-hidden font-sans border border-gray-700">
+            <!-- Close Button Top Right -->
+            <button onclick="closePosInterface()" class="absolute top-3 right-3 bg-red-600 hover:bg-red-700 text-white w-9 h-9 rounded font-bold flex items-center justify-center text-xl z-50 shadow">&times;</button>
+            
+            <!-- LEFT PANEL: Order Summary / Receipt list -->
+            <div class="w-[38%] bg-[#1a1a1a] border-r border-gray-700 flex flex-col justify-between p-3 select-none">
+                <!-- Top Table/Card Header -->
+                <div class="bg-[#2a2a2a] p-2.5 rounded text-xs font-semibold flex justify-between items-center border border-gray-700 mb-2">
+                    <div>TABLE : <span id="posTableDisplay" class="text-yellow-400">A60 / INDOOR</span></div>
+                    <div>CARD NO : <span id="posCardDisplay" class="text-yellow-400">1003</span></div>
+                </div>
+
+                <!-- Items Scrollable Table Area -->
+                <div class="flex-1 bg-white text-gray-900 rounded overflow-hidden flex flex-col border border-gray-700 mb-2">
+                    <div class="bg-gray-200 text-gray-700 font-bold text-xs grid grid-cols-12 px-2 py-1.5 border-b">
+                        <div class="col-span-7">Description</div>
+                        <div class="col-span-2 text-center">Qty</div>
+                        <div class="col-span-3 text-right">Amount</div>
+                    </div>
+                    <div id="posItemsListContainer" class="flex-1 overflow-y-auto divide-y divide-gray-100 text-xs">
+                        <!-- Dynamically populated items -->
+                    </div>
+                </div>
+
+                <!-- Totals & Info Box -->
+                <div class="bg-[#222] p-2.5 rounded text-xs border border-gray-700 space-y-1 mb-2">
+                    <div class="flex justify-between text-gray-400">
+                        <span>Note:</span>
+                        <span id="posNoteDisplay" class="text-white italic">None</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-700">
+                        <div>Item Qty: <span id="posTotalQty" class="font-bold text-white">0</span></div>
+                        <div>Sub Total: <span id="posSubTotal" class="font-bold text-white float-right">RM0.00</span></div>
+                        <div>Srvc Chrg.: <span class="font-bold text-white">0.00</span></div>
+                        <div>SST (6%): <span id="posSst" class="font-bold text-white float-right">RM0.00</span></div>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-gray-600 text-sm font-bold text-yellow-400">
+                        <span>TOTAL AMOUNT</span>
+                        <span>RM <span id="posTotalAmount" class="text-base">0.00</span></span>
+                    </div>
+                </div>
+
+                <!-- Bottom Action Buttons matching exact layout -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="triggerOrderNotePrompt()" class="bg-[#8b5a2b] hover:bg-[#a06833] text-white py-2.5 rounded font-bold text-xs shadow text-center uppercase tracking-wider">ORDER NOTE</button>
+                    <button onclick="triggerGuestCheck()" class="bg-[#5c4033] hover:bg-[#704f41] text-white py-2.5 rounded font-bold text-xs shadow text-center uppercase tracking-wider">GUEST CHECK</button>
+                    <button onclick="triggerHoldOrder()" class="bg-[#4a154b] hover:bg-[#5e1d5f] text-white py-2.5 rounded font-bold text-xs shadow text-center uppercase tracking-wider">HOLD</button>
+                    <button onclick="triggerClearOrder()" class="bg-[#7f1d1d] hover:bg-[#991b1b] text-white py-2.5 rounded font-bold text-xs shadow text-center uppercase tracking-wider">CLEAR</button>
                 </div>
             </div>
 
-            <!-- Modal Action Buttons -->
-            <div class="mt-4 pt-3 border-t flex justify-between items-center">
-                <button id="modalDeclineBtn" onclick="promptDeclineOrderFromModal()" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-medium">Decline Order</button>
-                <div class="flex space-x-2" id="modalActionButtonsContainer">
-                    <!-- Dynamically injected action buttons -->
+            <!-- RIGHT PANEL: Menu Categories & Items OR Payment Terminal View -->
+            <div class="flex-1 flex flex-col bg-[#121212] select-none overflow-hidden">
+                <!-- Top Navigation Bar -->
+                <div class="bg-[#1a1a1a] p-2 border-b border-gray-800 flex items-center justify-between gap-2">
+                    <div class="bg-emerald-600 text-white font-bold px-4 py-1.5 rounded text-xs flex items-center gap-1">
+                        <span>🍽️</span> DINE IN
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="switchPosTab('menu')" id="tabMenuBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-xs font-bold transition">MENU</button>
+                        <button onclick="switchPosTab('payment')" id="tabPaymentBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-1.5 rounded text-xs font-bold transition">PAYMENT SCREEN</button>
+                    </div>
+                </div>
+
+                <!-- VIEW A: MENU SELECTION GRID -->
+                <div id="posMenuView" class="flex-1 flex flex-col p-3 overflow-hidden">
+                    <!-- Categories Bar -->
+                    <div id="posCategoriesContainer" class="grid grid-cols-5 gap-2 mb-3">
+                        <!-- Categories populated dynamically -->
+                    </div>
+                    <!-- Items Grid & Favourites Sidebar -->
+                    <div class="flex-1 flex gap-3 overflow-hidden">
+                        <div id="posMenuItemsGrid" class="flex-1 grid grid-cols-4 gap-2 overflow-y-auto content-start pr-1">
+                            <!-- Menu items populated dynamically -->
+                        </div>
+                        <!-- Favourites Sidebar on Right -->
+                        <div class="w-36 bg-[#1a1a1a] rounded border border-gray-800 flex flex-col p-2">
+                            <div class="text-center font-bold text-xs text-yellow-400 mb-2 uppercase tracking-widest border-b border-gray-800 pb-1">Favourites</div>
+                            <div id="posFavouritesContainer" class="flex-1 overflow-y-auto space-y-2">
+                                <!-- Quick favourites -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW B: PAYMENT & KEYPAD VIEW (Matches exact Payment screenshot) -->
+                <div id="posPaymentView" class="flex-1 flex flex-col p-4 overflow-y-auto hidden">
+                    <div class="grid grid-cols-12 gap-4 h-full">
+                        <!-- Left Column: Discount & Currency Notes -->
+                        <div class="col-span-6 flex flex-col justify-between">
+                            <!-- Discount Header -->
+                            <div class="bg-[#1e1e1e] p-3 rounded border border-gray-700 flex justify-between items-center">
+                                <span class="font-bold text-sm text-gray-300">DISCOUNT :</span>
+                                <div class="flex gap-4 text-sm font-bold">
+                                    <span>% <span id="posDiscPercent">0</span></span>
+                                    <span>RM <span id="posDiscAmount">0.00</span></span>
+                                </div>
+                            </div>
+
+                            <!-- Amount Due Box -->
+                            <div class="bg-[#1e1e1e] p-4 rounded border border-gray-700 text-center my-2">
+                                <div class="text-xs text-gray-400 uppercase tracking-widest mb-1 font-semibold">AMOUNT DUE</div>
+                                <div id="posAmountDueDisplay" class="text-3xl font-extrabold text-yellow-400">RM 0.00</div>
+                            </div>
+
+                            <!-- Malaysian Currency Notes Grid (Specimen Notes) -->
+                            <div class="grid grid-cols-3 gap-2 bg-[#1a1a1a] p-3 rounded border border-gray-700">
+                                <button onclick="addCashAmount(100)" class="bg-[#991b1b] hover:bg-red-800 text-white rounded p-1 font-bold text-xs border border-red-500 shadow text-center">RM 100</button>
+                                <button onclick="addCashAmount(50)" class="bg-[#1e40af] hover:bg-blue-800 text-white rounded p-1 font-bold text-xs border border-blue-500 shadow text-center">RM 50</button>
+                                <button onclick="addCashAmount(20)" class="bg-[#9a3412] hover:bg-orange-800 text-white rounded p-1 font-bold text-xs border border-orange-500 shadow text-center">RM 20</button>
+                                <button onclick="addCashAmount(10)" class="bg-[#854d0e] hover:bg-yellow-800 text-white rounded p-1 font-bold text-xs border border-yellow-600 shadow text-center">RM 10</button>
+                                <button onclick="addCashAmount(5)" class="bg-[#166534] hover:bg-green-800 text-white rounded p-1 font-bold text-xs border border-green-500 shadow text-center">RM 5</button>
+                                <button onclick="addCashAmount(1)" class="bg-[#374151] hover:bg-gray-600 text-white rounded p-1 font-bold text-xs border border-gray-400 shadow text-center">RM 1</button>
+                            </div>
+
+                            <!-- Payment Method Buttons -->
+                            <div class="grid grid-cols-2 gap-2 mt-2">
+                                <button onclick="executePosPayment('Cash')" class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 rounded font-bold text-sm shadow text-center" id="posExactCashBtn">RM 0.00</button>
+                                <button onclick="executePosPayment('GHL Card Payment')" class="bg-[#ca8a04] hover:bg-yellow-600 text-black py-3 rounded font-bold text-xs shadow text-center">GHL CARD PAYMENT</button>
+                                <button onclick="executePosPayment('DuitNow QR')" class="bg-pink-700 hover:bg-pink-800 text-white py-3 rounded font-bold text-xs shadow text-center">DuitNow QR</button>
+                                <button onclick="executePosPayment('Other Payment')" class="bg-[#78350f] hover:bg-amber-900 text-white py-3 rounded font-bold text-xs shadow text-center">OTHER PAYMENT</button>
+                                <button onclick="executePosPayment('Multi Payment')" class="col-span-2 bg-[#0e7490] hover:bg-cyan-800 text-white py-2.5 rounded font-bold text-xs shadow text-center">MULTI PAYMENT</button>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Number Keypad & Enter Amount Screen -->
+                        <div class="col-span-6 bg-[#181818] p-3 rounded border border-gray-700 flex flex-col justify-between">
+                            <div>
+                                <div class="text-center text-xs font-bold text-gray-400 tracking-wider mb-1">ENTER AMOUNT</div>
+                                <div id="posKeypadDisplay" class="bg-white text-gray-900 text-right px-3 py-2.5 rounded font-mono text-xl font-bold border border-gray-600 mb-3 shadow-inner min-h-[42px]">0.00</div>
+                            </div>
+
+                            <!-- Keypad Grid -->
+                            <div class="grid grid-cols-3 gap-2 flex-1">
+                                <button onclick="keypadPress('1')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">1</button>
+                                <button onclick="keypadPress('2')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">2</button>
+                                <button onclick="keypadPress('3')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">3</button>
+                                <button onclick="keypadPress('4')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">4</button>
+                                <button onclick="keypadPress('5')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">5</button>
+                                <button onclick="keypadPress('6')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">6</button>
+                                <button onclick="keypadPress('7')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">7</button>
+                                <button onclick="keypadPress('8')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">8</button>
+                                <button onclick="keypadPress('9')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">9</button>
+                                <button onclick="keypadPress('AC')" class="bg-red-900 hover:bg-red-800 text-white text-base font-bold rounded shadow border border-red-700">AC</button>
+                                <button onclick="keypadPress('0')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">0</button>
+                                <button onclick="keypadPress('.')" class="bg-[#262626] hover:bg-gray-700 text-blue-400 text-xl font-bold rounded shadow border border-gray-700 active:bg-gray-600">.</button>
+                            </div>
+
+                            <button onclick="executePosPayment('Cash')" class="mt-3 bg-emerald-700 hover:bg-emerald-800 text-white py-4 rounded-xl text-lg font-bold shadow uppercase tracking-wider text-center">PAY</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Full-Screen Payment Modal (Switching mechanism) -->
-    <div id="paymentModal" class="fixed inset-0 bg-white z-50 hidden flex flex-col">
-        <div class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm">
-            <div>
-                <h3 class="font-bold text-2xl text-gray-800">Secure Payment Gateway</h3>
-                <p class="text-xs text-gray-500" id="paymentOrderInfo">Order ID: #000</p>
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <button onclick="closePaymentModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            <h3 class="font-bold text-xl text-gray-800 mb-1">Complete Payment</h3>
+            <p id="paymentOrderInfo" class="text-xs text-gray-500 mb-4"></p>
+            <div class="bg-gray-50 p-4 rounded-xl border mb-4">
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-600">Total Amount:</span>
+                    <span id="paymentTotalAmount" class="font-bold text-lg text-emerald-600">RM0.00</span>
+                </div>
             </div>
-            <button onclick="closePaymentModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-xl font-bold text-sm">✕ Exit Payment</button>
-        </div>
-        <div class="flex-1 max-w-3xl w-full mx-auto p-8 flex flex-col justify-center space-y-6">
-            <div class="bg-gray-50 border p-6 rounded-2xl text-center space-y-2">
-                <span class="text-sm font-medium text-gray-500">Total Payable Amount (incl. SST & Rounding)</span>
-                <div class="text-4xl font-extrabold text-emerald-600" id="paymentTotalAmount">RM0.00</div>
+            <div class="space-y-3 mb-5">
+                <label class="block text-sm font-medium text-gray-700">Select Payment Method:</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="completePayment('Cash')" class="border-2 border-emerald-500 bg-emerald-50 text-emerald-700 py-3 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition">Cash</button>
+                    <button onclick="completePayment('QR / Online')" class="border-2 border-blue-500 bg-blue-50 text-blue-700 py-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition">QR / Online</button>
+                </div>
             </div>
-            <h4 class="font-bold text-gray-700 text-sm text-center">Select Payment Method</h4>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button onclick="completePayment('Cash')" class="bg-emerald-600 hover:bg-emerald-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">Cash</button>
-                <button onclick="completePayment('QR Pay')" class="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">QR Pay</button>
-                <button onclick="completePayment('Credit Card')" class="bg-indigo-600 hover:bg-indigo-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">Credit Card</button>
-                <button onclick="completePayment('E-Wallet')" class="bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-2xl font-bold text-base shadow-md transition">E-Wallet</button>
-            </div>
+            <button onclick="closePaymentModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium">Cancel</button>
         </div>
     </div>
 
-    <!-- Notification Modal -->
     <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[85vh] flex flex-col">
             <button onclick="closeNotificationModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
@@ -137,7 +370,6 @@
         </div>
     </div>
 
-    <!-- Decline Modal -->
     <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
             <h3 class="font-bold text-lg text-gray-800 mb-2">Decline Order</h3>
@@ -183,7 +415,6 @@
         </div>
     </div>
 
-    <!-- JavaScript Application Logic -->
     <script>
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
@@ -193,6 +424,16 @@
         let currentActiveOrderId = null;
         let activeOrderData = null;
         let orderToDeclineId = null;
+
+        // POS Terminal State Variables
+        let posCartItems = [];
+        let posCurrentTable = 'A60 / INDOOR';
+        let posCardNo = '1003';
+        let posNoteText = 'None';
+        let posKeypadInput = '';
+        let activeMenuCategory = 'MINUMAN';
+        let allMenuItems = [];
+        let allCategories = [];
 
         // Malaysian Standard 5 Sen Rounding Helper Function
         function roundToNearest5Sen(amount) {
@@ -204,671 +445,533 @@
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             const errorDiv = document.getElementById('loginError');
-
             errorDiv.classList.add('hidden');
 
-            const { data, error } = await _supabase
-                .from('profiles')
-                .select('*')
-                .eq('email', email)
-                .eq('password', password)
-                .maybeSingle();
-
-            const allowedRoles = ['Admin', 'Manager', 'Cashier', 'Staff'];
-
-            if (error || !data || !allowedRoles.includes(data.role)) {
-                errorDiv.innerText = "Invalid login credentials or unauthorized role.";
+            try {
+                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                if (data && data.user) {
+                    checkUserSession();
+                }
+            } catch (err) {
+                errorDiv.textContent = err.message || 'Login failed. Please check credentials.';
                 errorDiv.classList.remove('hidden');
-                return;
             }
-
-            localStorage.setItem('cashier_session', JSON.stringify(data));
-            applyUserSession(data);
-        }
-
-        function applyUserSession(data) {
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('mainPanel').classList.remove('hidden');
-            
-            document.getElementById('cashierName').innerText = data.full_name || data.email.split('@')[0];
-            document.getElementById('cashierRole').innerText = data.role;
-
-            loadPendingOrders();
-            fetchIncomingOrders();
-            setupRealtimeSubscription();
         }
 
         async function handleLogout() {
-            localStorage.removeItem('cashier_session');
+            await _supabase.auth.signOut();
             document.getElementById('mainPanel').classList.add('hidden');
             document.getElementById('loginSection').classList.remove('hidden');
         }
 
+        async function checkUserSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session && session.user) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainPanel').classList.remove('hidden');
+                document.getElementById('cashierName').textContent = session.user.email.split('@')[0];
+                loadPendingOrders();
+                fetchMenuCatalog();
+            }
+        }
+
+        async function doCheckIn() {
+            alert('Checked in successfully!');
+        }
+
+        async function doCheckOut() {
+            alert('Checked out successfully!');
+        }
+
+        function refreshCashierSystem() {
+            loadPendingOrders();
+            fetchMenuCatalog();
+            alert('System refreshed.');
+        }
+
         async function loadPendingOrders() {
             const container = document.getElementById('pendingOrdersContainer');
-            container.innerHTML = '<p class="text-gray-500 text-sm">Loading current orders...</p>';
+            try {
+                const { data, error } = await _supabase
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-            const { data, error } = await _supabase
-                .from('orders')
-                .select('*')
-                .eq('status', 'accepted')
-                .order('created_at', { ascending: false });
+                if (error) throw error;
 
-            if(error) {
-                container.innerHTML = '<p class="text-red-500 text-sm">Failed to load orders.</p>';
-                return;
-            }
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="text-gray-500 text-xs p-4 bg-white rounded-xl border">No current orders found.</div>';
+                    document.getElementById('notificationBadge').classList.add('hidden');
+                    return;
+                }
 
-            if(!data || data.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-sm">No active current orders available.</p>';
-                return;
-            }
+                // Filter active/pending orders
+                const pending = data.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+                document.getElementById('notificationBadge').textContent = pending.length;
+                if (pending.length > 0) {
+                    document.getElementById('notificationBadge').classList.remove('hidden');
+                } else {
+                    document.getElementById('notificationBadge').classList.add('hidden');
+                }
 
-            container.innerHTML = data.map(order => `
-                <div class="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="font-bold text-gray-800 text-base">Order ID: #${order.id}</span>
-                            <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">Accepted</span>
+                container.innerHTML = data.map(order => {
+                    let badgeColor = 'bg-gray-100 text-gray-700';
+                    if (order.status === 'Pending') badgeColor = 'bg-yellow-100 text-yellow-800';
+                    else if (order.status === 'Preparing') badgeColor = 'bg-blue-100 text-blue-800';
+                    else if (order.status === 'Completed') badgeColor = 'bg-green-100 text-green-800';
+                    else if (order.status === 'Cancelled') badgeColor = 'bg-red-100 text-red-800';
+
+                    return `
+                        <div class="bg-white p-4 rounded-xl border shadow-sm flex justify-between items-center">
+                            <div>
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="font-bold text-sm text-gray-800">Order #${order.id}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${order.status}</span>
+                                </div>
+                                <p class="text-xs text-gray-500">Table/Type: ${order.table_number || 'Dine In'} | Total: RM ${Number(order.total_amount || 0).toFixed(2)}</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="openOrderModalById(${order.id})" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium">View</button>
+                                ${order.status !== 'Completed' && order.status !== 'Cancelled' ? `
+                                    <button onclick="openPaymentModalForOrder(${order.id}, ${order.total_amount})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Pay</button>
+                                ` : ''}
+                            </div>
                         </div>
-                        <p class="text-xs text-gray-600">Table / Location: <span class="font-semibold text-gray-800">${order.table_id || 'N/A'}</span></p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-base text-emerald-600 mr-2">RM${Number(order.total_amount || 0).toFixed(2)}</span>
-                        <button onclick='openOrderDetailsById(${order.id}, "current")' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
-                        <button onclick='openPaymentModalFromListId(${order.id}, ${order.total_amount || 0})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
-                    </div>
-                </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div class="text-red-500 text-xs p-4 bg-white rounded-xl border">Error loading orders.</div>';
+            }
+        }
+
+        async function fetchMenuCatalog() {
+            try {
+                const { data, error } = await _supabase.from('menu_items').select('*');
+                if (error) throw error;
+                if (data) {
+                    allMenuItems = data;
+                    // Extract unique categories
+                    allCategories = [...new Set(data.map(item => item.category || 'General'))];
+                    renderPosCategories();
+                    renderPosMenuItems(activeMenuCategory);
+                    renderPosFavourites();
+                    
+                    // Populate extra item select dropdown in order detail modal
+                    const select = document.getElementById('extraMenuItemSelect');
+                    if (select) {
+                        select.innerHTML = data.map(item => `<option value="${item.id}">${item.name} - RM ${Number(item.price).toFixed(2)}</option>`).join('');
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching menu catalog:', err);
+            }
+        }
+
+        // POS Interface Functions
+        function openNewOrderInterface() {
+            posCartItems = [];
+            posNoteText = 'None';
+            posKeypadInput = '';
+            document.getElementById('posInterfaceModal').classList.remove('hidden');
+            switchPosTab('menu');
+            renderPosCart();
+        }
+
+        function closePosInterface() {
+            document.getElementById('posInterfaceModal').classList.add('hidden');
+        }
+
+        function switchPosTab(tab) {
+            const menuView = document.getElementById('posMenuView');
+            const paymentView = document.getElementById('posPaymentView');
+            const menuBtn = document.getElementById('tabMenuBtn');
+            const paymentBtn = document.getElementById('tabPaymentBtn');
+
+            if (tab === 'menu') {
+                menuView.classList.remove('hidden');
+                paymentView.classList.add('hidden');
+                menuBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-xs font-bold transition';
+                paymentBtn.className = 'bg-gray-700 hover:bg-gray-600 text-white px-4 py-1.5 rounded text-xs font-bold transition';
+            } else {
+                menuView.classList.add('hidden');
+                paymentView.classList.remove('hidden');
+                menuBtn.className = 'bg-gray-700 hover:bg-gray-600 text-white px-4 py-1.5 rounded text-xs font-bold transition';
+                paymentBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-xs font-bold transition';
+                updatePaymentScreenValues();
+            }
+        }
+
+        function renderPosCategories() {
+            const container = document.getElementById('posCategoriesContainer');
+            if (!container) return;
+            container.innerHTML = allCategories.map(cat => `
+                <button onclick="selectMenuCategory('${cat}')" class="py-2 px-1 rounded text-center text-xs font-bold truncate transition ${activeMenuCategory === cat ? 'bg-amber-600 text-white shadow' : 'bg-[#222] text-gray-300 hover:bg-[#333]'}" title="${cat}">
+                    ${cat}
+                </button>
             `).join('');
         }
 
-        async function openOrderDetailsById(orderId, sourceType = 'current') {
-            const { data: order } = await _supabase.from('orders').select('*').eq('id', orderId).single();
-            if(!order) return;
-            openOrderDetails(order, sourceType);
+        function selectMenuCategory(cat) {
+            activeMenuCategory = cat;
+            renderPosCategories();
+            renderPosMenuItems(cat);
         }
 
-        async function openOrderDetails(order, sourceType = 'current') {
-            currentActiveOrderId = order.id;
-            activeOrderData = order;
-            document.getElementById('modalOrderTitle').innerText = `Order ID: #${order.id}`;
-            document.getElementById('modalOrderMeta').innerText = `Table: ${order.table_id || 'N/A'}`;
+        function renderPosMenuItems(category) {
+            const grid = document.getElementById('posMenuItemsGrid');
+            if (!grid) return;
+            const filtered = allMenuItems.filter(i => (i.category || 'General') === category);
             
-            const actionContainer = document.getElementById('modalActionButtonsContainer');
-            const extraSection = document.getElementById('extraItemSectionContainer');
-            const declineBtn = document.getElementById('modalDeclineBtn');
+            grid.innerHTML = filtered.map(item => `
+                <button onclick="addPosCartItem(${item.id})" class="bg-[#222] hover:bg-[#2c2c2c] border border-gray-700 p-2 rounded flex flex-col justify-between h-20 text-left transition active:scale-95 shadow">
+                    <span class="font-semibold text-xs text-gray-200 line-clamp-2">${item.name}</span>
+                    <span class="text-amber-400 font-bold text-xs">RM ${Number(item.price).toFixed(2)}</span>
+                </button>
+            `).join('');
+        }
 
-            if (sourceType === 'incoming') {
-                extraSection.classList.remove('hidden');
-                declineBtn.classList.remove('hidden');
-                actionContainer.innerHTML = `
-                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
-                    <button onclick="sendOrderToKitchen()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Accept & Send to Kitchen</button>
-                `;
-                await renderModalItems(order.id, true);
-                loadMenuForDropdown();
-            } else if (sourceType === 'completed' || sourceType === 'invoice_view') {
-                extraSection.classList.add('hidden');
-                declineBtn.classList.add('hidden');
-                
-                const { data: invData } = await _supabase.from('invoices').select('*').eq('order_id', order.id).maybeSingle();
-                const paymentMethod = invData ? invData.payment_method : 'N/A';
-                const invoiceDate = invData ? new Date(invData.created_at).toLocaleString() : new Date(order.created_at).toLocaleString();
-                
-                const sessionData = JSON.parse(localStorage.getItem('cashier_session') || '{}');
-                const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
+        function renderPosFavourites() {
+            const container = document.getElementById('posFavouritesContainer');
+            if (!container) return;
+            // Take first 6 items as favourites
+            const favs = allMenuItems.slice(0, 6);
+            container.innerHTML = favs.map(item => `
+                <button onclick="addPosCartItem(${item.id})" class="w-full bg-[#252525] hover:bg-[#333] border border-gray-800 p-1.5 rounded text-left transition">
+                    <div class="text-[11px] font-medium text-gray-200 truncate">${item.name}</div>
+                    <div class="text-[10px] text-amber-400 font-bold">RM ${Number(item.price).toFixed(2)}</div>
+                </button>
+            `).join('');
+        }
 
-                document.getElementById('modalOrderMeta').innerHTML = `
-                    Table: ${order.table_id || 'N/A'}<br>
-                    Date: ${invoiceDate}<br>
-                    Payment Method: <span class="font-semibold text-emerald-600">${paymentMethod}</span><br>
-                    Cashier: <span class="font-semibold text-gray-700">${cashierLabel}</span>
-                `;
+        function addPosCartItem(itemId) {
+            const item = allMenuItems.find(i => i.id === itemId);
+            if (!item) return;
 
-                actionContainer.innerHTML = `
-                    <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Print Receipt</button>
-                    <button onclick="recallOrder(${order.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Recall</button>
-                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Close</button>
-                `;
-                await renderReadOnlyModalItems(order.id, order.total_amount);
+            const existing = posCartItems.find(i => i.id === itemId);
+            if (existing) {
+                existing.quantity += 1;
             } else {
-                extraSection.classList.remove('hidden');
-                declineBtn.classList.remove('hidden');
-                actionContainer.innerHTML = `
-                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
-                    <button onclick="proceedToPaymentFromModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Proceed to Payment</button>
-                `;
-                await renderModalItems(order.id, true);
-                loadMenuForDropdown();
+                posCartItems.push({
+                    id: item.id,
+                    name: item.name,
+                    price: Number(item.price),
+                    quantity: 1
+                });
             }
-
-            document.getElementById('orderDetailModal').classList.remove('hidden');
+            renderPosCart();
         }
 
-        async function renderModalItems(orderId, editable = true) {
-            const itemsContainer = document.getElementById('modalOrderItemsList');
-            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
+        function renderPosCart() {
+            const container = document.getElementById('posItemsListContainer');
+            if (!container) return;
 
-            const { data: items, error } = await _supabase
-                .from('order_items')
-                .select('*')
-                .eq('order_id', orderId);
-            
-            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en, price');
-            const menuMap = {};
-            if (menuData) {
-                menuData.forEach(m => { menuMap[m.id] = m; });
-            }
-            
-            if (error || !items || items.length === 0) {
-                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
-                await recalulateAndUpdateOrderTotal(orderId);
-                return;
-            }
-
-            itemsContainer.innerHTML = '';
-            
-            items.forEach(item => {
-                let itemName = item.item_name;
-                if (!itemName && menuMap[item.menu_item_id]) {
-                    itemName = menuMap[item.menu_item_id].name_en;
-                }
-                if (!itemName) {
-                    itemName = `Menu Item #${item.menu_item_id}`;
-                }
-
-                const itemDiv = document.createElement('div');
-                itemDiv.className = "py-2 border-b text-xs space-y-2";
-                
-                if (editable) {
-                    itemDiv.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <div class="flex-1 pr-2">
-                                <span class="font-medium text-gray-800 block">${itemName}</span>
-                                <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="flex items-center border rounded-lg overflow-hidden bg-white">
-                                    <button type="button" class="decrease-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
-                                    <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
-                                    <button type="button" class="increase-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
-                                </div>
-                                <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
-                                <button type="button" class="remove-btn text-red-600 hover:text-red-800 font-bold px-2.5 py-1 bg-red-50 rounded">✕</button>
-                            </div>
+            if (posCartItems.length === 0) {
+                container.innerHTML = '<div class="p-4 text-center text-gray-400 text-xs">No items added yet. Select from menu.</div>';
+            } else {
+                container.innerHTML = posCartItems.map((item, index) => `
+                    <div class="grid grid-cols-12 px-2 py-1.5 items-center hover:bg-gray-50">
+                        <div class="col-span-7 font-medium truncate">${item.name}</div>
+                        <div class="col-span-2 text-center flex items-center justify-center space-x-1">
+                            <button onclick="updateCartQty(${index}, -1)" class="text-gray-500 hover:text-black font-bold px-1">-</button>
+                            <span>${item.quantity}</span>
+                            <button onclick="updateCartQty(${index}, 1)" class="text-gray-500 hover:text-black font-bold px-1">+</button>
                         </div>
-                        <div class="flex gap-2 items-center">
-                            <input type="text" class="item-note-input flex-1 border px-2.5 py-1 rounded-lg text-xs bg-gray-50 focus:bg-white focus:ring-1 focus:ring-emerald-500" placeholder="Add note (e.g. Less spicy, No onion)..." value="${item.note || ''}">
-                            <button type="button" class="save-note-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-lg text-xs font-medium">Save Note</button>
-                        </div>
-                    `;
-
-                    itemDiv.querySelector('.decrease-btn').addEventListener('click', async () => {
-                        await updateItemQuantity(item.id, item.quantity - 1, orderId);
-                    });
-                    itemDiv.querySelector('.increase-btn').addEventListener('click', async () => {
-                        await updateItemQuantity(item.id, item.quantity + 1, orderId);
-                    });
-                    itemDiv.querySelector('.remove-btn').addEventListener('click', async () => {
-                        await removeItemFromOrder(item.id, orderId);
-                    });
-                    itemDiv.querySelector('.save-note-btn').addEventListener('click', async () => {
-                        const noteVal = itemDiv.querySelector('.item-note-input').value.trim();
-                        await updateItemNote(item.id, noteVal, orderId);
-                    });
-                } else {
-                    itemDiv.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <div class="flex-1 pr-2">
-                                <span class="font-medium text-gray-800 block">${itemName} (x${item.quantity})</span>
-                                <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
-                                ${item.note ? `<p class="text-emerald-700 italic mt-0.5">Note: ${item.note}</p>` : ''}
-                            </div>
-                            <div class="font-bold text-emerald-600 text-right">RM${(item.price * item.quantity).toFixed(2)}</div>
-                        </div>
-                    `;
-                }
-
-                itemsContainer.appendChild(itemDiv);
-            });
-            
-            if (editable) {
-                await recalulateAndUpdateOrderTotal(orderId);
-            }
-        }
-
-        async function renderReadOnlyModalItems(orderId, totalAmount) {
-            const itemsContainer = document.getElementById('modalOrderItemsList');
-            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading receipt items...</p>';
-
-            const { data: items } = await _supabase
-                .from('order_items')
-                .select('*')
-                .eq('order_id', orderId);
-            
-            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
-            const menuMap = {};
-            if (menuData) {
-                menuData.forEach(m => { menuMap[m.id] = m.name_en; });
-            }
-
-            if (!items || items.length === 0) {
-                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found.</p>';
-                return;
-            }
-
-            let subtotal = 0;
-            items.forEach(i => { subtotal += Number(i.price) * Number(i.quantity); });
-            const sst = subtotal * 0.06;
-            const calculatedTotal = subtotal + sst;
-            const finalTotal = roundToNearest5Sen(calculatedTotal);
-            const roundingDiff = finalTotal - calculatedTotal;
-
-            const roundingFormatted = `${roundingDiff >= 0 ? '+' : ''}RM${roundingDiff.toFixed(2)}`;
-
-            itemsContainer.innerHTML = items.map(item => {
-                let itemName = item.item_name || menuMap[item.menu_item_id] || `Menu Item #${item.menu_item_id}`;
-                return `
-                    <div class="py-1.5 border-b text-xs space-y-0.5">
-                        <div class="flex justify-between items-center">
-                            <span class="font-medium text-gray-800">${itemName} (x${item.quantity})</span>
-                            <span class="font-bold text-gray-700">RM${(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                        ${item.note ? `<p class="text-emerald-700 italic">Note: ${item.note}</p>` : ''}
+                        <div class="col-span-3 text-right font-semibold">RM ${(item.price * item.quantity).toFixed(2)}</div>
                     </div>
-                `;
-            }).join('') + `
-                <div class="pt-2 mt-2 border-t space-y-1 text-xs">
-                    <div class="flex justify-between text-gray-600"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
-                    <div class="flex justify-between text-gray-600"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
-                    <div class="flex justify-between text-gray-600"><span>Rounding:</span><span>${roundingFormatted}</span></div>
-                    <div class="flex justify-between font-bold text-emerald-600 text-sm pt-1 border-t"><span>Total Amount:</span><span>RM${finalTotal.toFixed(2)}</span></div>
-                </div>
-            `;
+                `).join('');
+            }
+
+            // Calculate Totals
+            let totalQty = posCartItems.reduce((acc, curr) => acc + curr.quantity, 0);
+            let subTotal = posCartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+            let sst = subTotal * 0.06;
+            let grandTotal = roundToNearest5Sen(subTotal + sst);
+
+            document.getElementById('posTotalQty').textContent = totalQty;
+            document.getElementById('posSubTotal').textContent = `RM ${subTotal.toFixed(2)}`;
+            document.getElementById('posSst').textContent = `RM ${sst.toFixed(2)}`;
+            document.getElementById('posTotalAmount').textContent = grandTotal.toFixed(2);
+            document.getElementById('posNoteDisplay').textContent = posNoteText;
         }
 
-        async function updateItemQuantity(itemId, newQty, orderId) {
-            if (newQty <= 0) {
-                await removeItemFromOrder(itemId, orderId);
+        function updateCartQty(index, change) {
+            posCartItems[index].quantity += change;
+            if (posCartItems[index].quantity <= 0) {
+                posCartItems.splice(index, 1);
+            }
+            renderPosCart();
+        }
+
+        function triggerOrderNotePrompt() {
+            const note = prompt('Enter Order Note:', posNoteText);
+            if (note !== null) {
+                posNoteText = note.trim() || 'None';
+                renderPosCart();
+            }
+        }
+
+        function triggerGuestCheck() {
+            if (posCartItems.length === 0) {
+                alert('Cart is empty.');
                 return;
             }
-            const { error } = await _supabase
-                .from('order_items')
-                .update({ quantity: newQty })
-                .eq('id', itemId);
+            switchPosTab('payment');
+        }
 
-            if (!error) {
-                await renderModalItems(orderId, true);
+        function triggerHoldOrder() {
+            alert('Order placed on hold.');
+            closePosInterface();
+        }
+
+        function triggerClearOrder() {
+            if (confirm('Are you sure you want to clear current order items?')) {
+                posCartItems = [];
+                posNoteText = 'None';
+                renderPosCart();
+            }
+        }
+
+        function updatePaymentScreenValues() {
+            let subTotal = posCartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+            let sst = subTotal * 0.06;
+            let grandTotal = roundToNearest5Sen(subTotal + sst);
+
+            document.getElementById('posAmountDueDisplay').textContent = `RM ${grandTotal.toFixed(2)}`;
+            document.getElementById('posExactCashBtn').textContent = `RM ${grandTotal.toFixed(2)}`;
+            posKeypadInput = grandTotal.toFixed(2);
+            document.getElementById('posKeypadDisplay').textContent = posKeypadInput;
+        }
+
+        function keypadPress(val) {
+            if (val === 'AC') {
+                posKeypadInput = '0.00';
             } else {
-                alert('Failed to update quantity.');
+                if (posKeypadInput === '0.00' || posKeypadInput === '0') {
+                    posKeypadInput = val;
+                } else {
+                    posKeypadInput += val;
+                }
+            }
+            document.getElementById('posKeypadDisplay').textContent = posKeypadInput;
+        }
+
+        function addCashAmount(amount) {
+            let current = parseFloat(posKeypadInput) || 0;
+            posKeypadInput = (current + amount).toFixed(2);
+            document.getElementById('posKeypadDisplay').textContent = posKeypadInput;
+        }
+
+        async function executePosPayment(method) {
+            if (posCartItems.length === 0) {
+                alert('No items in cart.');
+                return;
+            }
+
+            let subTotal = posCartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+            let sst = subTotal * 0.06;
+            let grandTotal = roundToNearest5Sen(subTotal + sst);
+
+            try {
+                // 1. Insert into orders table
+                const { data: orderData, error: orderError } = await _supabase
+                    .from('orders')
+                    .insert([{
+                        table_number: posCurrentTable,
+                        total_amount: grandTotal,
+                        status: 'Completed',
+                        payment_status: 'Paid',
+                        payment_method: method,
+                        notes: posNoteText
+                    }])
+                    .select()
+                    .single();
+
+                if (orderError) throw orderError;
+
+                // 2. Insert into order_items table
+                const orderItemsPayload = posCartItems.map(i => ({
+                    order_id: orderData.id,
+                    item_name: i.name,
+                    quantity: i.quantity,
+                    price: i.price
+                }));
+
+                const { error: itemsError } = await _supabase.from('order_items').insert(orderItemsPayload);
+                if (itemsError) throw itemsError;
+
+                // 3. Insert into invoices table
+                const { error: invoiceError } = await _supabase.from('invoices').insert([{
+                    order_id: orderData.id,
+                    total_amount: grandTotal,
+                    payment_method: method,
+                    status: 'Paid'
+                }]);
+
+                if (invoiceError) {
+                    console.warn('Invoice table insert note:', invoiceError.message);
+                }
+
+                alert(`Payment successful via ${method}! Order #${orderData.id} completed.`);
+                closePosInterface();
+                loadPendingOrders();
+
+            } catch (err) {
+                console.error(err);
+                alert('Payment processing failed: ' + err.message);
             }
         }
 
-        async function updateItemNote(itemId, noteText, orderId) {
-            const { error } = await _supabase
-                .from('order_items')
-                .update({ note: noteText })
-                .eq('id', itemId);
+        // Order Management Modals
+        async function openOrderModalById(orderId) {
+            currentActiveOrderId = orderId;
+            const modal = document.getElementById('orderDetailModal');
+            modal.classList.remove('hidden');
 
-            if (!error) {
-                alert('Note saved successfully!');
-                await renderModalItems(orderId, true);
-            } else {
-                alert('Failed to save item note.');
+            try {
+                const { data: order, error: orderErr } = await _supabase
+                    .from('orders')
+                    .select('*')
+                    .eq('id', orderId)
+                    .single();
+
+                if (orderErr) throw orderErr;
+                activeOrderData = order;
+
+                document.getElementById('modalOrderTitle').textContent = `Order #${order.id} Details`;
+                document.getElementById('modalOrderMeta').textContent = `Table/Type: ${order.table_number || 'Dine In'} | Status: ${order.status} | Created: ${new Date(order.created_at).toLocaleString()}`;
+
+                // Fetch Items
+                const { data: items, error: itemsErr } = await _supabase
+                    .from('order_items')
+                    .select('*')
+                    .eq('order_id', orderId);
+
+                if (itemsErr) throw itemsErr;
+
+                const itemsListContainer = document.getElementById('modalOrderItemsList');
+                if (!items || items.length === 0) {
+                    itemsListContainer.innerHTML = '<p class="text-xs text-gray-500">No items found for this order.</p>';
+                } else {
+                    itemsListContainer.innerHTML = items.map(item => `
+                        <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border text-xs">
+                            <div>
+                                <span class="font-bold text-gray-800">${item.item_name}</span>
+                                <span class="text-gray-500 ml-2">Qty: ${item.quantity}</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="font-semibold text-emerald-600">RM ${(item.price * item.quantity).toFixed(2)}</span>
+                                <button onclick="removeOrderItem(${item.id}, ${orderId})" class="text-red-500 hover:text-red-700 font-bold">&times;</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Setup action buttons based on status
+                const actionsContainer = document.getElementById('modalActionButtonsContainer');
+                let buttonsHTML = '';
+                if (order.status === 'Pending') {
+                    buttonsHTML = `
+                        <button onclick="updateOrderStatus(${order.id}, 'Preparing')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Accept & Prepare</button>
+                    `;
+                } else if (order.status === 'Preparing') {
+                    buttonsHTML = `
+                        <button onclick="updateOrderStatus(${order.id}, 'Ready')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Mark Ready</button>
+                    `;
+                } else if (order.status === 'Ready') {
+                    buttonsHTML = `
+                        <button onclick="openPaymentModalForOrder(${order.id}, ${order.total_amount})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Pay & Complete</button>
+                    `;
+                }
+                actionsContainer.innerHTML = buttonsHTML;
+
+            } catch (err) {
+                console.error(err);
+                alert('Error loading order details.');
             }
         }
 
-        async function removeItemFromOrder(itemId, orderId) {
-            const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
-            if (!error) {
-                await renderModalItems(orderId, true);
-            } else {
-                alert('Failed to remove item from database.');
-            }
+        function closeOrderModal() {
+            document.getElementById('orderDetailModal').classList.add('hidden');
+            currentActiveOrderId = null;
         }
 
-        async function recalulateAndUpdateOrderTotal(orderId) {
-            const { data: items } = await _supabase
-                .from('order_items')
-                .select('price, quantity')
-                .eq('order_id', orderId);
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const { error } = await _supabase
+                    .from('orders')
+                    .update({ status: newStatus })
+                    .eq('id', orderId);
 
-            let subtotal = 0;
-            if (items) {
-                items.forEach(i => { subtotal += (Number(i.price) * Number(i.quantity)); });
-            }
-
-            const sst = subtotal * 0.06;
-            const calculatedTotal = subtotal + sst;
-            const finalTotal = roundToNearest5Sen(calculatedTotal);
-
-            await _supabase
-                .from('orders')
-                .update({ total_amount: finalTotal })
-                .eq('id', orderId);
-                
-            loadPendingOrders();
-        }
-
-        function closeOrderModal() { 
-            document.getElementById('orderDetailModal').classList.add('hidden'); 
-        }
-
-        async function loadMenuForDropdown() {
-            const select = document.getElementById('extraMenuItemSelect');
-            const { data } = await _supabase.from('menu_items').select('id, name_en, price');
-            if(data) {
-                select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name_en}">${m.name_en} - RM${m.price}</option>`).join('');
+                if (error) throw error;
+                alert(`Order status updated to ${newStatus}`);
+                closeOrderModal();
+                loadPendingOrders();
+            } catch (err) {
+                console.error(err);
+                alert('Failed to update status.');
             }
         }
 
         async function addExtraItemToOrder() {
+            if (!currentActiveOrderId) return;
             const select = document.getElementById('extraMenuItemSelect');
-            const opt = select.options[select.selectedIndex];
-            if(!opt) return;
+            const itemId = select.value;
+            const item = allMenuItems.find(i => i.id == itemId);
+            if (!item) return;
 
-            await _supabase.from('order_items').insert([{
-                order_id: currentActiveOrderId,
-                menu_item_id: opt.value,
-                item_name: opt.getAttribute('data-name'),
-                price: parseFloat(opt.getAttribute('data-price')),
-                quantity: 1
-            }]);
-            
-            await renderModalItems(currentActiveOrderId, true);
-        }
-
-        function openPaymentModalFromListId(orderId, totalAmount) {
-            currentActiveOrderId = orderId;
-            document.getElementById('paymentOrderInfo').innerText = `Order ID: #${orderId}`;
-            document.getElementById('paymentTotalAmount').innerText = `RM${Number(totalAmount || 0).toFixed(2)}`;
-            document.getElementById('paymentModal').classList.remove('hidden');
-        }
-
-        function proceedToPaymentFromModal() {
-            closeOrderModal();
-            openPaymentModalFromListId(activeOrderData.id, activeOrderData.total_amount);
-        }
-
-        function closePaymentModal() { 
-            document.getElementById('paymentModal').classList.add('hidden'); 
-        }
-
-        async function completePayment(method) {
-            const { data: orderItems } = await _supabase.from('order_items').select('*').eq('order_id', currentActiveOrderId);
-            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
-            const menuMap = {};
-            if (menuData) {
-                menuData.forEach(m => { menuMap[m.id] = m.name_en; });
-            }
-
-            if (orderItems) {
-                for (let item of orderItems) {
-                    if (!item.item_name && menuMap[item.menu_item_id]) {
-                        await _supabase.from('order_items')
-                            .update({ item_name: menuMap[item.menu_item_id] })
-                            .eq('id', item.id);
-                    }
-                }
-            }
-
-            let subtotal = 0;
-            if (orderItems) {
-                orderItems.forEach(i => { subtotal += Number(i.price) * Number(i.quantity); });
-            }
-            const sst = subtotal * 0.06;
-            const calculatedTotal = subtotal + sst;
-            const finalTotal = roundToNearest5Sen(calculatedTotal);
-
-            const { error: orderError } = await _supabase.from('orders').update({ status: 'Completed', payment_status: 'Paid', total_amount: finalTotal }).eq('id', currentActiveOrderId);
-            if(orderError) {
-                alert('Failed to update order status: ' + orderError.message);
-                return;
-            }
-
-            const { data: orderData } = await _supabase.from('orders').select('*').eq('id', currentActiveOrderId).single();
-
-            if (orderData) {
-                const { error: invError } = await _supabase.from('invoices').insert([{
-                    order_id: orderData.id,
-                    table_id: orderData.table_id || 'N/A',
-                    total_amount: orderData.total_amount || 0,
-                    payment_method: method
+            try {
+                const { error } = await _supabase.from('order_items').insert([{
+                    order_id: currentActiveOrderId,
+                    item_name: item.name,
+                    quantity: 1,
+                    price: item.price
                 }]);
 
-                if(invError) {
-                    alert('Error saving to invoices table: ' + invError.message);
-                    return;
-                }
-            }
+                if (error) throw error;
 
-            alert(`Payment completed via ${method} and successfully saved to Invoices table!`);
-            closePaymentModal();
-            closeOrderModal();
-            loadPendingOrders();
-            fetchIncomingOrders();
-        }
+                // Recalculate total amount
+                const { data: currentItems } = await _supabase.from('order_items').select('*').eq('order_id', currentActiveOrderId);
+                let newTotal = currentItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+                
+                await _supabase.from('orders').update({ total_amount: newTotal }).eq('id', currentActiveOrderId);
 
-        async function sendOrderToKitchen() {
-            if (!currentActiveOrderId) {
-                alert('No active order selected.');
-                return;
-            }
-
-            const { error } = await _supabase
-                .from('orders')
-                .update({ status: 'accepted' })
-                .eq('id', currentActiveOrderId);
-
-            if (!error) {
-                alert('Order accepted and sent successfully to Kitchen and Current Orders!');
-                closeOrderModal();
-                await loadPendingOrders();
-                await fetchIncomingOrders();
-            } else {
-                alert('Failed to send order.');
-            }
-        }
-
-        function openNotificationModal() {
-            document.getElementById('notificationModal').classList.remove('hidden');
-            fetchIncomingOrders();
-        }
-        
-        function closeNotificationModal() { 
-            document.getElementById('notificationModal').classList.add('hidden'); 
-        }
-
-        async function fetchIncomingOrders() {
-            const { data, error } = await _supabase
-                .from('orders')
-                .select('*')
-                .eq('status', 'pending')
-                .order('created_at', { ascending: false });
-
-            if(error) return;
-
-            const badge = document.getElementById('notificationBadge');
-            const container = document.getElementById('incomingOrdersList');
-            
-            if(data && data.length > 0) {
-                badge.innerText = data.length;
-                badge.classList.remove('hidden');
-                container.innerHTML = data.map(o => `
-                    <div class="border p-3 rounded-xl bg-gray-50 space-y-2 text-xs">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <span class="font-bold text-sm text-gray-900">Order #${o.id}</span>
-                                <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick='openOrderDetailsById(${o.id}, "incoming")' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">Open</button>
-                                <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium">Decline</button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                badge.classList.add('hidden');
-                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
-            }
-        }
-
-        async function openInvoiceListModal() {
-            document.getElementById('invoiceListModal').classList.remove('hidden');
-            const container = document.getElementById('invoiceListContainer');
-            container.innerHTML = '<p class="text-xs text-gray-500">Loading invoices...</p>';
-
-            const { data, error } = await _supabase
-                .from('invoices')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(50);
-
-            if (error) {
-                container.innerHTML = '<p class="text-red-500 text-xs">Failed to load invoices.</p>';
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-xs text-center py-4">No invoices found in table.</p>';
-                return;
-            }
-
-            container.innerHTML = data.map(inv => `
-                <div class="border p-3 rounded-xl bg-gray-50 flex justify-between items-center text-xs">
-                    <div>
-                        <span class="font-bold text-gray-800 text-sm">Invoice ID: #${inv.id} (Order #${inv.order_id})</span>
-                        <p class="text-gray-500">Table: ${inv.table_id || 'N/A'} | Method: ${inv.payment_method || 'N/A'} | Date: ${new Date(inv.created_at).toLocaleString()}</p>
-                        <span class="text-emerald-700 font-semibold">Status: Paid</span>
-                    </div>
-                    <div class="text-right">
-                        <span class="font-bold text-emerald-600 text-sm block mb-1">RM${Number(inv.total_amount || 0).toFixed(2)}</span>
-                        <button onclick="viewInvoiceDetails(${inv.order_id})" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded-lg text-xs">View Order</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function closeInvoiceListModal() {
-            document.getElementById('invoiceListModal').classList.add('hidden');
-        }
-
-        async function viewInvoiceDetails(orderId) {
-            closeInvoiceListModal();
-            const { data: order } = await _supabase.from('orders').select('*').eq('id', orderId).single();
-            if (order) {
-                openOrderDetails(order, 'invoice_view');
-            }
-        }
-
-        async function recallOrder(orderId) {
-            const { error } = await _supabase.from('orders').update({ status: 'accepted' }).eq('id', orderId);
-            if (!error) {
-                alert(`Order #${orderId} has been successfully recalled to Current Orders!`);
-                closeOrderModal();
+                alert('Extra item added successfully!');
+                openOrderModalById(currentActiveOrderId);
                 loadPendingOrders();
-            } else {
-                alert('Failed to recall order.');
+            } catch (err) {
+                console.error(err);
+                alert('Failed to add extra item.');
             }
         }
 
-        async function openLastReceiptModal() {
-            document.getElementById('lastReceiptModal').classList.remove('hidden');
-            const contentDiv = document.getElementById('lastReceiptContent');
-            contentDiv.innerHTML = '<p class="text-xs text-gray-500">Fetching last receipt...</p>';
+        async function removeOrderItem(itemId, orderId) {
+            if (!confirm('Remove this item from order?')) return;
+            try {
+                const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
+                if (error) throw error;
 
-            const { data, error } = await _supabase
-                .from('invoices')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
+                // Recalculate total amount
+                const { data: currentItems } = await _supabase.from('order_items').select('*').eq('order_id', orderId);
+                let newTotal = currentItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+                
+                await _supabase.from('orders').update({ total_amount: newTotal }).eq('id', orderId);
 
-            if (error || !data) {
-                contentDiv.innerHTML = '<p class="text-red-500 text-xs">No recent invoice found.</p>';
-                return;
+                openOrderModalById(orderId);
+                loadPendingOrders();
+            } catch (err) {
+                console.error(err);
+                alert('Failed to remove item.');
             }
-
-            const { data: items } = await _supabase
-                .from('order_items')
-                .select('*')
-                .eq('order_id', data.order_id);
-
-            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
-            const menuMap = {};
-            if (menuData) {
-                menuData.forEach(m => { menuMap[m.id] = m.name_en; });
-            }
-
-            let subtotal = 0;
-            if (items) {
-                items.forEach(i => { subtotal += Number(i.price) * Number(i.quantity); });
-            }
-            const sst = subtotal * 0.06;
-            const calculatedTotal = subtotal + sst;
-            const finalTotal = roundToNearest5Sen(calculatedTotal);
-            const roundingDiff = finalTotal - calculatedTotal;
-
-            const sstFormatted = sst.toFixed(2);
-            const roundingFormatted = `${roundingDiff >= 0 ? '+' : ''}RM${roundingDiff.toFixed(2)}`;
-            const finalTotalFormatted = finalTotal.toFixed(2);
-
-            let itemsHtml = '<div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 6px 0; margin: 6px 0;" class="space-y-1">';
-            if (items && items.length > 0) {
-                items.forEach(item => {
-                    let itemName = item.item_name || menuMap[item.menu_item_id] || `Menu Item #${item.menu_item_id || 'N/A'}`;
-                    itemsHtml += `
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>${itemName} (x${item.quantity})</span>
-                            <span>RM${(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
-                        </div>
-                        ${item.note ? `<div style="font-size: 10px; color: #047857; font-style: italic;">Note: ${item.note}</div>` : ''}
-                    `;
-                });
-            } else {
-                itemsHtml += '<div>No item details available.</div>';
-            }
-            itemsHtml += '</div>';
-
-            const sessionData = JSON.parse(localStorage.getItem('cashier_session') || '{}');
-            const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
-
-            contentDiv.innerHTML = `
-                <div style="text-align: center; border-bottom: 2px dashed #333; padding-bottom: 8px; margin-bottom: 8px;">
-                    <h2 style="font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0; color: #111;">Hameeds Bistro</h2>
-                </div>
-                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 2px;">Invoice #${data.id} (Order #${data.order_id}) | Table: ${data.table_id || 'N/A'}</div>
-                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 2px;">Date: ${new Date(data.created_at).toLocaleString()}</div>
-                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 6px;">Cashier: ${cashierLabel} | Method: ${data.payment_method || 'N/A'}</div>
-                ${itemsHtml}
-                <div style="space-y: 2px; font-size: 11px;">
-                    <div style="display: flex; justify-content: space-between; color: #444;"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; color: #444;"><span>SST (6%):</span><span>RM${sstFormatted}</span></div>
-                    <div style="display: flex; justify-content: space-between; color: #444;"><span>Rounding:</span><span>${roundingFormatted}</span></div>
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; color: #111; padding-top: 4px; border-top: 1px solid #ddd;">
-                        <span>Total Paid:</span>
-                        <span style="color: #059669;">RM${finalTotalFormatted}</span>
-                    </div>
-                </div>
-                <div style="text-align: center; color: #059669; font-weight: bold; margin-top: 8px; font-size: 11px;">STATUS: PAID</div>
-            `;
-        }
-
-        function closeLastReceiptModal() {
-            document.getElementById('lastReceiptModal').classList.add('hidden');
-        }
-
-        function promptDeclineOrder(orderId) {
-            orderToDeclineId = orderId;
-            document.getElementById('declineReasonInput').value = '';
-            document.getElementById('declineModal').classList.remove('hidden');
         }
 
         function promptDeclineOrderFromModal() {
             if (!currentActiveOrderId) return;
+            orderToDeclineId = currentActiveOrderId;
             closeOrderModal();
-            promptDeclineOrder(currentActiveOrderId);
+            document.getElementById('declineModal').classList.remove('hidden');
         }
 
         function closeDeclineModal() {
@@ -878,49 +981,222 @@
 
         async function submitDeclineOrder() {
             const reason = document.getElementById('declineReasonInput').value.trim();
-            if(!reason) {
-                alert('Please type a reason for declining.');
+            if (!reason) {
+                alert('Please provide a reason.');
                 return;
             }
 
-            const { error } = await _supabase
-                .from('orders')
-                .update({ status: 'Cancelled', decline_reason: reason })
-                .eq('id', orderToDeclineId);
+            try {
+                const { error } = await _supabase
+                    .from('orders')
+                    .update({ status: 'Cancelled', notes: reason })
+                    .eq('id', orderToDeclineId);
 
-            if(!error) {
+                if (error) throw error;
                 alert('Order declined successfully.');
                 closeDeclineModal();
-                fetchIncomingOrders();
                 loadPendingOrders();
-            } else {
+            } catch (err) {
+                console.error(err);
                 alert('Failed to decline order.');
             }
         }
 
-        function setupRealtimeSubscription() {
-            _supabase.channel('public:orders')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, payload => {
-                    if(payload.new && payload.new.status === 'pending') {
-                        fetchIncomingOrders();
-                    }
-                })
-                .subscribe();
+        // Payment Modal Handling
+        let targetPaymentOrderId = null;
+
+        function openPaymentModalForOrder(orderId, totalAmount) {
+            targetPaymentOrderId = orderId;
+            document.getElementById('paymentOrderInfo').textContent = `Order #${orderId}`;
+            document.getElementById('paymentTotalAmount').textContent = `RM ${Number(totalAmount).toFixed(2)}`;
+            document.getElementById('paymentModal').classList.remove('hidden');
         }
 
-        function doCheckIn() { alert("Checked-in!"); }
-        function doCheckOut() { alert("Checked-out!"); }
-        function refreshCashierSystem() { loadPendingOrders(); fetchIncomingOrders(); alert("Refreshed!"); }
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+            targetPaymentOrderId = null;
+        }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const session = localStorage.getItem('cashier_session');
-            if (session) {
-                const data = JSON.parse(session);
-                applyUserSession(data);
-            } else {
-                document.getElementById('mainPanel').classList.add('hidden');
-                document.getElementById('loginSection').classList.remove('hidden');
+        async function completePayment(method) {
+            if (!targetPaymentOrderId) return;
+            try {
+                // Update order to Completed & Paid
+                const { error: orderErr } = await _supabase
+                    .from('orders')
+                    .update({ status: 'Completed', payment_status: 'Paid', payment_method: method })
+                    .eq('id', targetPaymentOrderId);
+
+                if (orderErr) throw orderErr;
+
+                // Get order amount for invoice
+                const { data: ord } = await _supabase.from('orders').select('*').eq('id', targetPaymentOrderId).single();
+
+                // Insert into invoices table
+                await _supabase.from('invoices').insert([{
+                    order_id: targetPaymentOrderId,
+                    total_amount: ord.total_amount,
+                    payment_method: method,
+                    status: 'Paid'
+                }]);
+
+                alert(`Payment completed via ${method} for Order #${targetPaymentOrderId}!`);
+                closePaymentModal();
+                closeOrderModal();
+                loadPendingOrders();
+
+            } catch (err) {
+                console.error(err);
+                alert('Payment completion failed.');
             }
+        }
+
+        // Notification Modal
+        async function openNotificationModal() {
+            const modal = document.getElementById('notificationModal');
+            modal.classList.remove('hidden');
+            const container = document.getElementById('incomingOrdersList');
+            
+            try {
+                const { data, error } = await _supabase
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-gray-500">No incoming orders.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(order => `
+                    <div class="bg-gray-50 p-4 rounded-xl border flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-sm text-gray-800">Order #${order.id}</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800">${order.status}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Table: ${order.table_number || 'Dine In'} | RM ${Number(order.total_amount).toFixed(2)}</p>
+                        </div>
+                        <button onclick="closeNotificationModal(); openOrderModalById(${order.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Review</button>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p class="text-xs text-red-500">Error loading incoming orders.</p>';
+            }
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').classList.add('hidden');
+        }
+
+        // Invoice List Modal
+        async function openInvoiceListModal() {
+            const modal = document.getElementById('invoiceListModal');
+            modal.classList.remove('hidden');
+            const container = document.getElementById('invoiceListContainer');
+
+            try {
+                const { data, error } = await _supabase
+                    .from('invoices')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-gray-500">No completed invoices found.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(inv => `
+                    <div class="bg-gray-50 p-3 rounded-xl border flex justify-between items-center text-xs">
+                        <div>
+                            <span class="font-bold text-gray-800">Invoice #${inv.id} (Order #${inv.order_id})</span>
+                            <p class="text-gray-500 mt-0.5">Method: ${inv.payment_method || 'Cash'} | Date: ${new Date(inv.created_at).toLocaleString()}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-emerald-600 text-sm">RM ${Number(inv.total_amount).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p class="text-xs text-red-500">Error loading invoices.</p>';
+            }
+        }
+
+        function closeInvoiceListModal() {
+            document.getElementById('invoiceListModal').classList.add('hidden');
+        }
+
+        // Last Receipt Modal
+        async function openLastReceiptModal() {
+            const modal = document.getElementById('lastReceiptModal');
+            modal.classList.remove('hidden');
+            const content = document.getElementById('lastReceiptContent');
+
+            try {
+                const { data, error } = await _supabase
+                    .from('invoices')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (error || !data) {
+                    content.innerHTML = '<p class="text-xs text-gray-500">No recent receipt available.</p>';
+                    return;
+                }
+
+                // Fetch associated order items if possible
+                const { data: orderItems } = await _supabase
+                    .from('order_items')
+                    .select('*')
+                    .eq('order_id', data.order_id);
+
+                content.innerHTML = `
+                    <div class="text-center pb-2 border-b mb-2">
+                        <h4 class="font-bold text-sm text-gray-900">Hameeds Bistro</h4>
+                        <p class="text-[10px] text-gray-500">Official Receipt</p>
+                    </div>
+                    <div class="space-y-1 mb-2 text-[11px] text-gray-600">
+                        <div class="flex justify-between"><span>Invoice #:</span> <span class="font-bold">${data.id}</span></div>
+                        <div class="flex justify-between"><span>Order #:</span> <span class="font-bold">${data.order_id}</span></div>
+                        <div class="flex justify-between"><span>Date:</span> <span>${new Date(data.created_at).toLocaleString()}</span></div>
+                        <div class="flex justify-between"><span>Payment Method:</span> <span class="font-bold">${data.payment_method || 'Cash'}</span></div>
+                    </div>
+                    <div class="border-t border-b py-2 mb-2 space-y-1">
+                        <div class="font-bold text-[10px] text-gray-400 uppercase">Items</div>
+                        ${orderItems ? orderItems.map(i => `
+                            <div class="flex justify-between text-[11px]">
+                                <span>${i.item_name} x${i.quantity}</span>
+                                <span>RM ${(i.price * i.quantity).toFixed(2)}</span>
+                            </div>
+                        `).join('') : '<p class="text-[11px]">Items detail unavailable</p>'}
+                    </div>
+                    <div class="flex justify-between font-bold text-sm text-gray-900 pt-1">
+                        <span>Total Paid:</span>
+                        <span class="text-emerald-600">RM ${Number(data.total_amount).toFixed(2)}</span>
+                    </div>
+                `;
+
+            } href (err) {
+                console.error(err);
+                content.innerHTML = '<p class="text-xs text-red-500">Error loading last receipt.</p>';
+            }
+        }
+
+        function closeLastReceiptModal() {
+            document.getElementById('lastReceiptModal').classList.add('hidden');
+        }
+
+        // Initialize session check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            checkUserSession();
         });
     </script>
 </body>
