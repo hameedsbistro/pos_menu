@@ -121,14 +121,13 @@
 
     </div>
 
-    <!-- Modals (Order Details মডালে z-9999 ব্যবহার করা হয়েছে) -->
+    <!-- Modals (Order Details) -->
     <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
             <button onclick="closeOrderModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
             <h3 id="modalOrderTitle" class="font-bold text-xl text-gray-800 mb-1">Order Details</h3>
             <p id="modalOrderMeta" class="text-xs text-gray-500 mb-4"></p>
             
-            <!-- আইটেম লিস্ট এবং রিমুভ বাটন -->
             <div class="border rounded-xl p-3 mb-4 max-h-40 overflow-y-auto bg-gray-50 space-y-2" id="modalOrderItemsList"></div>
             
             <div class="border-t pt-3 flex-1 flex flex-col">
@@ -145,6 +144,7 @@
         </div>
     </div>
 
+    <!-- Payment Modal -->
     <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
             <button onclick="closePaymentModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
@@ -167,6 +167,7 @@
         </div>
     </div>
 
+    <!-- Notification Modal -->
     <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[85vh] flex flex-col">
             <button onclick="closeNotificationModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
@@ -179,6 +180,19 @@
         </div>
     </div>
 
+    <!-- Decline Reason Modal -->
+    <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <h3 class="font-bold text-lg text-gray-800 mb-2">Decline Order</h3>
+            <p class="text-xs text-gray-500 mb-3">Please provide a reason for declining this order:</p>
+            <textarea id="declineReasonInput" rows="3" class="w-full border p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4" placeholder="Type reason here..."></textarea>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeDeclineModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Cancel</button>
+                <button onclick="submitDeclineOrder()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Confirm Decline</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
@@ -187,6 +201,7 @@
 
         let currentActiveOrderId = null;
         let activeOrderData = null;
+        let orderToDeclineId = null;
 
         async function handleLogin(event) {
             event.preventDefault();
@@ -289,7 +304,6 @@
             const itemsContainer = document.getElementById('modalOrderItemsList');
             itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
 
-            // order_items টেবিলের সাথে সঠিক 'menu_items' টেবিল এবং 'name_en' কলাম জয়েন করা হলো
             const { data: items, error } = await _supabase
                 .from('order_items')
                 .select(`
@@ -297,6 +311,7 @@
                     order_id,
                     quantity,
                     price,
+                    item_name,
                     menu_item_id,
                     menu_items ( name_en )
                 `)
@@ -308,9 +323,9 @@
             }
 
             itemsContainer.innerHTML = items.map(item => {
-                const itemName = item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
+                const itemName = item.item_name || item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
 
-                return `
+                 return `
                     <div class="flex justify-between items-center py-1.5 border-b text-xs">
                         <div>
                             <span class="font-medium text-gray-800">${itemName}</span>
@@ -337,7 +352,6 @@
 
         async function loadMenuForDropdown() {
             const select = document.getElementById('extraMenuItemSelect');
-            // menu_items থেকে name_en ফেচ করা হচ্ছে
             const { data } = await _supabase.from('menu_items').select('id, name_en, price');
             if(data) {
                 select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name_en}">${m.name_en} - RM${m.price}</option>`).join('');
@@ -393,15 +407,13 @@
             document.getElementById('notificationModal').classList.add('hidden'); 
         }
 
-                // ১. নোটিফিকেশন লিস্ট ঠিক করার জন্য
         async function fetchIncomingOrders() {
-            const { data, error } = await _supabase
+            const { data } = await _supabase
                 .from('orders')
                 .select(`
                     *,
                     order_items (
                         id,
-                        order_id,
                         quantity,
                         price,
                         item_name,
@@ -425,12 +437,15 @@
                                 <span class="font-bold text-sm text-gray-900">Order #${o.id}</span>
                                 <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
                             </div>
-                            <button onclick='openOrderDetails(${JSON.stringify(o)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded-lg text-xs">Open</button>
+                            <div class="flex gap-2">
+                                <button onclick='handleNotificationOpen(${JSON.stringify(o)})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">Open</button>
+                                <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium">Decline</button>
+                            </div>
                         </div>
                         <div class="bg-white p-2 rounded border space-y-1 text-gray-700">
                             ${o.order_items && o.order_items.length > 0 
                                 ? o.order_items.map(item => {
-                                    const displayName = item.item_name || item.menu_items?.name_en || `Menu Item ID: ${item.menu_item_id}`;
+                                    const displayName = item.item_name || item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
                                     return `<div>• ${displayName} (x${item.quantity})</div>`;
                                   }).join('') 
                                 : '<span class="text-gray-400">No items found</span>'}
@@ -443,44 +458,44 @@
             }
         }
 
-        // ২. অর্ডারের ডিটেইলস মডাল ঠিক করার জন্য
-        async function renderModalItems(orderId) {
-            const itemsContainer = document.getElementById('modalOrderItemsList');
-            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
+        async function handleNotificationOpen(order) {
+            closeNotificationModal();
+            await loadPendingOrders();
+            openOrderDetails(order);
+        }
 
-            const { data: items, error } = await _supabase
-                .from('order_items')
-                .select(`
-                    id,
-                    order_id,
-                    quantity,
-                    price,
-                    item_name,
-                    menu_item_id,
-                    menu_items ( name_en )
-                `)
-                .eq('order_id', orderId);
-            
-            if (error || !items || items.length === 0) {
-                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
+        function promptDeclineOrder(orderId) {
+            orderToDeclineId = orderId;
+            document.getElementById('declineReasonInput').value = '';
+            document.getElementById('declineModal').classList.remove('hidden');
+        }
+
+        function closeDeclineModal() {
+            document.getElementById('declineModal').classList.add('hidden');
+            orderToDeclineId = null;
+        }
+
+        async function submitDeclineOrder() {
+            const reason = document.getElementById('declineReasonInput').value.trim();
+            if(!reason) {
+                alert('Please type a reason for declining.');
                 return;
             }
 
-            itemsContainer.innerHTML = items.map(item => {
-                const itemName = item.item_name || item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
+            const { error } = await _supabase
+                .from('orders')
+                .update({ status: 'Cancelled', decline_reason: reason })
+                .eq('id', orderToDeclineId);
 
-                return `
-                    <div class="flex justify-between items-center py-1.5 border-b text-xs">
-                        <div>
-                            <span class="font-medium text-gray-800">${itemName}</span>
-                            <span class="text-gray-500 ml-2">x${item.quantity} (RM${(item.price * item.quantity).toFixed(2)})</span>
-                        </div>
-                        <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 bg-red-50 rounded text-xs">✕ Remove</button>
-                    </div>
-                `;
-            }).join('');
+            if(!error) {
+                alert('Order declined successfully.');
+                closeDeclineModal();
+                fetchIncomingOrders();
+                loadPendingOrders();
+            } else {
+                alert('Failed to decline order.');
+            }
         }
-        
 
         function setupRealtimeSubscription() {
             _supabase.channel('public:orders')
