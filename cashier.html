@@ -1184,7 +1184,7 @@
                     </div>
                 `;
 
-            } href (err) {
+            } catch (err) {
                 console.error(err);
                 content.innerHTML = '<p class="text-xs text-red-500">Error loading last receipt.</p>';
             }
