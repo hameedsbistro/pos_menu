@@ -121,14 +121,10 @@
                 </div>
             </div>
             <div class="flex justify-between items-center mt-4 pt-3 border-t">
-                <!-- Left side action inside modal -->
                 <div>
                     <button onclick="promptDeclineOrderFromModal()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium">Cancel Order</button>
                 </div>
-                <!-- Right side dynamic buttons based on source -->
-                <div class="flex space-x-3" id="modalActionButtonsContainer">
-                    <!-- Dynamically injected via JS -->
-                </div>
+                <div class="flex space-x-3" id="modalActionButtonsContainer"></div>
             </div>
         </div>
     </div>
@@ -280,13 +276,11 @@
             
             const actionContainer = document.getElementById('modalActionButtonsContainer');
             if (sourceType === 'incoming') {
-                // Incoming notification open: Show Accept & Send to Kitchen
                 actionContainer.innerHTML = `
                     <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
                     <button onclick="sendOrderToKitchen()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Accept & Send to Kitchen</button>
                 `;
             } else {
-                // Current orders open: Show Proceed to Payment, Close button is handled by top right / footer
                 actionContainer.innerHTML = `
                     <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
                     <button onclick="proceedToPaymentFromModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Proceed to Payment</button>
@@ -302,10 +296,17 @@
             const itemsContainer = document.getElementById('modalOrderItemsList');
             itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
 
+            // Fetch order items and menu details concurrently to map names if missing
             const { data: items, error } = await _supabase
                 .from('order_items')
                 .select('*')
                 .eq('order_id', orderId);
+            
+            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en, price');
+            const menuMap = {};
+            if (menuData) {
+                menuData.forEach(m => { menuMap[m.id] = m; });
+            }
             
             if (error || !items || items.length === 0) {
                 itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
@@ -313,17 +314,51 @@
             }
 
             itemsContainer.innerHTML = items.map(item => {
-                const itemName = item.item_name || `Item ID: ${item.menu_item_id}`;
+                let itemName = item.item_name;
+                if (!itemName && menuMap[item.menu_item_id]) {
+                    itemName = menuMap[item.menu_item_id].name_en;
+                }
+                if (!itemName) {
+                    itemName = `Menu Item #${item.menu_item_id}`;
+                }
+
                 return `
-                    <div class="flex justify-between items-center py-1.5 border-b text-xs">
-                        <div>
-                            <span class="font-medium text-gray-800">${itemName}</span>
-                            <span class="text-gray-500 ml-2">x${item.quantity} (RM${(item.price * item.quantity).toFixed(2)})</span>
+                    <div class="flex justify-between items-center py-2 border-b text-xs">
+                        <div class="flex-1 pr-2">
+                            <span class="font-medium text-gray-800 block">${itemName}</span>
+                            <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
                         </div>
-                        <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 bg-red-50 rounded text-xs">✕ Remove</button>
+                        <div class="flex items-center space-x-2">
+                            <div class="flex items-center border rounded-lg overflow-hidden bg-white">
+                                <button onclick="updateItemQuantity(${item.id}, ${item.quantity - 1}, ${orderId})" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
+                                <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
+                                <button onclick="updateItemQuantity(${item.id}, ${item.quantity + 1}, ${orderId})" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
+                            </div>
+                            <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
+                            <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-1 bg-red-50 rounded">✕</button>
+                        </div>
                     </div>
                 `;
             }).join('');
+            
+            await recalulateAndUpdateOrderTotal(orderId);
+        }
+
+        async function updateItemQuantity(itemId, newQty, orderId) {
+            if (newQty <= 0) {
+                removeItemFromOrder(itemId, orderId);
+                return;
+            }
+            const { error } = await _supabase
+                .from('order_items')
+                .update({ quantity: newQty })
+                .eq('id', itemId);
+
+            if (!error) {
+                await renderModalItems(orderId);
+            } else {
+                alert('Failed to update quantity.');
+            }
         }
 
         async function removeItemFromOrder(itemId, orderId) {
@@ -333,6 +368,25 @@
             } else {
                 alert('Failed to remove item.');
             }
+        }
+
+        async function recalulateAndUpdateOrderTotal(orderId) {
+            const { data: items } = await _supabase
+                .from('order_items')
+                .select('price, quantity')
+                .eq('order_id', orderId);
+
+            let newTotal = 0;
+            if (items) {
+                items.forEach(i => { newTotal += (Number(i.price) * Number(i.quantity)); });
+            }
+
+            await _supabase
+                .from('orders')
+                .update({ total_amount: newTotal })
+                .eq('id', orderId);
+                
+            loadPendingOrders();
         }
 
         function closeOrderModal() { 
@@ -396,9 +450,7 @@
 
             const { error } = await _supabase
                 .from('orders')
-                .update({ 
-                    status: 'accepted' 
-                })
+                .update({ status: 'accepted' })
                 .eq('id', currentActiveOrderId);
 
             if (!error) {
@@ -407,7 +459,6 @@
                 await loadPendingOrders();
                 await fetchIncomingOrders();
             } else {
-                console.error("Send order error:", error);
                 alert('Failed to send order. Please check database permissions.');
             }
         }
