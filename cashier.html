@@ -488,23 +488,50 @@
         }
 
         async function completePayment(method) {
-            // 1. Update order status to Completed
-            await _supabase.from('orders').update({ status: 'Completed', payment_status: 'Paid' }).eq('id', currentActiveOrderId);
+            // 1. Ensure all order_items have valid item_names synced from menu_items if missing
+            const { data: orderItems } = await _supabase.from('order_items').select('*').eq('order_id', currentActiveOrderId);
+            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
+            const menuMap = {};
+            if (menuData) {
+                menuData.forEach(m => { menuMap[m.id] = m.name_en; });
+            }
 
-            // 2. Fetch order details to save into invoices table
+            if (orderItems) {
+                for (let item of orderItems) {
+                    if (!item.item_name && menuMap[item.menu_item_id]) {
+                        await _supabase.from('order_items')
+                            .update({ item_name: menuMap[item.menu_item_id] })
+                            .eq('id', item.id);
+                    }
+                }
+            }
+
+            // 2. Update order status to Completed
+            const { error: orderError } = await _supabase.from('orders').update({ status: 'Completed', payment_status: 'Paid' }).eq('id', currentActiveOrderId);
+            if(orderError) {
+                alert('Failed to update order status: ' + orderError.message);
+                return;
+            }
+
+            // 3. Fetch order details to save into invoices table
             const { data: orderData } = await _supabase.from('orders').select('*').eq('id', currentActiveOrderId).single();
 
             if (orderData) {
-                // 3. Save entry into dedicated 'invoices' table
-                await _supabase.from('invoices').insert([{
+                // 4. Save entry into dedicated 'invoices' table
+                const { error: invError } = await _supabase.from('invoices').insert([{
                     order_id: orderData.id,
                     table_id: orderData.table_id || 'N/A',
                     total_amount: orderData.total_amount || 0,
                     payment_method: method
                 }]);
+
+                if(invError) {
+                    alert('Error saving to invoices table: ' + invError.message + '\n(Please check if RLS is disabled for the invoices table in Supabase).');
+                    return;
+                }
             }
 
-            alert(`Payment completed via ${method} and saved to Invoices table!`);
+            alert(`Payment completed via ${method} and successfully saved to Invoices table!`);
             closePaymentModal();
             closeOrderModal();
             loadPendingOrders();
@@ -648,12 +675,26 @@
                 .select('*')
                 .eq('order_id', data.order_id);
 
+            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
+            const menuMap = {};
+            if (menuData) {
+                menuData.forEach(m => { menuMap[m.id] = m.name_en; });
+            }
+
             let itemsHtml = '<div class="border-t border-b py-2 my-2 space-y-1">';
             if (items && items.length > 0) {
                 items.forEach(item => {
+                    let itemName = item.item_name;
+                    if (!itemName && menuMap[item.menu_item_id]) {
+                        itemName = menuMap[item.menu_item_id];
+                    }
+                    if (!itemName) {
+                        itemName = `Menu Item #${item.menu_item_id || 'N/A'}`;
+                    }
+
                     itemsHtml += `
                         <div class="flex justify-between">
-                            <span>${item.item_name || 'Item'} (x${item.quantity})</span>
+                            <span>${itemName} (x${item.quantity})</span>
                             <span>RM${(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
                         </div>
                     `;
