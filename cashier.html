@@ -349,15 +349,15 @@
                     </div>
                 `;
 
-                // Safe Event Listeners for buttons
-                itemDiv.querySelector('.decrease-btn').addEventListener('click', () => {
-                    updateItemQuantity(item.id, item.quantity - 1, orderId);
+                // Safe Event Listeners for + / - / x buttons with async handling
+                itemDiv.querySelector('.decrease-btn').addEventListener('click', async () => {
+                    await updateItemQuantity(item.id, item.quantity - 1, orderId);
                 });
-                itemDiv.querySelector('.increase-btn').addEventListener('click', () => {
-                    updateItemQuantity(item.id, item.quantity + 1, orderId);
+                itemDiv.querySelector('.increase-btn').addEventListener('click', async () => {
+                    await updateItemQuantity(item.id, item.quantity + 1, orderId);
                 });
-                itemDiv.querySelector('.remove-btn').addEventListener('click', () => {
-                    removeItemFromOrder(item.id, orderId);
+                itemDiv.querySelector('.remove-btn').addEventListener('click', async () => {
+                    await removeItemFromOrder(item.id, orderId);
                 });
 
                 itemsContainer.appendChild(itemDiv);
