@@ -262,6 +262,7 @@
                 .order('created_at', { ascending: false });
 
             if(error) {
+                console.error("Error loading orders:", error);
                 container.innerHTML = '<p class="text-red-500 text-sm">Failed to load orders.</p>';
                 return;
             }
@@ -287,6 +288,46 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        async function fetchIncomingOrders() {
+            // শুধুমাত্র orders টেবিল থেকে ডাটা ফেচ করা হচ্ছে যাতে Bad Request না আসে
+            const { data, error } = await _supabase
+                .from('orders')
+                .select('*')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if(error) {
+                console.error("Error fetching incoming orders:", error);
+                return;
+            }
+
+            const badge = document.getElementById('notificationBadge');
+            const container = document.getElementById('incomingOrdersList');
+            
+            if(data && data.length > 0) {
+                badge.innerText = data.length;
+                badge.classList.remove('hidden');
+                
+                container.innerHTML = data.map(o => `
+                    <div class="border p-3 rounded-xl bg-gray-50 space-y-2 text-xs">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-sm text-gray-900">Order #${o.id}</span>
+                                <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick='handleNotificationOpen(${JSON.stringify(o)})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">Open</button>
+                                <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                badge.classList.add('hidden');
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
+            }
         }
 
         async function openOrderDetails(order) {
