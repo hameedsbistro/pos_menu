@@ -316,10 +316,10 @@
             
             if (error || !items || items.length === 0) {
                 itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
+                await recalulateAndUpdateOrderTotal(orderId);
                 return;
             }
 
-            // Clean DOM generation for items to prevent inline onclick string issues
             itemsContainer.innerHTML = '';
             
             items.forEach(item => {
@@ -349,7 +349,7 @@
                     </div>
                 `;
 
-                // Attach safe event listeners directly to the buttons
+                // Safe Event Listeners for buttons
                 itemDiv.querySelector('.decrease-btn').addEventListener('click', () => {
                     updateItemQuantity(item.id, item.quantity - 1, orderId);
                 });
@@ -388,7 +388,7 @@
             if (!error) {
                 await renderModalItems(orderId);
             } else {
-                alert('Failed to remove item.');
+                alert('Failed to remove item from database.');
             }
         }
 
