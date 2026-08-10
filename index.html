@@ -859,7 +859,7 @@
     const email = document.getElementById('regEmail').value;
     const password = document.getElementById('regPassword').value;
 
-    // ১. প্রথমে Supabase Auth এ ইউজার ক্রিয়েট করুন
+    // ১. প্রথমে Supabase Auth-এ ইউজার রেজিস্টার করুন
     const { data: authData, error: authError } = await _supabase.auth.signUp({
         email: email,
         password: password
@@ -870,12 +870,12 @@
         return;
     }
 
-    // ২. সফলভাবে Auth এ ক্রিয়েট হলে এবার আপনার customers টেবিলে ইনফরমেশন সেভ করুন
+    // ২. সফলভাবে Auth-এ তৈরি হলে আপনার custom 'customers' টেবিলে সেভ করুন
     const { error: dbError } = await _supabase.from('customers').insert([{ 
         full_name, 
         phone, 
         email, 
-        password // যদি টেবিলে পাসওয়ার্ড রাখতে চান
+        password 
     }]);
 
     if(dbError) { 
@@ -885,7 +885,8 @@
 
     alert('Registration successful! Please login.');
     toggleAuthMode('login');
-}
+        }
+        
 
 
         async function loginCustomer() {
