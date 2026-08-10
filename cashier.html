@@ -204,26 +204,44 @@
         let orderToDeclineId = null;
 
         async function handleLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const errorDiv = document.getElementById('loginError');
+    event.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const errorDiv = document.getElementById('loginError');
 
-            errorDiv.classList.add('hidden');
+    errorDiv.classList.add('hidden');
 
-            const { data, error } = await _supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
+    // 'profiles' টেবিল থেকে ইমেল ও পাসওয়ার্ড দিয়ে ইউজার খুঁজুন
+    const { data, error } = await _supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
 
-            if (error) {
-                errorDiv.innerText = error.message;
-                errorDiv.classList.remove('hidden');
-                return;
-            }
+    // ভ্যালিড রোলগুলোর তালিকা
+    const allowedRoles = ['Admin', 'Manager', 'Cashier', 'Staff'];
 
-            checkAuthSession();
-        }
+    if (error || !data || !allowedRoles.includes(data.role)) {
+        errorDiv.innerText = "Invalid login credentials or unauthorized role.";
+        errorDiv.classList.remove('hidden');
+        return;
+    }
+
+    // লগইন সফল হলে প্যানেল ওপেন হবে
+    document.getElementById('loginSection').classList.add('hidden');
+    document.getElementById('mainPanel').classList.remove('hidden');
+    
+    document.getElementById('cashierName').innerText = data.full_name || 'Staff';
+    document.getElementById('cashierRole').innerText = data.role;
+
+    // সেশন সেভ করে রাখা যাতে পেজ রিফ্রেশ করলে লগইন না কাটে
+    localStorage.setItem('cashier_session', JSON.stringify(data));
+
+    loadPendingOrders();
+    fetchIncomingOrders();
+    setupRealtimeSubscription();
+}
 
         async function handleLogout() {
             await _supabase.auth.signOut();
