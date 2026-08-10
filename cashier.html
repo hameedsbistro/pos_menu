@@ -261,11 +261,17 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-base text-emerald-600 mr-2">RM${Number(order.total_amount || 0).toFixed(2)}</span>
-                        <button onclick='openOrderDetails(${JSON.stringify(order)}, "current")' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
-                        <button onclick='openPaymentModalFromList(${JSON.stringify(order)})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
+                        <button onclick='openOrderDetailsById(${order.id}, "current")' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
+                        <button onclick='openPaymentModalFromListId(${order.id}, ${order.total_amount || 0})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
                     </div>
                 </div>
             `).join('');
+        }
+
+        async function openOrderDetailsById(orderId, sourceType = 'current') {
+            const { data: order } = await _supabase.from('orders').select('*').eq('id', orderId).single();
+            if(!order) return;
+            openOrderDetails(order, sourceType);
         }
 
         async function openOrderDetails(order, sourceType = 'current') {
@@ -301,38 +307,53 @@
                 .select('*')
                 .eq('order_id', orderId);
             
+            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en, price');
+            const menuMap = {};
+            if (menuData) {
+                menuData.forEach(m => { menuMap[m.id] = m; });
+            }
+            
             if (error || !items || items.length === 0) {
                 itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
                 return;
             }
 
             itemsContainer.innerHTML = items.map(item => {
-                const itemName = item.item_name || `Item ID: ${item.menu_item_id}`;
-                const itemTotal = (Number(item.price) * Number(item.quantity)).toFixed(2);
+                let itemName = item.item_name;
+                if (!itemName && menuMap[item.menu_item_id]) {
+                    itemName = menuMap[item.menu_item_id].name_en;
+                }
+                if (!itemName) {
+                    itemName = `Menu Item #${item.menu_item_id}`;
+                }
+
                 return `
-                    <div class="flex justify-between items-center py-2 border-b text-xs gap-2">
-                        <div class="flex-1">
-                            <span class="font-bold text-gray-900 block">${itemName}</span>
-                            <span class="text-gray-500">RM${Number(item.price).toFixed(2)} each</span>
+                    <div class="flex justify-between items-center py-2 border-b text-xs">
+                        <div class="flex-1 pr-2">
+                            <span class="font-medium text-gray-800 block">${itemName}</span>
+                            <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
                         </div>
-                        <div class="flex items-center space-x-1 border rounded-lg bg-white px-1">
-                            <button onclick="updateItemQuantity(${item.id}, ${item.quantity - 1}, ${orderId})" class="w-6 h-6 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-100 rounded">-</button>
-                            <span class="w-6 text-center font-semibold">${item.quantity}</span>
-                            <button onclick="updateItemQuantity(${item.id}, ${item.quantity + 1}, ${orderId})" class="w-6 h-6 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-100 rounded">+</button>
+                        <div class="flex items-center space-x-2">
+                            <div class="flex items-center border rounded-lg overflow-hidden bg-white">
+                                <button onclick="updateItemQuantity(${item.id}, ${item.quantity - 1}, ${orderId})" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
+                                <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
+                                <button onclick="updateItemQuantity(${item.id}, ${item.quantity + 1}, ${orderId})" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
+                            </div>
+                            <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
+                            <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-1 bg-red-50 rounded">✕</button>
                         </div>
-                        <span class="font-bold text-emerald-600 w-16 text-right">RM${itemTotal}</span>
-                        <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold p-1 bg-red-50 rounded ml-1" title="Remove Item">✕</button>
                     </div>
                 `;
             }).join('');
+            
+            await recalulateAndUpdateOrderTotal(orderId);
         }
 
         async function updateItemQuantity(itemId, newQty, orderId) {
             if (newQty <= 0) {
-                await removeItemFromOrder(itemId, orderId);
+                removeItemFromOrder(itemId, orderId);
                 return;
             }
-
             const { error } = await _supabase
                 .from('order_items')
                 .update({ quantity: newQty })
@@ -340,7 +361,6 @@
 
             if (!error) {
                 await renderModalItems(orderId);
-                recalculateOrderTotal(orderId);
             } else {
                 alert('Failed to update quantity.');
             }
@@ -350,19 +370,28 @@
             const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
             if (!error) {
                 await renderModalItems(orderId);
-                recalculateOrderTotal(orderId);
             } else {
                 alert('Failed to remove item.');
             }
         }
 
-        async function recalculateOrderTotal(orderId) {
-            const { data: items } = await _supabase.from('order_items').select('price, quantity').eq('order_id', orderId);
-            if(items) {
-                const total = items.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
-                await _supabase.from('orders').update({ total_amount: total }).eq('id', orderId);
-                loadPendingOrders();
+        async function recalulateAndUpdateOrderTotal(orderId) {
+            const { data: items } = await _supabase
+                .from('order_items')
+                .select('price, quantity')
+                .eq('order_id', orderId);
+
+            let newTotal = 0;
+            if (items) {
+                items.forEach(i => { newTotal += (Number(i.price) * Number(i.quantity)); });
             }
+
+            await _supabase
+                .from('orders')
+                .update({ total_amount: newTotal })
+                .eq('id', orderId);
+                
+            loadPendingOrders();
         }
 
         function closeOrderModal() { 
@@ -382,43 +411,27 @@
             const opt = select.options[select.selectedIndex];
             if(!opt) return;
 
-            const menuItemId = opt.value;
-            const itemName = opt.getAttribute('data-name');
-            const itemPrice = parseFloat(opt.getAttribute('data-price'));
-
-            const { data: existingItems } = await _supabase
-                .from('order_items')
-                .select('*')
-                .eq('order_id', currentActiveOrderId)
-                .eq('menu_item_id', menuItemId);
-
-            if (existingItems && existingItems.length > 0) {
-                const existing = existingItems[0];
-                await updateItemQuantity(existing.id, existing.quantity + 1, currentActiveOrderId);
-            } else {
-                await _supabase.from('order_items').insert([{
-                    order_id: currentActiveOrderId,
-                    menu_item_id: menuItemId,
-                    item_name: itemName,
-                    price: itemPrice,
-                    quantity: 1
-                }]);
-            }
+            await _supabase.from('order_items').insert([{
+                order_id: currentActiveOrderId,
+                menu_item_id: opt.value,
+                item_name: opt.getAttribute('data-name'),
+                price: parseFloat(opt.getAttribute('data-price')),
+                quantity: 1
+            }]);
             
             await renderModalItems(currentActiveOrderId);
-            recalculateOrderTotal(currentActiveOrderId);
         }
 
-        function openPaymentModalFromList(order) {
-            currentActiveOrderId = order.id;
-            document.getElementById('paymentOrderInfo').innerText = `Order ID: #${order.id}`;
-            document.getElementById('paymentTotalAmount').innerText = `RM${Number(order.total_amount || 0).toFixed(2)}`;
+        function openPaymentModalFromListId(orderId, totalAmount) {
+            currentActiveOrderId = orderId;
+            document.getElementById('paymentOrderInfo').innerText = `Order ID: #${orderId}`;
+            document.getElementById('paymentTotalAmount').innerText = `RM${Number(totalAmount || 0).toFixed(2)}`;
             document.getElementById('paymentModal').classList.remove('hidden');
         }
 
         function proceedToPaymentFromModal() {
             closeOrderModal();
-            openPaymentModalFromList(activeOrderData);
+            openPaymentModalFromListId(activeOrderData.id, activeOrderData.total_amount);
         }
 
         function closePaymentModal() { 
@@ -487,7 +500,7 @@
                                 <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick='handleNotificationOpen(${JSON.stringify(o)})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">Open</button>
+                                <button onclick='openOrderDetailsById(${o.id}, "incoming")' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">Open</button>
                                 <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium">Decline</button>
                             </div>
                         </div>
@@ -497,11 +510,6 @@
                 badge.classList.add('hidden');
                 container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
             }
-        }
-
-        async function handleNotificationOpen(order) {
-            closeNotificationModal();
-            openOrderDetails(order, 'incoming');
         }
 
         function promptDeclineOrder(orderId) {
