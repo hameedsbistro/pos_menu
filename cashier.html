@@ -11,6 +11,29 @@
     <link rel="icon" href="https://your-image-url.com/icon.png" type="image/x-icon">
     <style>
         .z-9999 { z-index: 9999 !important; }
+
+        /* Print Specific Styling: Only receipt content will print, buttons & modal backgrounds will hide */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #lastReceiptContent, #lastReceiptContent * {
+                visibility: visible;
+            }
+            #lastReceiptContent {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+            }
+            #lastReceiptModal, #lastReceiptModal > div > div:last-child {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans overflow-hidden">
@@ -114,7 +137,6 @@
             
             <div class="border rounded-xl p-3 mb-4 max-h-48 overflow-y-auto bg-gray-50 space-y-2" id="modalOrderItemsList"></div>
             
-            <!-- Extra Item Section (Only visible for active orders, hidden for completed invoice views) -->
             <div id="extraItemSectionContainer" class="border-t pt-3 flex-1 flex flex-col">
                 <h4 class="font-semibold text-gray-700 text-sm mb-2">Add Extra Item from Menu:</h4>
                 <div class="flex gap-2 mb-3">
@@ -330,11 +352,9 @@
                 await renderModalItems(order.id, true);
                 loadMenuForDropdown();
             } else if (sourceType === 'completed' || sourceType === 'invoice_view') {
-                // Read-only invoice view mode (No quantity editing, no remove button, no extra add dropdown)
                 extraSection.classList.add('hidden');
                 declineBtn.classList.add('hidden');
                 
-                // Fetch invoice meta if available for cashier name & payment details
                 const { data: invData } = await _supabase.from('invoices').select('*').eq('order_id', order.id).maybeSingle();
                 const paymentMethod = invData ? invData.payment_method : 'N/A';
                 const invoiceDate = invData ? new Date(invData.created_at).toLocaleString() : new Date(order.created_at).toLocaleString();
@@ -691,7 +711,6 @@
             }
         }
 
-        // --- INVOICE LIST FUNCTIONS ---
         async function openInvoiceListModal() {
             document.getElementById('invoiceListModal').classList.remove('hidden');
             const container = document.getElementById('invoiceListContainer');
@@ -751,7 +770,6 @@
             }
         }
 
-        // --- LAST RECEIPT FUNCTIONS ---
         async function openLastReceiptModal() {
             document.getElementById('lastReceiptModal').classList.remove('hidden');
             const contentDiv = document.getElementById('lastReceiptContent');
@@ -807,7 +825,9 @@
             const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
 
             contentDiv.innerHTML = `
-                <div class="text-center font-bold text-gray-800 text-sm mb-1">Hameeds Bistro</div>
+                <div style="text-align: center; border-bottom: 2px dashed #333; padding-bottom: 8px; margin-bottom: 8px;">
+                    <h2 style="font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0; color: #111;">Hameeds Bistro</h2>
+                </div>
                 <div class="text-center text-gray-500 text-[10px] mb-1">Invoice #${data.id} (Order #${data.order_id}) | Table: ${data.table_id || 'N/A'}</div>
                 <div class="text-center text-gray-500 text-[10px] mb-1">Date: ${new Date(data.created_at).toLocaleString()}</div>
                 <div class="text-center text-gray-500 text-[10px] mb-1">Cashier: ${cashierLabel} | Method: ${data.payment_method || 'N/A'}</div>
