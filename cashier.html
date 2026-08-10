@@ -157,10 +157,13 @@
             
             <!-- LEFT COLUMN: ORDER RECEIPT TICKET VIEW -->
             <div class="w-[380px] bg-white text-black flex flex-col border-r border-gray-300 flex-shrink-0">
-                <!-- Top Info Header -->
+                <!-- Top Info Header (Card No Aeditable/Optional) -->
                 <div class="bg-gray-800 text-white px-3 py-2 flex justify-between items-center text-xs font-bold">
                     <div>TABLE : <span id="posDisplayTable" class="text-emerald-400">A60 / INDOOR</span></div>
-                    <div>CARD NO : <span id="posDisplayCard" class="text-yellow-400">1003</span></div>
+                    <div class="flex items-center gap-1">
+                        <span>CARD NO:</span>
+                        <input type="text" id="posEditableCardNo" value="1003" class="w-12 bg-gray-700 text-yellow-400 px-1 rounded text-center text-xs border border-gray-600 focus:outline-none">
+                    </div>
                     <div>PAX : <span id="posDisplayPax" class="text-blue-400">5</span></div>
                 </div>
 
@@ -182,7 +185,7 @@
                     <input type="text" id="posOrderNoteInput" placeholder="Add order note..." class="w-full border px-2 py-1 rounded mt-1 text-xs text-black focus:outline-none focus:ring-1 focus:ring-emerald-500">
                 </div>
 
-                <!-- Summary Totals Footer -->
+                <!-- Summary Totals Footer with Editable SST/Percent -->
                 <div class="bg-gray-900 text-white p-3 space-y-1 text-xs">
                     <div class="flex justify-between text-gray-300">
                         <span>Item Qty</span>
@@ -190,10 +193,14 @@
                         <span>Sub Total</span>
                         <span id="posSummarySubTotal" class="font-bold">RM0.00</span>
                     </div>
-                    <div class="flex justify-between text-gray-300">
+                    <div class="flex justify-between items-center text-gray-300">
                         <span>Srvc Chrg.</span>
                         <span id="posSummarySrvc">0.00</span>
-                        <span>SST (6%)</span>
+                        <div class="flex items-center gap-1">
+                            <span>SST (</span>
+                            <input type="number" id="posEditableTaxPercent" value="6" oninput="renderPosCart()" class="w-8 bg-gray-800 text-emerald-400 font-bold px-1 rounded text-center text-xs border border-gray-700 focus:outline-none">
+                            <span>%)</span>
+                        </div>
                         <span id="posSummarySst" class="font-bold">RM0.00</span>
                     </div>
                     <div class="flex justify-between text-emerald-400 font-extrabold text-sm pt-1 border-t border-gray-700">
@@ -294,6 +301,7 @@
         </div>
     </div>
 
+    <!-- Notification Modal -->
     <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[85vh] flex flex-col">
             <button onclick="closeNotificationModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
@@ -303,6 +311,65 @@
             <div class="mt-4 pt-3 border-t flex justify-end">
                 <button onclick="closeNotificationModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modifier / Item Options Modal -->
+    <div id="modifierModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <button onclick="closeModifierModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            <h3 id="modifierItemTitle" class="font-bold text-xl text-gray-800 mb-2">Item Modifiers</h3>
+            <p class="text-xs text-gray-500 mb-4">Select options or preferences for this item:</p>
+            
+            <div class="space-y-3 mb-5 text-sm">
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Sugar Level:</label>
+                    <select id="modSugarSelect" class="w-full border p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="Normal Sugar">Normal Sugar</option>
+                        <option value="Less Sugar">Less Sugar</option>
+                        <option value="No Sugar">No Sugar (Kosong)</option>
+                        <option value="Extra Sugar">Extra Sugar</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Temperature / Ice:</label>
+                    <select id="modTempSelect" class="w-full border p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="Normal Ice">Normal Ice</option>
+                        <option value="Less Ice">Less Ice</option>
+                        <option value="No Ice (Jambu/O)">No Ice</option>
+                        <option value="Hot">Hot (Panas)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-1">Special Instruction / Note:</label>
+                    <input type="text" id="modNoteInput" placeholder="e.g., Bungkus, Extra spicy..." class="w-full border p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeModifierModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Cancel</button>
+                <button onclick="confirmAddWithModifiers()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Add to Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Success Popup Modal -->
+    <div id="paymentSuccessModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-sm w-full shadow-2xl relative mx-4 text-center">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">✓</div>
+            <h3 class="font-bold text-xl text-gray-800 mb-1">Payment Successful!</h3>
+            <p id="successPaymentMethodLabel" class="text-xs text-emerald-600 font-bold uppercase mb-3">Cash</p>
+            
+            <div class="bg-gray-50 p-3 rounded-xl border text-xs space-y-2 mb-4 text-left">
+                <div class="flex justify-between"><span class="text-gray-500">Total Paid:</span><span id="successTotalPaid" class="font-bold">RM0.00</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Change Due:</span><span id="successChangeDue" class="font-bold text-emerald-600">RM0.00</span></div>
+            </div>
+
+            <div id="successPaymentLogoArea" class="mb-4 flex justify-center items-center">
+                <!-- Dynamic QR or Card Logo -->
+            </div>
+
+            <button onclick="closePaymentSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-bold shadow">Done / New Order</button>
         </div>
     </div>
 
@@ -367,6 +434,9 @@
         let posSelectedCategory = null;
         let posEnteredAmountString = "";
         let posTargetOrderId = null; 
+
+        // Temporary storage for item currently selected for modifier popup
+        let pendingModifierItem = null;
 
         function roundToNearest5Sen(amount) {
             return Math.round(amount / 0.05) * 0.05;
@@ -556,7 +626,6 @@
             itemsContainer.innerHTML = '';
             
             items.forEach(item => {
-                // FIXED: সঠিক নাম রেন্ডার করার লজিক (ফলব্যাক হিসেবে 'Item #' এভয়েড করা হয়েছে)
                 let itemName = item.item_name;
                 if (!itemName && menuMap[item.menu_item_id]) {
                     itemName = menuMap[item.menu_item_id].name_en;
@@ -758,7 +827,6 @@
                 menuData.forEach(m => { menuMap[m.id] = m.name_en; });
             }
 
-            // FIXED: পেমেন্টের সময় আইটেমের নাম ডাটাবেজে আপডেট করে দেওয়া যাতে 'Item #' না দেখায়
             if (orderItems) {
                 for (let item of orderItems) {
                     if (!item.item_name && menuMap[item.menu_item_id]) {
@@ -1059,7 +1127,7 @@
             posCart = [];
             posEnteredAmountString = "";
             document.getElementById('posDisplayTable').innerText = "A60 / INDOOR";
-            document.getElementById('posDisplayCard').innerText = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('posEditableCardNo').value = Math.floor(1000 + Math.random() * 9000);
             document.getElementById('posDisplayPax').innerText = "5";
             document.getElementById('posOrderNoteInput').value = "";
             
@@ -1076,7 +1144,7 @@
             const { data: items } = await _supabase.from('order_items').select('*').eq('order_id', orderId);
             
             document.getElementById('posDisplayTable').innerText = order ? (order.table_id || 'A60 / INDOOR') : 'A60 / INDOOR';
-            document.getElementById('posDisplayCard').innerText = "1003";
+            document.getElementById('posEditableCardNo').value = "1003";
             document.getElementById('posDisplayPax').innerText = "5";
             
             posCart = [];
@@ -1167,7 +1235,7 @@
             grid.innerHTML = filteredItems.map((item, idx) => {
                 const colorClass = tileColors[idx % tileColors.length];
                 return `
-                    <button onclick="addPosCartItem(${item.id}, '${item.name_en.replace(/'/g, "\\'")}', ${item.price})" class="${colorClass} hover:opacity-90 text-white p-3 rounded-lg shadow flex flex-col justify-between items-center h-20 text-center transition border border-black/20">
+                    <button onclick="triggerModifierPopup(${item.id}, '${item.name_en.replace(/'/g, "\\'")}', ${item.price})" class="${colorClass} hover:opacity-90 text-white p-3 rounded-lg shadow flex flex-col justify-between items-center h-20 text-center transition border border-black/20">
                         <span class="font-bold text-xs leading-tight line-clamp-2">${item.name_en}</span>
                         <span class="text-xs font-semibold bg-black/20 px-2 py-0.5 rounded mt-1">RM${Number(item.price).toFixed(2)}</span>
                     </button>
@@ -1175,13 +1243,50 @@
             }).join('');
         }
 
-        function addPosCartItem(id, name, price) {
-            const existing = posCart.find(i => i.menu_item_id === id);
+        // Trigger Modifier Popup before adding to cart
+        function triggerModifierPopup(id, name, price) {
+            pendingModifierItem = { id, name, price };
+            document.getElementById('modifierItemTitle').innerText = `Item: ${name}`;
+            document.getElementById('modSugarSelect').value = "Normal Sugar";
+            document.getElementById('modTempSelect').value = "Normal Ice";
+            document.getElementById('modNoteInput').value = "";
+            document.getElementById('modifierModal').classList.remove('hidden');
+        }
+
+        function closeModifierModal() {
+            document.getElementById('modifierModal').classList.add('hidden');
+            pendingModifierItem = null;
+        }
+
+        function confirmAddWithModifiers() {
+            if (!pendingModifierItem) return;
+            const sugar = document.getElementById('modSugarSelect').value;
+            const temp = document.getElementById('modTempSelect').value;
+            const note = document.getElementById('modNoteInput').value.trim();
+
+            let modifierString = [];
+            if (sugar) modifierString.push(sugar);
+            if (temp) modifierString.push(temp);
+            if (note) modifierString.push(note);
+
+            let displayName = pendingModifierItem.name;
+            if (modifierString.length > 0) {
+                displayName += ` (${modifierString.join(', ')})`;
+            }
+
+            const existing = posCart.find(i => i.menu_item_id === pendingModifierItem.id && i.name_en === displayName);
             if (existing) {
                 existing.quantity += 1;
             } else {
-                posCart.push({ menu_item_id: id, name_en: name, price: price, quantity: 1 });
+                posCart.push({
+                    menu_item_id: pendingModifierItem.id,
+                    name_en: displayName,
+                    price: pendingModifierItem.price,
+                    quantity: 1
+                });
             }
+
+            closeModifierModal();
             renderPosCart();
         }
 
@@ -1217,7 +1322,9 @@
                 totalQty += i.quantity;
                 subtotal += (i.price * i.quantity);
             });
-            const sst = subtotal * 0.06;
+
+            let taxPercent = parseFloat(document.getElementById('posEditableTaxPercent').value) || 0;
+            const sst = subtotal * (taxPercent / 100);
             const calculatedTotal = subtotal + sst;
             const finalTotal = roundToNearest5Sen(calculatedTotal);
 
@@ -1235,7 +1342,8 @@
 
             let subtotal = 0;
             posCart.forEach(i => { subtotal += (i.price * i.quantity); });
-            const sst = subtotal * 0.06;
+            let taxPercent = parseFloat(document.getElementById('posEditableTaxPercent').value) || 0;
+            const sst = subtotal * (taxPercent / 100);
             const calculatedTotal = subtotal + sst;
             const finalTotal = roundToNearest5Sen(calculatedTotal);
 
@@ -1278,14 +1386,14 @@
                             <button onclick="posProcessPayment('Exact Cash')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold p-3 rounded-xl text-xs shadow text-center">
                                 RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Exact Cash</span>
                             </button>
-                            <button onclick="posProcessPayment('GHL Card Payment')" class="bg-[#D69E2E] hover:bg-yellow-600 text-black font-extrabold p-3 rounded-xl text-xs shadow text-center flex flex-col items-center justify-center">
+                            <button onclick="posProcessGHLPayment()" class="bg-[#D69E2E] hover:bg-yellow-600 text-black font-extrabold p-3 rounded-xl text-xs shadow text-center flex flex-col items-center justify-center">
                                 <span>GHL</span><span class="text-[9px]">CARD PAYMENT</span>
                             </button>
                             <button onclick="posProcessPayment('DuitNow QR')" class="bg-[#C53030] hover:bg-red-700 text-white font-bold p-3 rounded-xl text-xs shadow text-center flex items-center justify-center gap-1">
                                 <span>📱</span><span>DuitNow QR</span>
                             </button>
-                            <button onclick="posProcessPayment('Other Payment')" class="bg-[#4A5568] hover:bg-gray-600 text-white font-bold p-3 rounded-xl text-xs shadow text-center">
-                                OTHER PAYMENT
+                            <button onclick="posProcessMultiPayment()" class="bg-[#4A5568] hover:bg-gray-600 text-white font-bold p-3 rounded-xl text-xs shadow text-center">
+                                OTHER / MULTI-PAY
                             </button>
                         </div>
                     </div>
@@ -1322,10 +1430,6 @@
             `;
         }
 
-        function renderPosPaymentInterface() {
-            openPosPaymentInterface();
-        }
-
         function posKeypadAppend(char) {
             posEnteredAmountString += char;
             const disp = document.getElementById('posEnteredAmountDisplay');
@@ -1346,16 +1450,51 @@
             if (disp) disp.innerText = posEnteredAmountString;
         }
 
-        async function posProcessPayment(methodName) {
+        // GHL Card Payment with Transaction ID prompt
+        async function posProcessGHLPayment() {
+            let txnId = prompt("Enter GHL Transaction ID / Approval Code:");
+            if (!txnId) {
+                alert("Transaction ID is required for GHL Card Payment!");
+                return;
+            }
+            await posProcessPayment(`GHL Card (Txn: ${txnId})`);
+        }
+
+        // Multi-Payment / Other Payment (Cash + QR split calculation)
+        async function posProcessMultiPayment() {
             let subtotal = 0;
             posCart.forEach(i => { subtotal += (i.price * i.quantity); });
-            const sst = subtotal * 0.06;
+            let taxPercent = parseFloat(document.getElementById('posEditableTaxPercent').value) || 0;
+            const sst = subtotal * (taxPercent / 100);
             const calculatedTotal = subtotal + sst;
             const finalTotal = roundToNearest5Sen(calculatedTotal);
 
-            // Validation for keypad payment
+            let cashInput = prompt(`Total Due: RM${finalTotal.toFixed(2)}\nEnter amount paid via Cash:`, "0");
+            if (cashInput === null) return;
+            let cashPaid = parseFloat(cashInput) || 0;
+
+            if (cashPaid >= finalTotal) {
+                await posProcessPayment('Cash');
+                return;
+            }
+
+            let remainingQR = finalTotal - cashPaid;
+            let confirmSplit = confirm(`Cash Paid: RM${cashPaid.toFixed(2)}\nRemaining to pay via QR / Online: RM${remainingQR.toFixed(2)}\nProceed with Multi-Payment?`);
+            if (confirmSplit) {
+                await posProcessPayment(`Multi-Payment (Cash: RM${cashPaid.toFixed(2)} + QR: RM${remainingQR.toFixed(2)})`);
+            }
+        }
+
+        async function posProcessPayment(methodName) {
+            let subtotal = 0;
+            posCart.forEach(i => { subtotal += (i.price * i.quantity); });
+            let taxPercent = parseFloat(document.getElementById('posEditableTaxPercent').value) || 0;
+            const sst = subtotal * (taxPercent / 100);
+            const calculatedTotal = subtotal + sst;
+            const finalTotal = roundToNearest5Sen(calculatedTotal);
+
             let enteredAmount = parseFloat(posEnteredAmountString) || finalTotal;
-            if (methodName.includes('Cash') && enteredAmount < finalTotal) {
+            if (methodName.includes('Cash') && !methodName.includes('Multi-Payment') && enteredAmount < finalTotal) {
                 alert('Insufficient Amount! Entered cash is less than the total due.');
                 return;
             }
@@ -1405,16 +1544,36 @@
                 payment_method: methodName
             }]);
 
-            let changeAmount = enteredAmount - finalTotal;
-            if (changeAmount > 0) {
-                alert(`Payment successful! Change to return: RM${changeAmount.toFixed(2)}`);
-            } else {
-                alert(`Payment of RM${finalTotal.toFixed(2)} successfully processed via ${methodName}!`);
-            }
+            let changeAmount = enteredAmount > finalTotal ? enteredAmount - finalTotal : 0;
+
+            // Show Success Modal Popup
+            showPaymentSuccessPopup(methodName, finalTotal, enteredAmount, changeAmount);
 
             closePosModal();
             loadPendingOrders();
             fetchIncomingOrders();
+        }
+
+        // Success Modal Popup Handler
+        function showPaymentSuccessPopup(method, total, paid, change) {
+            document.getElementById('successPaymentMethodLabel').innerText = `Paid via: ${method}`;
+            document.getElementById('successTotalPaid').innerText = `RM${total.toFixed(2)}`;
+            document.getElementById('successChangeDue').innerText = `RM${change.toFixed(2)}`;
+
+            const logoArea = document.getElementById('successPaymentLogoArea');
+            if (method.includes('QR')) {
+                logoArea.innerHTML = `<div class="bg-gray-100 p-2 rounded border text-xs text-gray-600 font-semibold">📱 DuitNow QR Verified</div>`;
+            } else if (method.includes('GHL') || method.includes('Card')) {
+                logoArea.innerHTML = `<div class="bg-yellow-50 text-yellow-800 p-2 rounded border border-yellow-200 text-xs font-bold">💳 GHL Card Transaction Approved</div>`;
+            } else {
+                logoArea.innerHTML = ``;
+            }
+
+            document.getElementById('paymentSuccessModal').classList.remove('hidden');
+        }
+
+        function closePaymentSuccessModal() {
+            document.getElementById('paymentSuccessModal').classList.add('hidden');
         }
 
         function posActionOrderNote() {
@@ -1424,8 +1583,9 @@
             }
         }
 
+        // Guest Check: Direct print command without popup dialogs
         function posActionGuestCheck() {
-            alert("Guest check generated for Table " + document.getElementById('posDisplayTable').innerText);
+            window.print();
         }
 
         function posActionHold() {
