@@ -266,6 +266,11 @@
         let activeOrderData = null;
         let orderToDeclineId = null;
 
+        // Malaysian Standard 5 Sen Rounding Helper Function
+        function roundToNearest5Sen(amount) {
+            return Math.round(amount / 0.05) * 0.05;
+        }
+
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
@@ -514,7 +519,11 @@
             let subtotal = 0;
             items.forEach(i => { subtotal += Number(i.price) * Number(i.quantity); });
             const sst = subtotal * 0.06;
-            const finalTotal = subtotal + sst;
+            const calculatedTotal = subtotal + sst;
+            const finalTotal = roundToNearest5Sen(calculatedTotal);
+            const roundingDiff = finalTotal - calculatedTotal;
+
+            const roundingFormatted = `${roundingDiff >= 0 ? '+' : ''}RM${roundingDiff.toFixed(2)}`;
 
             itemsContainer.innerHTML = items.map(item => {
                 let itemName = item.item_name || menuMap[item.menu_item_id] || `Menu Item #${item.menu_item_id}`;
@@ -528,6 +537,7 @@
                 <div class="pt-2 mt-2 border-t space-y-1 text-xs">
                     <div class="flex justify-between text-gray-600"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
                     <div class="flex justify-between text-gray-600"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
+                    <div class="flex justify-between text-gray-600"><span>Rounding:</span><span>${roundingFormatted}</span></div>
                     <div class="flex justify-between font-bold text-emerald-600 text-sm pt-1 border-t"><span>Total Amount:</span><span>RM${finalTotal.toFixed(2)}</span></div>
                 </div>
             `;
@@ -565,14 +575,18 @@
                 .select('price, quantity')
                 .eq('order_id', orderId);
 
-            let newTotal = 0;
+            let subtotal = 0;
             if (items) {
-                items.forEach(i => { newTotal += (Number(i.price) * Number(i.quantity)); });
+                items.forEach(i => { subtotal += (Number(i.price) * Number(i.quantity)); });
             }
+
+            const sst = subtotal * 0.06;
+            const calculatedTotal = subtotal + sst;
+            const finalTotal = roundToNearest5Sen(calculatedTotal);
 
             await _supabase
                 .from('orders')
-                .update({ total_amount: newTotal })
+                .update({ total_amount: finalTotal })
                 .eq('id', orderId);
                 
             loadPendingOrders();
@@ -640,7 +654,15 @@
                 }
             }
 
-            const { error: orderError } = await _supabase.from('orders').update({ status: 'Completed', payment_status: 'Paid' }).eq('id', currentActiveOrderId);
+            let subtotal = 0;
+            if (orderItems) {
+                orderItems.forEach(i => { subtotal += Number(i.price) * Number(i.quantity); });
+            }
+            const sst = subtotal * 0.06;
+            const calculatedTotal = subtotal + sst;
+            const finalTotal = roundToNearest5Sen(calculatedTotal);
+
+            const { error: orderError } = await _supabase.from('orders').update({ status: 'Completed', payment_status: 'Paid', total_amount: finalTotal }).eq('id', currentActiveOrderId);
             if(orderError) {
                 alert('Failed to update order status: ' + orderError.message);
                 return;
@@ -826,7 +848,13 @@
                 items.forEach(i => { subtotal += Number(i.price) * Number(i.quantity); });
             }
             const sst = subtotal * 0.06;
-            const finalTotal = subtotal + sst;
+            const calculatedTotal = subtotal + sst;
+            const finalTotal = roundToNearest5Sen(calculatedTotal);
+            const roundingDiff = finalTotal - calculatedTotal;
+
+            const sstFormatted = sst.toFixed(2);
+            const roundingFormatted = `${roundingDiff >= 0 ? '+' : ''}RM${roundingDiff.toFixed(2)}`;
+            const finalTotalFormatted = finalTotal.toFixed(2);
 
             let itemsHtml = '<div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 6px 0; margin: 6px 0;" class="space-y-1">';
             if (items && items.length > 0) {
@@ -857,10 +885,11 @@
                 ${itemsHtml}
                 <div style="space-y: 2px; font-size: 11px;">
                     <div style="display: flex; justify-content: space-between; color: #444;"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; color: #444;"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
+                    <div style="display: flex; justify-content: space-between; color: #444;"><span>SST (6%):</span><span>RM${sstFormatted}</span></div>
+                    <div style="display: flex; justify-content: space-between; color: #444;"><span>Rounding:</span><span>${roundingFormatted}</span></div>
                     <div style="display: flex; justify-content: space-between; font-weight: bold; color: #111; padding-top: 4px; border-top: 1px solid #ddd;">
                         <span>Total Paid:</span>
-                        <span style="color: #059669;">RM${finalTotal.toFixed(2)}</span>
+                        <span style="color: #059669;">RM${finalTotalFormatted}</span>
                     </div>
                 </div>
                 <div style="text-align: center; color: #059669; font-weight: bold; margin-top: 8px; font-size: 11px;">STATUS: PAID</div>
