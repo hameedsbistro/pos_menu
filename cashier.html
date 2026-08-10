@@ -318,7 +318,10 @@
                 return;
             }
 
-            itemsContainer.innerHTML = items.map(item => {
+            // Clean DOM generation for items to prevent inline onclick string issues
+            itemsContainer.innerHTML = '';
+            
+            items.forEach(item => {
                 let itemName = item.item_name;
                 if (!itemName && menuMap[item.menu_item_id]) {
                     itemName = menuMap[item.menu_item_id].name_en;
@@ -327,24 +330,37 @@
                     itemName = `Menu Item #${item.menu_item_id}`;
                 }
 
-                return `
-                    <div class="flex justify-between items-center py-2 border-b text-xs">
-                        <div class="flex-1 pr-2">
-                            <span class="font-medium text-gray-800 block">${itemName}</span>
-                            <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex justify-between items-center py-2 border-b text-xs";
+                itemDiv.innerHTML = `
+                    <div class="flex-1 pr-2">
+                        <span class="font-medium text-gray-800 block">${itemName}</span>
+                        <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex items-center border rounded-lg overflow-hidden bg-white">
+                            <button type="button" class="decrease-btn px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
+                            <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
+                            <button type="button" class="increase-btn px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="flex items-center border rounded-lg overflow-hidden bg-white">
-                                <button type="button" onclick="updateItemQuantity(${item.id}, ${item.quantity - 1}, ${orderId})" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
-                                <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
-                                <button type="button" onclick="updateItemQuantity(${item.id}, ${item.quantity + 1}, ${orderId})" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
-                            </div>
-                            <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
-                            <button type="button" onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-1 bg-red-50 rounded">✕</button>
-                        </div>
+                        <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
+                        <button type="button" class="remove-btn text-red-600 hover:text-red-800 font-bold px-2 py-1 bg-red-50 rounded">✕</button>
                     </div>
                 `;
-            }).join('');
+
+                // Attach safe event listeners directly to the buttons
+                itemDiv.querySelector('.decrease-btn').addEventListener('click', () => {
+                    updateItemQuantity(item.id, item.quantity - 1, orderId);
+                });
+                itemDiv.querySelector('.increase-btn').addEventListener('click', () => {
+                    updateItemQuantity(item.id, item.quantity + 1, orderId);
+                });
+                itemDiv.querySelector('.remove-btn').addEventListener('click', () => {
+                    removeItemFromOrder(item.id, orderId);
+                });
+
+                itemsContainer.appendChild(itemDiv);
+            });
             
             await recalulateAndUpdateOrderTotal(orderId);
         }
