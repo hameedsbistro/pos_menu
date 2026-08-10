@@ -264,7 +264,7 @@
                     </div>
                 </div>
 
-                <!-- VIEW B: PAYMENT & KEYPAD VIEW (Matches exact Payment screenshot) -->
+                <!-- VIEW B: PAYMENT & KEYPAD VIEW -->
                 <div id="posPaymentView" class="flex-1 flex flex-col p-4 overflow-y-auto hidden">
                     <div class="grid grid-cols-12 gap-4 h-full">
                         <!-- Left Column: Discount & Currency Notes -->
@@ -284,7 +284,7 @@
                                 <div id="posAmountDueDisplay" class="text-3xl font-extrabold text-yellow-400">RM 0.00</div>
                             </div>
 
-                            <!-- Malaysian Currency Notes Grid (Specimen Notes) -->
+                            <!-- Malaysian Currency Notes Grid -->
                             <div class="grid grid-cols-3 gap-2 bg-[#1a1a1a] p-3 rounded border border-gray-700">
                                 <button onclick="addCashAmount(100)" class="bg-[#991b1b] hover:bg-red-800 text-white rounded p-1 font-bold text-xs border border-red-500 shadow text-center">RM 100</button>
                                 <button onclick="addCashAmount(50)" class="bg-[#1e40af] hover:bg-blue-800 text-white rounded p-1 font-bold text-xs border border-blue-500 shadow text-center">RM 50</button>
@@ -440,18 +440,59 @@
             return Math.round(amount / 0.05) * 0.05;
         }
 
-        async function handleLogout() {
-            await _supabase.auth.signOut();
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const { data, error } = await _supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('password', password)
+                    .single();
+
+                if (error || !data) {
+                    throw new Error('Invalid email or password.');
+                }
+
+                localStorage.setItem('cashier_user', JSON.stringify(data));
+
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainPanel').classList.remove('hidden');
+                document.getElementById('cashierName').textContent = data.name || email.split('@')[0];
+                if(document.getElementById('cashierRole')) {
+                    document.getElementById('cashierRole').textContent = data.role || 'Cashier';
+                }
+                
+                loadPendingOrders();
+                fetchMenuCatalog();
+
+            } catch (err) {
+                errorDiv.textContent = err.message || 'Login failed. Please check credentials.';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('cashier_user');
             document.getElementById('mainPanel').classList.add('hidden');
             document.getElementById('loginSection').classList.remove('hidden');
         }
 
-        async function checkUserSession() {
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (session && session.user) {
+        function checkUserSession() {
+            const savedUser = localStorage.getItem('cashier_user');
+            if (savedUser) {
+                const data = JSON.parse(savedUser);
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('mainPanel').classList.remove('hidden');
-                document.getElementById('cashierName').textContent = session.user.email.split('@')[0];
+                document.getElementById('cashierName').textContent = data.name || data.email.split('@')[0];
+                if(document.getElementById('cashierRole')) {
+                    document.getElementById('cashierRole').textContent = data.role || 'Cashier';
+                }
                 loadPendingOrders();
                 fetchMenuCatalog();
             }
@@ -487,7 +528,6 @@
                     return;
                 }
 
-                // Filter active/pending orders
                 const pending = data.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
                 document.getElementById('notificationBadge').textContent = pending.length;
                 if (pending.length > 0) {
@@ -534,13 +574,11 @@
                 if (error) throw error;
                 if (data) {
                     allMenuItems = data;
-                    // Extract unique categories
                     allCategories = [...new Set(data.map(item => item.category || 'General'))];
                     renderPosCategories();
                     renderPosMenuItems(activeMenuCategory);
                     renderPosFavourites();
                     
-                    // Populate extra item select dropdown in order detail modal
                     const select = document.getElementById('extraMenuItemSelect');
                     if (select) {
                         select.innerHTML = data.map(item => `<option value="${item.id}">${item.name} - RM ${Number(item.price).toFixed(2)}</option>`).join('');
@@ -551,7 +589,6 @@
             }
         }
 
-        // POS Interface Functions
         function openNewOrderInterface() {
             posCartItems = [];
             posNoteText = 'None';
@@ -617,7 +654,6 @@
         function renderPosFavourites() {
             const container = document.getElementById('posFavouritesContainer');
             if (!container) return;
-            // Take first 6 items as favourites
             const favs = allMenuItems.slice(0, 6);
             container.innerHTML = favs.map(item => `
                 <button onclick="addPosCartItem(${item.id})" class="w-full bg-[#252525] hover:bg-[#333] border border-gray-800 p-1.5 rounded text-left transition">
@@ -665,7 +701,6 @@
                 `).join('');
             }
 
-            // Calculate Totals
             let totalQty = posCartItems.reduce((acc, curr) => acc + curr.quantity, 0);
             let subTotal = posCartItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
             let sst = subTotal * 0.06;
@@ -756,7 +791,6 @@
             let grandTotal = roundToNearest5Sen(subTotal + sst);
 
             try {
-                // 1. Insert into orders table
                 const { data: orderData, error: orderError } = await _supabase
                     .from('orders')
                     .insert([{
@@ -772,7 +806,6 @@
 
                 if (orderError) throw orderError;
 
-                // 2. Insert into order_items table
                 const orderItemsPayload = posCartItems.map(i => ({
                     order_id: orderData.id,
                     item_name: i.name,
@@ -783,7 +816,6 @@
                 const { error: itemsError } = await _supabase.from('order_items').insert(orderItemsPayload);
                 if (itemsError) throw itemsError;
 
-                // 3. Insert into invoices table
                 const { error: invoiceError } = await _supabase.from('invoices').insert([{
                     order_id: orderData.id,
                     total_amount: grandTotal,
@@ -805,7 +837,6 @@
             }
         }
 
-        // Order Management Modals
         async function openOrderModalById(orderId) {
             currentActiveOrderId = orderId;
             const modal = document.getElementById('orderDetailModal');
@@ -824,7 +855,6 @@
                 document.getElementById('modalOrderTitle').textContent = `Order #${order.id} Details`;
                 document.getElementById('modalOrderMeta').textContent = `Table/Type: ${order.table_number || 'Dine In'} | Status: ${order.status} | Created: ${new Date(order.created_at).toLocaleString()}`;
 
-                // Fetch Items
                 const { data: items, error: itemsErr } = await _supabase
                     .from('order_items')
                     .select('*')
@@ -850,7 +880,6 @@
                     `).join('');
                 }
 
-                // Setup action buttons based on status
                 const actionsContainer = document.getElementById('modalActionButtonsContainer');
                 let buttonsHTML = '';
                 if (order.status === 'Pending') {
@@ -913,7 +942,6 @@
 
                 if (error) throw error;
 
-                // Recalculate total amount
                 const { data: currentItems } = await _supabase.from('order_items').select('*').eq('order_id', currentActiveOrderId);
                 let newTotal = currentItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
                 
@@ -934,7 +962,6 @@
                 const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
                 if (error) throw error;
 
-                // Recalculate total amount
                 const { data: currentItems } = await _supabase.from('order_items').select('*').eq('order_id', orderId);
                 let newTotal = currentItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
                 
@@ -983,7 +1010,6 @@
             }
         }
 
-        // Payment Modal Handling
         let targetPaymentOrderId = null;
 
         function openPaymentModalForOrder(orderId, totalAmount) {
@@ -1001,7 +1027,6 @@
         async function completePayment(method) {
             if (!targetPaymentOrderId) return;
             try {
-                // Update order to Completed & Paid
                 const { error: orderErr } = await _supabase
                     .from('orders')
                     .update({ status: 'Completed', payment_status: 'Paid', payment_method: method })
@@ -1009,10 +1034,8 @@
 
                 if (orderErr) throw orderErr;
 
-                // Get order amount for invoice
                 const { data: ord } = await _supabase.from('orders').select('*').eq('id', targetPaymentOrderId).single();
 
-                // Insert into invoices table
                 await _supabase.from('invoices').insert([{
                     order_id: targetPaymentOrderId,
                     total_amount: ord.total_amount,
@@ -1031,7 +1054,6 @@
             }
         }
 
-        // Notification Modal
         async function openNotificationModal() {
             const modal = document.getElementById('notificationModal');
             modal.classList.remove('hidden');
@@ -1073,7 +1095,6 @@
             document.getElementById('notificationModal').classList.add('hidden');
         }
 
-        // Invoice List Modal
         async function openInvoiceListModal() {
             const modal = document.getElementById('invoiceListModal');
             modal.classList.remove('hidden');
@@ -1114,7 +1135,6 @@
             document.getElementById('invoiceListModal').classList.add('hidden');
         }
 
-        // Last Receipt Modal
         async function openLastReceiptModal() {
             const modal = document.getElementById('lastReceiptModal');
             modal.classList.remove('hidden');
@@ -1133,7 +1153,6 @@
                     return;
                 }
 
-                // Fetch associated order items if possible
                 const { data: orderItems } = await _supabase
                     .from('order_items')
                     .select('*')
@@ -1175,7 +1194,6 @@
             document.getElementById('lastReceiptModal').classList.add('hidden');
         }
 
-        // Initialize session check on load
         window.addEventListener('DOMContentLoaded', () => {
             checkUserSession();
         });
