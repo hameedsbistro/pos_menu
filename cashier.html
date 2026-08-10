@@ -151,7 +151,7 @@
         </aside>
     </div>
 
-    <!-- ==================== NEW ORDER & PAYMENT POS LAYOUT MODAL (MATCHING MAR DEYA PHOTO) ==================== -->
+    <!-- ==================== NEW ORDER & PAYMENT POS LAYOUT MODAL ==================== -->
     <div id="posSystemModal" class="fixed inset-0 bg-black bg-opacity-80 z-9999 hidden flex items-center justify-center p-2">
         <div class="bg-[#1e1e1e] w-full max-w-7xl h-[95vh] rounded-xl shadow-2xl flex overflow-hidden border border-gray-700 text-white select-none relative">
             
@@ -362,12 +362,12 @@
         let orderToDeclineId = null;
 
         // POS System State Variables matching the requested layout photos
-        let posCart = []; // Array of { menu_item_id, name_en, price, quantity }
+        let posCart = []; 
         let posCategories = [];
         let posMenuItems = [];
         let posSelectedCategory = null;
         let posEnteredAmountString = "";
-        let posTargetOrderId = null; // If null, creates a new order; if set, processes payment/updates for that order.
+        let posTargetOrderId = null; 
 
         // Malaysian Standard 5 Sen Rounding Helper Function
         function roundToNearest5Sen(amount) {
@@ -411,6 +411,21 @@
             loadPendingOrders();
             fetchIncomingOrders();
             setupRealtimeSubscription();
+        }
+
+        // FIX 1: Added setupRealtimeSubscription function to prevent reference error
+        function setupRealtimeSubscription() {
+            try {
+                _supabase
+                    .channel('public:orders')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+                        loadPendingOrders();
+                        fetchIncomingOrders();
+                    })
+                    .subscribe();
+            } catch (e) {
+                console.log("Realtime subscription fallback enabled");
+            }
         }
 
         async function handleLogout() {
@@ -724,7 +739,6 @@
         }
 
         function openPaymentModalFromListId(orderId, totalAmount) {
-            // Open the new mar deya photo style POS payment layout
             posTargetOrderId = orderId;
             openPosSystemModalWithOrder(orderId, totalAmount);
         }
@@ -1041,7 +1055,7 @@
             }
         }
 
-        /* ==================== POS SYSTEM (NEW ORDER & PAYMENT LAYOUT MATCHING PHOTOS) ==================== */
+        /* ==================== POS SYSTEM ==================== -->
         async function openNewOrderPosModal() {
             posTargetOrderId = null;
             posCart = [];
@@ -1081,7 +1095,7 @@
 
             await fetchPosMenuData();
             renderPosCart();
-            renderPosPaymentInterface(); // Directly show payment interface matching Mar Deya Photo 2
+            renderPosPaymentInterface(); 
             document.getElementById('posSystemModal').classList.remove('hidden');
         }
 
@@ -1093,7 +1107,6 @@
             const { data: menu } = await _supabase.from('menu_items').select('*');
             if (menu) {
                 posMenuItems = menu;
-                // Extract unique categories or group by name/category
                 const cats = [...new Set(menu.map(m => m.category || 'MINUMAN'))];
                 posCategories = cats.length > 0 ? cats : ['MINUMAN', 'FRESH JUICE', 'NASI KANDAR', 'ROTI', 'WESTERN', 'MAMAK GORENG'];
                 posSelectedCategory = posCategories[0];
@@ -1111,6 +1124,7 @@
 
         function renderPosCategories() {
             const bar = document.getElementById('posCategoriesBar');
+            if (!bar) return;
             bar.innerHTML = posCategories.map(cat => `
                 <button onclick="selectPosCategory('${cat}')" class="py-2 px-2 rounded text-xs font-bold uppercase transition ${posSelectedCategory === cat ? 'bg-emerald-600 text-white' : 'bg-[#444] hover:bg-[#555] text-gray-200'}">
                     ${cat}
@@ -1153,7 +1167,6 @@
                 return;
             }
 
-            // Colors matching Mar Deya Photo 1 (Red, Blue, Green pastel tiles)
             const tileColors = ['bg-[#C73E3A]', 'bg-[#2B6CB0]', 'bg-[#2F855A]', 'bg-[#7B341E]', 'bg-[#2C5282]', 'bg-[#1A202C]'];
 
             grid.innerHTML = filteredItems.map((item, idx) => {
@@ -1219,6 +1232,7 @@
             document.getElementById('posSummaryTotalAmount').innerText = finalTotal.toFixed(2);
         }
 
+        // FIX 2: Added renderPosPaymentInterface function to prevent reference error
         function openPosPaymentInterface() {
             if (posCart.length === 0 && !posTargetOrderId) {
                 alert('Please add at least one item to cart before payment.');
@@ -1232,7 +1246,6 @@
             const finalTotal = roundToNearest5Sen(calculatedTotal);
 
             const rightPane = document.getElementById('posRightPaneContainer');
-            // Exact layout match for Mar Deya Photo 2 (Discount, Amount Due, Banknote denominations, GHL card payment, DuitNow QR, Keypad Numpad, Pay button)
             rightPane.innerHTML = `
                 <!-- Top Navigation & Split/Combine Bar -->
                 <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
@@ -1245,7 +1258,7 @@
                     </div>
                 </div>
 
-                <!-- Main Payment Screen Body (Mar Deya Photo 2 Layout) -->
+                <!-- Main Payment Screen Body -->
                 <div class="flex-1 p-4 bg-[#2b2b2b] flex gap-4 overflow-hidden">
                     
                     <!-- Left: Banknote specimens & payment method buttons -->
@@ -1272,7 +1285,7 @@
                             </button>
                         </div>
 
-                        <!-- Payment Method Action Tiles matching photo 2 -->
+                        <!-- Payment Method Action Tiles -->
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="posProcessPayment('Exact Cash')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold p-3 rounded-xl text-xs shadow text-center">
                                 RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Exact Cash</span>
@@ -1323,6 +1336,11 @@
                 </div>
             `;
         }
+        
+        // Alias for renderPosPaymentInterface to support legacy code triggers
+        function renderPosPaymentInterface() {
+            openPosPaymentInterface();
+        }
 
         function posKeypadAppend(char) {
             posEnteredAmountString += char;
@@ -1354,7 +1372,6 @@
             let orderIdToProcess = posTargetOrderId;
 
             if (!orderIdToProcess) {
-                // Insert new order into database
                 const tableId = document.getElementById('posDisplayTable').innerText || 'A60 / INDOOR';
                 const note = document.getElementById('posOrderNoteInput').value || '';
                 
@@ -1372,7 +1389,6 @@
                 }
                 orderIdToProcess = newOrder.id;
 
-                // Insert items
                 for (let item of posCart) {
                     await _supabase.from('order_items').insert([{
                         order_id: orderIdToProcess,
@@ -1383,7 +1399,6 @@
                     }]);
                 }
             } else {
-                // Update existing order status to Completed
                 await _supabase.from('orders').update({
                     status: 'Completed',
                     payment_status: 'Paid',
@@ -1391,7 +1406,6 @@
                 }).eq('id', orderIdToProcess);
             }
 
-            // Insert into invoices table
             const tableId = document.getElementById('posDisplayTable').innerText || 'A60 / INDOOR';
             await _supabase.from('invoices').insert([{
                 order_id: orderIdToProcess,
