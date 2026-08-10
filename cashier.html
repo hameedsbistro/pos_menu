@@ -225,7 +225,7 @@
                         <span>🍽️</span> DINE IN
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="openModifierModal()" class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>📝</span> MODIFIER</button>
+                        <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>📝</span> MODIFIER</button>
                         <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>🔍</span> SEARCH</button>
                         <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>❤️</span> FAVOURITE</button>
                         <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>≡</span> MORE</button>
@@ -291,40 +291,6 @@
                 </div>
             </div>
             <button onclick="closePaymentModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium">Cancel</button>
-        </div>
-    </div>
-
-    <!-- Modifier Selection Modal -->
-    <div id="modifierModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-9999 hidden">
-        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4 text-black">
-            <button onclick="closeModifierModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            <h3 class="font-bold text-xl text-gray-800 mb-2">Item Modifiers</h3>
-            <p class="text-xs text-gray-500 mb-4">Select or specify custom preparation modifiers:</p>
-            <div class="space-y-2 mb-4">
-                <label class="flex items-center space-x-2 text-sm"><input type="checkbox" class="modifier-chk" value="Less Sugar"><span>Less Sugar (Kurang Manis)</span></label>
-                <label class="flex items-center space-x-2 text-sm"><input type="checkbox" class="modifier-chk" value="No Ice"><span>No Ice (Tak Nak Ais)</span></label>
-                <label class="flex items-center space-x-2 text-sm"><input type="checkbox" class="modifier-chk" value="Extra Hot"><span>Extra Hot (Lebih Panas)</span></label>
-                <label class="flex items-center space-x-2 text-sm"><input type="checkbox" class="modifier-chk" value="No Onion"><span>No Onion (Tak Nak Bawang)</span></label>
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button onclick="closeModifierModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Cancel</button>
-                <button onclick="applyModifiers()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Apply Modifier</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Guest Check Print Preview Modal -->
-    <div id="guestCheckModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-9999 hidden">
-        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4 text-black">
-            <button onclick="closeGuestCheckModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
-            <h3 class="font-bold text-xl text-gray-800 mb-2">Unfinalized Guest Check</h3>
-            <div id="guestCheckPrintContent" class="bg-gray-50 p-4 rounded-xl border text-xs space-y-2 mb-4">
-                <!-- Dynamic Guest Check Details -->
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Print Guest Check</button>
-                <button onclick="closeGuestCheckModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Close</button>
-            </div>
         </div>
     </div>
 
@@ -590,6 +556,7 @@
             itemsContainer.innerHTML = '';
             
             items.forEach(item => {
+                // FIXED: সঠিক নাম রেন্ডার করার লজিক (ফলব্যাক হিসেবে 'Item #' এভয়েড করা হয়েছে)
                 let itemName = item.item_name;
                 if (!itemName && menuMap[item.menu_item_id]) {
                     itemName = menuMap[item.menu_item_id].name_en;
@@ -791,6 +758,7 @@
                 menuData.forEach(m => { menuMap[m.id] = m.name_en; });
             }
 
+            // FIXED: পেমেন্টের সময় আইটেমের নাম ডাটাবেজে আপডেট করে দেওয়া যাতে 'Item #' না দেখায়
             if (orderItems) {
                 for (let item of orderItems) {
                     if (!item.item_name && menuMap[item.menu_item_id]) {
@@ -1175,7 +1143,6 @@
                         <span>🍽️</span> DINE IN
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="openModifierModal()" class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>📝</span> MODIFIER</button>
                         <button onclick="renderPosRightPaneMenu()" class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>📝</span> MENU</button>
                         <button onclick="openPosPaymentInterface()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>💳</span> PAYMENT SCREEN</button>
                     </div>
@@ -1311,7 +1278,7 @@
                             <button onclick="posProcessPayment('Exact Cash')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold p-3 rounded-xl text-xs shadow text-center">
                                 RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Exact Cash</span>
                             </button>
-                            <button onclick="posProcessGhlCard()" class="bg-[#D69E2E] hover:bg-yellow-600 text-black font-extrabold p-3 rounded-xl text-xs shadow text-center flex flex-col items-center justify-center">
+                            <button onclick="posProcessPayment('GHL Card Payment')" class="bg-[#D69E2E] hover:bg-yellow-600 text-black font-extrabold p-3 rounded-xl text-xs shadow text-center flex flex-col items-center justify-center">
                                 <span>GHL</span><span class="text-[9px]">CARD PAYMENT</span>
                             </button>
                             <button onclick="posProcessPayment('DuitNow QR')" class="bg-[#C53030] hover:bg-red-700 text-white font-bold p-3 rounded-xl text-xs shadow text-center flex items-center justify-center gap-1">
@@ -1379,15 +1346,6 @@
             if (disp) disp.innerText = posEnteredAmountString;
         }
 
-        async function posProcessGhlCard() {
-            const transNo = prompt("Please enter GHL Transaction No:");
-            if (!transNo || transNo.trim() === "") {
-                alert("Transaction No is required for GHL Card Payment.");
-                return;
-            }
-            await posProcessPayment(`GHL Card (Ref: ${transNo})`);
-        }
-
         async function posProcessPayment(methodName) {
             let subtotal = 0;
             posCart.forEach(i => { subtotal += (i.price * i.quantity); });
@@ -1395,6 +1353,7 @@
             const calculatedTotal = subtotal + sst;
             const finalTotal = roundToNearest5Sen(calculatedTotal);
 
+            // Validation for keypad payment
             let enteredAmount = parseFloat(posEnteredAmountString) || finalTotal;
             if (methodName.includes('Cash') && enteredAmount < finalTotal) {
                 alert('Insufficient Amount! Entered cash is less than the total due.');
@@ -1465,76 +1424,8 @@
             }
         }
 
-        function openModifierModal() {
-            document.getElementById('modifierModal').classList.remove('hidden');
-        }
-
-        function closeModifierModal() {
-            document.getElementById('modifierModal').classList.add('hidden');
-        }
-
-        function applyModifiers() {
-            const checkboxes = document.querySelectorAll('.modifier-chk:checked');
-            if (checkboxes.length === 0) {
-                alert("Please select at least one modifier.");
-                return;
-            }
-            let selectedMods = Array.from(checkboxes).map(cb => cb.value).join(', ');
-            let noteInput = document.getElementById('posOrderNoteInput');
-            noteInput.value = noteInput.value ? `${noteInput.value}, [${selectedMods}]` : `[${selectedMods}]`;
-            closeModifierModal();
-            alert(`Modifier(s) applied: ${selectedMods}`);
-        }
-
         function posActionGuestCheck() {
-            const table = document.getElementById('posDisplayTable').innerText;
-            const card = document.getElementById('posDisplayCard').innerText;
-            const pax = document.getElementById('posDisplayPax').innerText;
-            const note = document.getElementById('posOrderNoteInput').value;
-
-            let subtotal = 0;
-            posCart.forEach(i => { subtotal += (i.price * i.quantity); });
-            const sst = subtotal * 0.06;
-            const calculatedTotal = subtotal + sst;
-            const finalTotal = roundToNearest5Sen(calculatedTotal);
-
-            let itemsHtml = '<div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 6px 0; margin: 6px 0;" class="space-y-1">';
-            if (posCart.length > 0) {
-                posCart.forEach(item => {
-                    itemsHtml += `
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>${item.name_en} (x${item.quantity})</span>
-                            <span>RM${(item.price * item.quantity).toFixed(2)}</span>
-                        </div>
-                    `;
-                });
-            } else {
-                itemsHtml += '<div>No items in cart.</div>';
-            }
-            itemsHtml += '</div>';
-
-            document.getElementById('guestCheckPrintContent').innerHTML = `
-                <div style="text-align: center; border-bottom: 2px dashed #333; padding-bottom: 8px; margin-bottom: 8px;">
-                    <h2 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin: 0;">Hameeds Bistro</h2>
-                    <p style="font-size: 10px; color: #666; margin: 2px 0;">*** UNFINALIZED GUEST CHECK ***</p>
-                </div>
-                <div style="font-size: 10px; color: #444; margin-bottom: 4px;">Table: ${table} | Card No: ${card} | Pax: ${pax}</div>
-                <div style="font-size: 10px; color: #444; margin-bottom: 6px;">Note: ${note || 'None'}</div>
-                ${itemsHtml}
-                <div style="font-size: 11px;">
-                    <div style="display: flex; justify-content: space-between;"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between;"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; padding-top: 4px; border-top: 1px solid #ddd;">
-                        <span>Estimated Total:</span>
-                        <span style="color: #059669;">RM${finalTotal.toFixed(2)}</span>
-                    </div>
-                </div>
-            `;
-            document.getElementById('guestCheckModal').classList.remove('hidden');
-        }
-
-        function closeGuestCheckModal() {
-            document.getElementById('guestCheckModal').classList.add('hidden');
+            alert("Guest check generated for Table " + document.getElementById('posDisplayTable').innerText);
         }
 
         function posActionHold() {
