@@ -361,7 +361,6 @@
         let activeOrderData = null;
         let orderToDeclineId = null;
 
-        // POS System State Variables matching the requested layout photos
         let posCart = []; 
         let posCategories = [];
         let posMenuItems = [];
@@ -369,7 +368,6 @@
         let posEnteredAmountString = "";
         let posTargetOrderId = null; 
 
-        // Malaysian Standard 5 Sen Rounding Helper Function
         function roundToNearest5Sen(amount) {
             return Math.round(amount / 0.05) * 0.05;
         }
@@ -413,7 +411,6 @@
             setupRealtimeSubscription();
         }
 
-        // FIX 1: Added setupRealtimeSubscription function to prevent reference error
         function setupRealtimeSubscription() {
             try {
                 _supabase
@@ -1055,7 +1052,6 @@
             }
         }
 
-        
         async function openNewOrderPosModal() {
             posTargetOrderId = null;
             posCart = [];
@@ -1095,7 +1091,7 @@
 
             await fetchPosMenuData();
             renderPosCart();
-            renderPosPaymentInterface(); 
+            openPosPaymentInterface(); 
             document.getElementById('posSystemModal').classList.remove('hidden');
         }
 
@@ -1140,7 +1136,6 @@
         function renderPosRightPaneMenu() {
             const rightPane = document.getElementById('posRightPaneContainer');
             rightPane.innerHTML = `
-                <!-- Top Navigation Bar -->
                 <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
                     <div class="bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2">
                         <span>🍽️</span> DINE IN
@@ -1151,10 +1146,8 @@
                     </div>
                 </div>
 
-                <!-- Categories Bar -->
                 <div id="posCategoriesBar" class="grid grid-cols-5 gap-1.5 p-2 bg-[#333] flex-shrink-0"></div>
 
-                <!-- Menu Items Interactive Grid -->
                 <div id="posMenuItemsGrid" class="flex-1 p-2 overflow-y-auto grid grid-cols-5 gap-2 content-start"></div>
             `;
             renderPosCategories();
@@ -1232,7 +1225,6 @@
             document.getElementById('posSummaryTotalAmount').innerText = finalTotal.toFixed(2);
         }
 
-        // FIX 2: Added renderPosPaymentInterface function to prevent reference error
         function openPosPaymentInterface() {
             if (posCart.length === 0 && !posTargetOrderId) {
                 alert('Please add at least one item to cart before payment.');
@@ -1247,7 +1239,6 @@
 
             const rightPane = document.getElementById('posRightPaneContainer');
             rightPane.innerHTML = `
-                <!-- Top Navigation & Split/Combine Bar -->
                 <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
                     <div class="flex items-center gap-6">
                         <div class="text-xs text-gray-300">DISCOUNT : <span class="font-bold text-white">%</span> | DISC. AMOUNT : <span class="font-bold text-yellow-400">0.00</span></div>
@@ -1258,14 +1249,10 @@
                     </div>
                 </div>
 
-                <!-- Main Payment Screen Body -->
                 <div class="flex-1 p-4 bg-[#2b2b2b] flex gap-4 overflow-hidden">
-                    
-                    <!-- Left: Banknote specimens & payment method buttons -->
                     <div class="flex-1 flex flex-col space-y-3">
                         <div class="text-sm font-extrabold text-yellow-400">AMOUNT DUE : RM${finalTotal.toFixed(2)}</div>
                         
-                        <!-- Banknotes Grid -->
                         <div class="grid grid-cols-2 gap-2 bg-[#1e1e1e] p-2 rounded-xl border border-gray-700">
                             <button onclick="posAddEnteredCash(100)" class="bg-[#222] hover:bg-[#333] border border-emerald-600/50 p-1 rounded text-center">
                                 <span class="text-[10px] text-gray-400 block">RM100 Note</span>
@@ -1285,7 +1272,6 @@
                             </button>
                         </div>
 
-                        <!-- Payment Method Action Tiles -->
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="posProcessPayment('Exact Cash')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold p-3 rounded-xl text-xs shadow text-center">
                                 RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Exact Cash</span>
@@ -1302,7 +1288,6 @@
                         </div>
                     </div>
 
-                    <!-- Right: Enter Amount Screen & Numpad Calculator -->
                     <div class="w-[320px] bg-[#1a1a1a] p-3 rounded-xl border border-gray-700 flex flex-col justify-between">
                         <div>
                             <div class="text-xs text-gray-400 mb-1 font-semibold">ENTER AMOUNT</div>
@@ -1311,7 +1296,6 @@
                             </div>
                         </div>
 
-                        <!-- Keypad Grid -->
                         <div class="grid grid-cols-3 gap-2 flex-1">
                             <button onclick="posKeypadAppend('1')" class="bg-[#333] hover:bg-[#444] text-white font-bold text-lg py-3 rounded-lg shadow">1</button>
                             <button onclick="posKeypadAppend('2')" class="bg-[#333] hover:bg-[#444] text-white font-bold text-lg py-3 rounded-lg shadow">2</button>
@@ -1327,7 +1311,6 @@
                             <button onclick="posKeypadAppend('.')" class="bg-[#333] hover:bg-[#444] text-white font-bold text-lg py-3 rounded-lg shadow">.</button>
                         </div>
 
-                        <!-- PAY Confirm Button -->
                         <button onclick="posProcessPayment('Cash (Keypad)')" class="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-base shadow text-center tracking-wider">
                             PAY
                         </button>
@@ -1336,8 +1319,7 @@
                 </div>
             `;
         }
-        
-        // Alias for renderPosPaymentInterface to support legacy code triggers
+
         function renderPosPaymentInterface() {
             openPosPaymentInterface();
         }
@@ -1368,6 +1350,13 @@
             const sst = subtotal * 0.06;
             const calculatedTotal = subtotal + sst;
             const finalTotal = roundToNearest5Sen(calculatedTotal);
+
+            // Validation for keypad payment
+            let enteredAmount = parseFloat(posEnteredAmountString) || finalTotal;
+            if (methodName.includes('Cash') && enteredAmount < finalTotal) {
+                alert('Insufficient Amount! Entered cash is less than the total due.');
+                return;
+            }
 
             let orderIdToProcess = posTargetOrderId;
 
@@ -1414,7 +1403,13 @@
                 payment_method: methodName
             }]);
 
-            alert(`Payment of RM${finalTotal.toFixed(2)} successfully processed via ${methodName}!`);
+            let changeAmount = enteredAmount - finalTotal;
+            if (changeAmount > 0) {
+                alert(`Payment successful! Change to return: RM${changeAmount.toFixed(2)}`);
+            } else {
+                alert(`Payment of RM${finalTotal.toFixed(2)} successfully processed via ${methodName}!`);
+            }
+
             closePosModal();
             loadPendingOrders();
             fetchIncomingOrders();
