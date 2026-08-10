@@ -866,12 +866,14 @@
     });
 
     if (authError) {
-        alert('Authentication failed: ' + authError.message);
+        alert('Auth Error: ' + authError.message);
         return;
     }
 
-    // ২. সফলভাবে Auth-এ তৈরি হলে আপনার custom 'customers' টেবিলে সেভ করুন
+    // ২. Auth সফল হলে এবার আপনার 'customers' টেবিলে ডাটা সেভ করুন
+    // authData.user.id ব্যবহার করছি যাতে দুই জায়গার ইউজার কানেক্টেড থাকে
     const { error: dbError } = await _supabase.from('customers').insert([{ 
+        id: authData.user.id, // Supabase Auth ID টাকে কাস্টমার আইডির সাথে লিংক করে দিলাম
         full_name, 
         phone, 
         email, 
@@ -883,9 +885,9 @@
         return; 
     }
 
-    alert('Registration successful! Please login.');
+    alert('Registration successful! You are now registered in both Auth and Database.');
     toggleAuthMode('login');
-        }
+}
         
 
 
