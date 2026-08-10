@@ -393,10 +393,22 @@
             document.getElementById('notificationModal').classList.add('hidden'); 
         }
 
+                // ১. নোটিফিকেশন লিস্ট ঠিক করার জন্য
         async function fetchIncomingOrders() {
-            const { data } = await _supabase
+            const { data, error } = await _supabase
                 .from('orders')
-                .select('*, order_items(*)')
+                .select(`
+                    *,
+                    order_items (
+                        id,
+                        order_id,
+                        quantity,
+                        price,
+                        item_name,
+                        menu_item_id,
+                        menu_items ( name_en )
+                    )
+                `)
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false });
 
@@ -417,7 +429,10 @@
                         </div>
                         <div class="bg-white p-2 rounded border space-y-1 text-gray-700">
                             ${o.order_items && o.order_items.length > 0 
-                                ? o.order_items.map(item => `<div>• ${item.item_name} (x${item.quantity})</div>`).join('') 
+                                ? o.order_items.map(item => {
+                                    const displayName = item.item_name || item.menu_items?.name_en || `Menu Item ID: ${item.menu_item_id}`;
+                                    return `<div>• ${displayName} (x${item.quantity})</div>`;
+                                  }).join('') 
                                 : '<span class="text-gray-400">No items found</span>'}
                         </div>
                     </div>
@@ -427,6 +442,45 @@
                 container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
             }
         }
+
+        // ২. অর্ডারের ডিটেইলস মডাল ঠিক করার জন্য
+        async function renderModalItems(orderId) {
+            const itemsContainer = document.getElementById('modalOrderItemsList');
+            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
+
+            const { data: items, error } = await _supabase
+                .from('order_items')
+                .select(`
+                    id,
+                    order_id,
+                    quantity,
+                    price,
+                    item_name,
+                    menu_item_id,
+                    menu_items ( name_en )
+                `)
+                .eq('order_id', orderId);
+            
+            if (error || !items || items.length === 0) {
+                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
+                return;
+            }
+
+            itemsContainer.innerHTML = items.map(item => {
+                const itemName = item.item_name || item.menu_items?.name_en || `Item ID: ${item.menu_item_id}`;
+
+                return `
+                    <div class="flex justify-between items-center py-1.5 border-b text-xs">
+                        <div>
+                            <span class="font-medium text-gray-800">${itemName}</span>
+                            <span class="text-gray-500 ml-2">x${item.quantity} (RM${(item.price * item.quantity).toFixed(2)})</span>
+                        </div>
+                        <button onclick="removeItemFromOrder(${item.id}, ${orderId})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 bg-red-50 rounded text-xs">✕ Remove</button>
+                    </div>
+                `;
+            }).join('');
+        }
+        
 
         function setupRealtimeSubscription() {
             _supabase.channel('public:orders')
