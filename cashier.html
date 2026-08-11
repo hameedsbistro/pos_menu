@@ -820,6 +820,14 @@
                 .from('menu_items')
                 .select('id, name_en');
 
+            // IMPORTANT: View Order must use the saved invoice discount/payment values.
+            // It must not recalculate the bill as if there were no discount.
+            const { data: invoice } = await _supabase
+                .from('invoices')
+                .select('*')
+                .eq('order_id', orderId)
+                .maybeSingle();
+
             const menuMap = {};
             if (menuData) menuData.forEach(m => { menuMap[m.id] = m.name_en; });
 
@@ -833,9 +841,27 @@
                 subtotal += Number(i.price || 0) * Number(i.quantity || 0);
             });
 
-            const sst = subtotal * 0.06;
-            const calculatedTotal = subtotal + sst;
-            const finalTotal = roundToNearest5Sen(calculatedTotal);
+            // Read discount from the invoice first; localStorage is only a fallback
+            // for older invoices that were saved before discount columns existed.
+            let extra = {};
+            try {
+                extra = JSON.parse(localStorage.getItem('invoice_extra_' + orderId) || '{}');
+            } catch (e) {}
+
+            const discountPercent = Number(invoice?.discount_percent ?? extra.discount_percent ?? 0) || 0;
+            const savedDiscountAmount = Number(invoice?.discount_amount ?? extra.discount_amount ?? 0) || 0;
+
+            // Keep the same discount rule used by the payment/receipt system.
+            const percentDiscount = subtotal * Math.min(Math.max(discountPercent, 0), 100) / 100;
+            const discount = Math.min(subtotal, Math.max(0, savedDiscountAmount) + percentDiscount);
+            const taxable = Math.max(0, subtotal - discount);
+            const sst = taxable * 0.06;
+            const calculatedTotal = taxable + sst;
+            const calculatedRounded = roundToNearest5Sen(calculatedTotal);
+
+            // For a paid invoice, invoice.total_amount is the authoritative amount paid.
+            // This is what View Order must show, instead of recalculating an undiscounted total.
+            const finalTotal = Number(invoice?.total_amount ?? totalAmount ?? calculatedRounded);
             const roundingDiff = finalTotal - calculatedTotal;
             const roundingFormatted = `${roundingDiff >= 0 ? '+' : ''}RM${roundingDiff.toFixed(2)}`;
 
@@ -850,6 +876,7 @@
             }).join('') + `
                 <div class="pt-2 mt-2 border-t space-y-1 text-xs">
                     <div class="flex justify-between text-gray-600"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
+                    ${discount > 0 ? `<div class="flex justify-between text-red-600"><span>Discount${discountPercent > 0 ? ` (${discountPercent.toFixed(2)}%)` : ''}:</span><span>-RM${discount.toFixed(2)}</span></div>` : ''}
                     <div class="flex justify-between text-gray-600"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
                     <div class="flex justify-between text-gray-600"><span>Rounding:</span><span>${roundingFormatted}</span></div>
                     <div class="flex justify-between font-bold text-emerald-600 text-sm pt-1 border-t"><span>Total Amount:</span><span>RM${finalTotal.toFixed(2)}</span></div>
@@ -1514,20 +1541,21 @@
                             </div>
                             <div class="col-span-3 text-right font-bold text-emerald-700">RM${(Number(item.price)*Number(item.quantity)).toFixed(2)}</div>
                         </div>
-                        ${mods.length ? `<div class="ml-2 mt-0.5 text-[10px] text-blue-600 leading-4">${mods.map(m => `↳ ${m.text}${Number(m.price||0) ? ` (+RM${Number(m.price).toFixed(2)})` : ''}`).join('<br>')}</div>` : ''}
+                        ${mods.length ? `<div class="ml-2 mt-0.5 text-[10px] text-blue-600 leading-5">${mods.map((m,mi) => `<div class="flex items-center justify-between gap-2"><span>↳ ${m.text}${Number(m.price||0) ? ` (${Number(m.price)>0?'+':''}RM${Number(m.price).toFixed(2)})` : ''}</span><button type="button" onclick="event.stopPropagation(); deleteItemModifier(${idx},${mi})" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded" title="Delete modifier">×</button></div>`).join('')}</div>` : ''}
                     </div>`;
                 }).join('');
             }
             let totalQty=0, subtotal=0;
             posCart.forEach(i=>{ totalQty += Number(i.quantity||0); subtotal += Number(i.price||0)*Number(i.quantity||0); });
-            const discount = calculateDiscount(subtotal);
-            const taxable = Math.max(0, subtotal-discount);
-            const sst = taxable*0.06;
-            const finalTotal = roundToNearest5Sen(taxable+sst);
+            // CURRENT ORDER always shows the normal bill total, BEFORE any temporary payment discount.
+            // Discounts are applied only in the payment interface; they must never change the
+            // order's displayed/current total or the amount stored on the order for recall.
+            const sst = subtotal*0.06;
+            const currentOrderTotal = roundToNearest5Sen(subtotal+sst);
             document.getElementById('posSummaryItemQty').innerText=totalQty;
             document.getElementById('posSummarySubTotal').innerText=`RM${subtotal.toFixed(2)}`;
             document.getElementById('posSummarySst').innerText=`RM${sst.toFixed(2)}`;
-            document.getElementById('posSummaryTotalAmount').innerText=finalTotal.toFixed(2);
+            document.getElementById('posSummaryTotalAmount').innerText=currentOrderTotal.toFixed(2);
         }
 
         function calculateDiscount(subtotal) {
@@ -1576,10 +1604,24 @@
             if (paymentSummary) {
                 paymentSummary.innerText = `SUBTOTAL RM${subtotal.toFixed(2)} | DISCOUNT -RM${discount.toFixed(2)} | SST RM${sst.toFixed(2)} | AMOUNT DUE RM${finalTotal.toFixed(2)}`;
             }
-            const exactCash = document.getElementById('posExactCashButton');
-            if (exactCash) {
-                exactCash.innerHTML = `RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Cash / Exact</span>`;
-            }
+            updateExactCashButton(finalTotal);
+        }
+
+        function updateExactCashButton() {
+            const btn = document.getElementById('posExactCashButton');
+            if (!btn) return;
+            let subtotal = 0;
+            posCart.forEach(i => { subtotal += Number(i.price || 0) * Number(i.quantity || 0); });
+            const pctInput = document.getElementById('posDiscountPercentInput');
+            const amtInput = document.getElementById('posDiscountAmountInput');
+            const pct = pctInput ? (parseFloat(pctInput.value) || 0) : Number(posDiscountPercent || 0);
+            const fixed = amtInput ? (parseFloat(amtInput.value) || 0) : Number(posDiscountAmount || 0);
+            const discount = Math.min(subtotal, subtotal * Math.min(Math.max(pct, 0), 100) / 100 + Math.max(fixed, 0));
+            const taxable = Math.max(0, subtotal - discount);
+            const sst = taxable * 0.06;
+            const value = roundToNearest5Sen(taxable + sst);
+            btn.dataset.amountDue = value.toFixed(2);
+            btn.innerHTML = `RM ${value.toFixed(2)}<br><span class="text-[10px] font-normal">Cash / Exact</span>`;
         }
 
         function handleDiscountInput() {
@@ -1607,6 +1649,31 @@
             if(el) el.classList.add('bg-blue-100','border-blue-500');
         }
         function closeModifyItemModal(){ document.getElementById('modifyItemModal').classList.add('hidden'); posActiveModifierIndex=null; selectedQuickModifier=''; }
+
+        async function deleteItemModifier(itemIndex, modifierIndex) {
+            if (!posCart[itemIndex] || !Array.isArray(posCart[itemIndex].modifiers) || !posCart[itemIndex].modifiers[modifierIndex]) return;
+            const modifier = posCart[itemIndex].modifiers[modifierIndex];
+            const modifierText = String(modifier.text || 'Modifier');
+            if (!confirm(`Delete modifier "${modifierText}"?`)) return;
+
+            // The modifier price was added to the item's base price when saved,
+            // so remove the same adjustment when the modifier is deleted.
+            const modifierPrice = Number(modifier.price || 0);
+            if (modifierPrice !== 0) {
+                posCart[itemIndex].price = Math.max(0, Number(posCart[itemIndex].price || 0) - modifierPrice);
+            }
+
+            posCart[itemIndex].modifiers.splice(modifierIndex, 1);
+            if (posCart[itemIndex].modifiers.length === 0) delete posCart[itemIndex].modifiers;
+
+            renderPosCart();
+
+            // Keep held/existing orders synchronized with the database.
+            if (posTargetOrderId) {
+                const saved = await saveCurrentPosCartToDatabase(posTargetOrderId);
+                if (!saved) alert('Modifier deleted locally, but could not be saved to the database.');
+            }
+        }
         async function saveItemModification(){
             const idx=posActiveModifierIndex; if(idx===null || !posCart[idx]) return;
             const text=(document.getElementById('modifierTextInput').value||'').trim() || selectedQuickModifier;
@@ -1681,8 +1748,8 @@
                 <span id="posPaymentScreenMarker" class="hidden"></span>
                 <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
                     <div class="flex items-center gap-4 text-xs text-gray-300">
-                        <label>DISCOUNT % <input id="posDiscountPercentInput" type="text" inputmode="decimal" value="${posDiscountPercent||''}" oninput="handleDiscountInput()" class="w-20 ml-1 px-2 py-1 rounded text-black font-bold" placeholder="0"></label>
-                        <label>DISC. AMOUNT <input id="posDiscountAmountInput" type="text" inputmode="decimal" value="${posDiscountAmount||''}" oninput="handleDiscountInput()" class="w-24 ml-1 px-2 py-1 rounded text-black font-bold" placeholder="0.00"></label>
+                        <label>DISCOUNT % <input id="posDiscountPercentInput" type="text" inputmode="decimal" value="${posDiscountPercent||''}" oninput="handleDiscountInput(); updateExactCashButton()" onkeyup="updateExactCashButton()" class="w-20 ml-1 px-2 py-1 rounded text-black font-bold" placeholder="0"></label>
+                        <label>DISC. AMOUNT <input id="posDiscountAmountInput" type="text" inputmode="decimal" value="${posDiscountAmount||''}" oninput="handleDiscountInput(); updateExactCashButton()" onkeyup="updateExactCashButton()" class="w-24 ml-1 px-2 py-1 rounded text-black font-bold" placeholder="0.00"></label>
                     </div>
                     <div class="flex gap-2"><button onclick="renderPosRightPaneMenu()" class="bg-[#3b3b3b] px-3 py-1.5 rounded text-xs font-semibold text-white">← Back to Menu</button><button onclick="closePosModal()" class="bg-red-600 px-3 py-1.5 rounded font-bold text-sm">X</button></div>
                 </div>
@@ -1693,7 +1760,7 @@
                             ${[100,50,20,10].map(v=>`<button onclick="posAddEnteredCash(${v})" class="bg-[#222] border border-emerald-600/50 p-1 rounded text-center"><span class="text-[10px] text-gray-400 block">RM${v} Note</span><div class="bg-emerald-900/40 text-emerald-300 font-bold text-xs py-1 rounded">RM${v}.00</div></button>`).join('')}
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="posPayExactCash()" class="bg-emerald-700 text-white font-bold p-3 rounded-xl text-xs">RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Cash / Exact</span></button>
+                            <button id="posExactCashButton" type="button" onclick="posPayExactCash()" class="bg-emerald-700 text-white font-bold p-3 rounded-xl text-xs">RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Cash / Exact</span></button>
                             <button onclick="posProcessPayment('GHL Card')" class="bg-[#D69E2E] text-black font-extrabold p-3 rounded-xl text-xs"><span>GHL CARD</span><br><span class="text-[9px]">Transaction ID required</span></button>
                             <button onclick="posProcessPayment('DuitNow QR')" class="bg-[#C53030] text-white font-bold p-3 rounded-xl text-xs"><span>📱 DUITNOW QR</span><br><span class="text-[9px]">Transaction ID required</span></button>
                         </div>
@@ -1704,6 +1771,7 @@
                         <button onclick="posProcessPayment('Cash')" class="mt-3 bg-emerald-600 text-white font-extrabold py-3 rounded-xl text-base">PAY CASH</button>
                     </div>
                 </div>`;
+            updateExactCashButton(finalTotal);
         }
 
 
@@ -1728,24 +1796,25 @@
         }
 
         function posPayExactCash() {
-            // Always take the CURRENT discounted total, never the old pre-discount amount.
-            let subtotal = 0;
-            posCart.forEach(i => subtotal += Number(i.price || 0) * Number(i.quantity || 0));
-            const discount = calculateDiscount(subtotal);
-            const taxable = Math.max(0, subtotal - discount);
-            const sst = taxable * 0.06;
-            const finalTotal = roundToNearest5Sen(taxable + sst);
-
-            posEnteredAmountString = finalTotal.toFixed(2);
+            updateExactCashButton();
+            const btn = document.getElementById('posExactCashButton');
+            const amount = btn ? Number(btn.dataset.amountDue || 0) : 0;
+            posEnteredAmountString = amount.toFixed(2);
             const display = document.getElementById('posEnteredAmountDisplay');
             if (display) display.innerText = posEnteredAmountString;
-
             posProcessPayment('Cash');
         }
 
         async function posProcessPayment(methodName) {
             let subtotal=0; posCart.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));
-            const discount=calculateDiscount(subtotal); const taxable=Math.max(0,subtotal-discount); const sst=taxable*0.06; const calculatedTotal=taxable+sst; const finalTotal=roundToNearest5Sen(calculatedTotal);
+            const discount=calculateDiscount(subtotal);
+            const taxable=Math.max(0,subtotal-discount);
+            const sst=taxable*0.06;
+            const calculatedTotal=taxable+sst;
+            const finalTotal=roundToNearest5Sen(calculatedTotal);
+            // The order itself must retain the undiscounted bill total for Current Orders/Recall.
+            const orderSst=subtotal*0.06;
+            const orderTotal=roundToNearest5Sen(subtotal+orderSst);
             let enteredAmount=parseFloat(posEnteredAmountString); if(!Number.isFinite(enteredAmount)) enteredAmount=finalTotal;
             let transactionId='';
             if(methodName==='GHL Card' || methodName==='DuitNow QR'){
@@ -1758,7 +1827,7 @@
             const tableId=document.getElementById('posDisplayTable').innerText || 'N/A';
             const note=document.getElementById('posOrderNoteInput').value || '';
             if(!orderIdToProcess){
-                const {data:newOrder,error:ordErr}=await _supabase.from('orders').insert([{table_id:tableId,status:'Completed',payment_status:'Paid',total_amount:finalTotal,decline_reason:note}]).select().single();
+                const {data:newOrder,error:ordErr}=await _supabase.from('orders').insert([{table_id:tableId,status:'Completed',payment_status:'Paid',total_amount:orderTotal,decline_reason:note}]).select().single();
                 if(ordErr||!newOrder){alert('Failed to create order: '+(ordErr?ordErr.message:'Unknown error'));return;}
                 orderIdToProcess=newOrder.id;
             }
@@ -1773,7 +1842,7 @@
                 if(!itemErr) localStorage.setItem('order_modifiers_'+orderIdToProcess,JSON.stringify(posCart.map(i=>i.modifiers||[])));
             }
             if(itemErr){alert('Failed to save order items: '+itemErr.message);return;}
-            const orderUpdate={status:'Completed',payment_status:'Paid',total_amount:finalTotal};
+            const orderUpdate={status:'Completed',payment_status:'Paid',total_amount:orderTotal};
             const {error:orderUpdateError}=await _supabase.from('orders').update(orderUpdate).eq('id',orderIdToProcess);
             if(orderUpdateError){alert('Failed to complete order: '+orderUpdateError.message);return;}
             const paymentMethod=methodName==='Cash'?'Cash':methodName;
