@@ -983,42 +983,55 @@
     closeInvoiceListModal();
     
     try {
-        // ১. সরাসরি invoices টেবيل থেকে নির্দিষ্ট ইনভয়েসটি আনুন
-        const { data: invoice, error: invError } = await _supabase
+        // যদি invoiceId স্ট্রিং বা নাম্বার যাই হোক না কেন, তাকে সঠিকভাবে কুয়েরি করা
+        const { data: invoices, error: invError } = await _supabase
             .from('invoices')
-            .select('*')
-            .eq('id', invoiceId)
-            .single();
+            .select('*');
 
-        if (invError || !invoice) {
-            alert('Could not load invoice details.');
+        if (invError || !invoices) {
+            alert('Could not connect to invoices table.');
             return;
         }
 
-        // ২. order_id দিয়ে orders টেবিল থেকে মূল অর্ডারটি আনুন
-        const { data: order, error: orderError } = await _supabase
+        // জাভাস্ক্রিপ্ট দিয়ে লিস্ট থেকে নির্দিষ্ট ইনভয়েসটি খুঁজে নেওয়া (টাইপ মিসম্যাচ এড়াতে)
+        const invoice = invoices.find(i => String(i.id) === String(invoiceId));
+
+        if (!invoice) {
+            alert('Invoice not found.');
+            return;
+        }
+
+        // এবার orders টেবিল থেকে অর্ডারটি খুঁজে নেওয়া
+        const { data: orders, error: orderError } = await _supabase
             .from('orders')
-            .select('*')
-            .eq('id', invoice.order_id)
-            .single();
+            .select('*');
 
-        if (orderError || !order) {
-            alert('Could not load associated order.');
+        if (orderError || !orders) {
+            alert('Could not connect to orders table.');
             return;
         }
 
-        // ৩. গুরুত্বপূর্ণ পরিবর্তন: অর্ডারের টোটাল অ্যামাউন্টে ইনভয়েসের নিজস্ব টোটাল বসিয়ে দিন
+        const order = orders.find(o => String(o.id) === String(invoice.order_id));
+
+        if (!order) {
+            alert('Associated order not found.');
+            return;
+        }
+
+        // ইনভয়েসের সঠিক লেটেস্ট অ্যামাউন্ট অর্ডারে বসিয়ে দেওয়া
         order.total_amount = invoice.total_amount;
         order.payment_method = invoice.payment_method;
         order.invoice_created_at = invoice.created_at;
 
-        // ৪. মডাল ওপেন করুন
+        // মডাল ওপেন করা
         openOrderDetails(order, 'invoice_view');
 
     } catch (err) {
-        console.error('Error:', err);
+        console.error('Error in viewInvoiceDetails:', err);
+        alert('An error occurred while loading invoice details.');
     }
-        }
+               }
+            
         
         
         
