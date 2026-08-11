@@ -1138,13 +1138,51 @@
         }
 
         async function recallOrder(orderId) {
-            const { error } = await _supabase.from('orders').update({ status: 'accepted' }).eq('id', orderId);
-            if (!error) {
+            try {
+                // When an invoice is recalled, remove that invoice record first.
+                // This makes the Invoice List clear the recalled invoice and makes
+                // Last Receipt automatically fall back to the previous invoice.
+                const { data: invoice, error: invoiceFindError } = await _supabase
+                    .from('invoices')
+                    .select('id, order_id')
+                    .eq('order_id', orderId)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (invoiceFindError) throw invoiceFindError;
+
+                if (invoice && invoice.id) {
+                    const { error: invoiceDeleteError } = await _supabase
+                        .from('invoices')
+                        .delete()
+                        .eq('id', invoice.id);
+                    if (invoiceDeleteError) throw invoiceDeleteError;
+                }
+
+                // Clear any locally cached payment/discount data for the recalled invoice.
+                localStorage.removeItem('invoice_extra_' + orderId);
+
+                // Return the order to Current Orders as an unpaid/active order.
+                const { error: orderError } = await _supabase
+                    .from('orders')
+                    .update({ status: 'accepted', payment_status: 'Pending' })
+                    .eq('id', orderId);
+
+                if (orderError) throw orderError;
+
                 alert(`Order #${orderId} has been successfully recalled to Current Orders!`);
                 closeOrderModal();
                 loadPendingOrders();
-            } else {
-                alert('Failed to recall order.');
+
+                // Refresh Invoice List so the recalled invoice disappears immediately.
+                const invoiceListModal = document.getElementById('invoiceListModal');
+                if (invoiceListModal && !invoiceListModal.classList.contains('hidden')) {
+                    await openInvoiceListModal();
+                }
+            } catch (error) {
+                console.error('Recall invoice error:', error);
+                alert('Failed to recall order/invoice: ' + (error.message || error));
             }
         }
 
