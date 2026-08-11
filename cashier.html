@@ -982,30 +982,46 @@
         async function viewInvoiceDetails(invoiceId) {
     closeInvoiceListModal();
     
-    // ১. orders টেবিলের বদলে সরাসরি invoices টেবিল থেকে লেটেস্ট ইনভয়েস এবং তার অর্ডার ডেটা আনুন
-    const { data: invoice, error: invError } = await _supabase
-        .from('invoices')
-        .select('*, orders(*)')
-        .eq('id', invoiceId)
-        .single();
+    try {
+        // ১. প্রথমে সরাসরি invoices টেবিল থেকে ওই ইনভয়েসের ডেটা আনুন
+        const { data: invoice, error: invError } = await _supabase
+            .from('invoices')
+            .select('*')
+            .eq('id', invoiceId)
+            .single();
 
-    if (invError || !invoice) {
-        console.error('Error fetching invoice details:', invError);
-        return;
-    }
+        if (invError || !invoice) {
+            console.error('Invoice fetch error:', invError);
+            alert('Could not load invoice details.');
+            return;
+        }
 
-    // ২. ইনভয়েসের ভেতরের অর্ডার অবজেক্টটি নিন এবং ইনভয়েসের সঠিক total_amount টি অর্ডারে বসিয়ে দিন
-    let orderData = invoice.orders;
-    if (orderData) {
-        orderData.total_amount = invoice.total_amount; // ইনভয়েসের লেটেস্ট টোটাল অ্যামাউন্ট এখানে সেট করা হলো
-        orderData.payment_method = invoice.payment_method; // পেমেন্ট মেথড পাস করা হলো
-        orderData.invoice_created_at = invoice.created_at; // ইনভয়েসের ডেট পাস করা হলো
-    }
+        // ২. এবার order_id দিয়ে orders টেবিল থেকে মূল অর্ডারটি আনুন
+        const { data: order, error: orderError } = await _supabase
+            .from('orders')
+            .select('*')
+            .eq('id', invoice.order_id)
+            .single();
 
-    if (orderData) {
-        openOrderDetails(orderData, 'invoice_view');
+        if (orderError || !order) {
+            console.error('Order fetch error:', orderError);
+            alert('Could not load associated order.');
+            return;
+        }
+
+        // ৩. ইনভয়েসের সঠিক লেটেস্ট টোটাল অ্যামাউন্ট এবং পেমেন্ট মেথড অর্ডারের ভেতরে সেট করে দিন
+        order.total_amount = invoice.total_amount;
+        order.payment_method = invoice.payment_method;
+        order.invoice_created_at = invoice.created_at;
+
+        // ৪. এবার মডাল ওপেন করার ফাংশনে সঠিক ডেটা পাঠিয়ে দিন
+        openOrderDetails(order, 'invoice_view');
+
+    } catch (err) {
+        console.error('Unexpected error in viewInvoiceDetails:', err);
     }
         }
+        
         
 
         async function recallOrder(orderId) {
