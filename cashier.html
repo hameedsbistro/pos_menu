@@ -545,62 +545,65 @@
             openOrderDetails(order, sourceType);
         }
 
-        async function openOrderDetails(order, sourceType = 'current') {
-            currentActiveOrderId = order.id;
-            activeOrderData = order;
-            document.getElementById('modalOrderTitle').innerText = `Order ID: #${order.id}`;
-            document.getElementById('modalOrderMeta').innerText = `Table: ${order.table_id || 'N/A'}`;
-            
-            const actionContainer = document.getElementById('modalActionButtonsContainer');
-            const extraSection = document.getElementById('extraItemSectionContainer');
-            const declineBtn = document.getElementById('modalDeclineBtn');
+        async function viewInvoiceDetails(idParam) {
+    closeInvoiceListModal();
+    
+    try {
+        const inputId = Number(idParam);
+        let invoice = null;
 
-            if (sourceType === 'incoming') {
-                extraSection.classList.remove('hidden');
-                declineBtn.classList.remove('hidden');
-                actionContainer.innerHTML = `
-                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
-                    <button onclick="sendOrderToKitchen()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Accept & Send to Kitchen</button>
-                `;
-                await renderModalItems(order.id, true);
-                loadMenuForDropdown();
-            } else if (sourceType === 'completed' || sourceType === 'invoice_view') {
-                extraSection.classList.add('hidden');
-                declineBtn.classList.add('hidden');
-                
-                const { data: invData } = await _supabase.from('invoices').select('*').eq('order_id', order.id).maybeSingle();
-                const paymentMethod = invData ? invData.payment_method : 'N/A';
-                const invoiceDate = invData ? new Date(invData.created_at).toLocaleString() : new Date(order.created_at).toLocaleString();
-                
-                const sessionData = JSON.parse(localStorage.getItem('cashier_session') || '{}');
-                const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
+        // ১. ইনভয়েস আইডি দিয়ে ইনভয়েস খোঁজা
+        const { data: invById } = await _supabase
+            .from('invoices')
+            .select('*')
+            .eq('id', inputId)
+            .maybeSingle();
 
-                document.getElementById('modalOrderMeta').innerHTML = `
-                    Table: ${order.table_id || 'N/A'}<br>
-                    Date: ${invoiceDate}<br>
-                    Payment Method: <span class="font-semibold text-emerald-600">${paymentMethod}</span><br>
-                    Cashier: <span class="font-semibold text-gray-700">${cashierLabel}</span>
-                `;
+        if (invById) {
+            invoice = invById;
+        } else {
+            // ২. না পেলে অর্ডার আইডি দিয়ে লেটেস্ট ইনভয়েস খোঁজা
+            const { data: invByOrder } = await _supabase
+                .from('invoices')
+                .select('*')
+                .eq('order_id', inputId)
+                .order('created_at', { ascending: false })
+                .limit(1);
 
-                actionContainer.innerHTML = `
-                    <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Print Receipt</button>
-                    <button onclick="recallOrder(${order.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Recall</button>
-                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Close</button>
-                `;
-                await renderReadOnlyModalItems(order.id, order.total_amount);
-            } else {
-                extraSection.classList.remove('hidden');
-                declineBtn.classList.remove('hidden');
-                actionContainer.innerHTML = `
-                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
-                    <button onclick="proceedToPaymentFromModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Proceed to Payment</button>
-                `;
-                await renderModalItems(order.id, true);
-                loadMenuForDropdown();
+            if (invByOrder && invByOrder.length > 0) {
+                invoice = invByOrder[0];
             }
-
-            document.getElementById('orderDetailModal').classList.remove('hidden');
         }
+
+        if (!invoice) {
+            alert('Invoice not found for ID: ' + idParam);
+            return;
+        }
+
+        // ৩. order_id দিয়ে orders টেবিল থেকে মূল অর্ডারটি আনা
+        const { data: order, error: orderError } = await _supabase
+            .from('orders')
+            .select('*')
+            .eq('id', invoice.order_id)
+            .maybeSingle();
+
+        if (orderError || !order) {
+            alert('Associated order not found.');
+            return;
+        }
+
+        // ৪. সবচেয়ে গুরুত্বপূর্ণ: অর্ডারের টোটাল অ্যামাউন্ট সরাসরি ইনভয়েসের টোটাল দিয়ে ওভাররাইট করে দেওয়া
+        order.total_amount = Number(invoice.total_amount);
+
+        // ৫. মডাল ওপেন করা
+        openOrderDetails(order, 'invoice_view');
+
+    } catch (err) {
+        console.error('Error in viewInvoiceDetails:', err);
+        alert('An unexpected error occurred.');
+    }
+                                                                          }
+        
 
         async function renderModalItems(orderId, editable = true) {
             const itemsContainer = document.getElementById('modalOrderItemsList');
