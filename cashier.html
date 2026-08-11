@@ -983,7 +983,7 @@
     closeInvoiceListModal();
     
     try {
-        // ১. প্রথমে সরাসরি invoices টেবিল থেকে ওই ইনভয়েসের ডেটা আনুন
+        // ১. সরাসরি invoices টেবيل থেকে নির্দিষ্ট ইনভয়েসটি আনুন
         const { data: invoice, error: invError } = await _supabase
             .from('invoices')
             .select('*')
@@ -991,12 +991,11 @@
             .single();
 
         if (invError || !invoice) {
-            console.error('Invoice fetch error:', invError);
             alert('Could not load invoice details.');
             return;
         }
 
-        // ২. এবার order_id দিয়ে orders টেবিল থেকে মূল অর্ডারটি আনুন
+        // ২. order_id দিয়ে orders টেবিল থেকে মূল অর্ডারটি আনুন
         const { data: order, error: orderError } = await _supabase
             .from('orders')
             .select('*')
@@ -1004,23 +1003,23 @@
             .single();
 
         if (orderError || !order) {
-            console.error('Order fetch error:', orderError);
             alert('Could not load associated order.');
             return;
         }
 
-        // ৩. ইনভয়েসের সঠিক লেটেস্ট টোটাল অ্যামাউন্ট এবং পেমেন্ট মেথড অর্ডারের ভেতরে সেট করে দিন
+        // ৩. গুরুত্বপূর্ণ পরিবর্তন: অর্ডারের টোটাল অ্যামাউন্টে ইনভয়েসের নিজস্ব টোটাল বসিয়ে দিন
         order.total_amount = invoice.total_amount;
         order.payment_method = invoice.payment_method;
         order.invoice_created_at = invoice.created_at;
 
-        // ৪. এবার মডাল ওপেন করার ফাংশনে সঠিক ডেটা পাঠিয়ে দিন
+        // ৪. মডাল ওপেন করুন
         openOrderDetails(order, 'invoice_view');
 
     } catch (err) {
-        console.error('Unexpected error in viewInvoiceDetails:', err);
+        console.error('Error:', err);
     }
         }
+        
         
         
 
