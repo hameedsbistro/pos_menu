@@ -979,13 +979,34 @@
             document.getElementById('invoiceListModal').classList.add('hidden');
         }
 
-        async function viewInvoiceDetails(orderId) {
-            closeInvoiceListModal();
-            const { data: order } = await _supabase.from('orders').select('*').eq('id', orderId).single();
-            if (order) {
-                openOrderDetails(order, 'invoice_view');
-            }
+        async function viewInvoiceDetails(invoiceId) {
+    closeInvoiceListModal();
+    
+    // ১. orders টেবিলের বদলে সরাসরি invoices টেবিল থেকে লেটেস্ট ইনভয়েস এবং তার অর্ডার ডেটা আনুন
+    const { data: invoice, error: invError } = await _supabase
+        .from('invoices')
+        .select('*, orders(*)')
+        .eq('id', invoiceId)
+        .single();
+
+    if (invError || !invoice) {
+        console.error('Error fetching invoice details:', invError);
+        return;
+    }
+
+    // ২. ইনভয়েসের ভেতরের অর্ডার অবজেক্টটি নিন এবং ইনভয়েসের সঠিক total_amount টি অর্ডারে বসিয়ে দিন
+    let orderData = invoice.orders;
+    if (orderData) {
+        orderData.total_amount = invoice.total_amount; // ইনভয়েসের লেটেস্ট টোটাল অ্যামাউন্ট এখানে সেট করা হলো
+        orderData.payment_method = invoice.payment_method; // পেমেন্ট মেথড পাস করা হলো
+        orderData.invoice_created_at = invoice.created_at; // ইনভয়েসের ডেট পাস করা হলো
+    }
+
+    if (orderData) {
+        openOrderDetails(orderData, 'invoice_view');
+    }
         }
+        
 
         async function recallOrder(orderId) {
             const { error } = await _supabase.from('orders').update({ status: 'accepted' }).eq('id', orderId);
