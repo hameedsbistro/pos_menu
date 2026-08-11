@@ -231,6 +231,82 @@
         let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
         let currentLang = localStorage.getItem('hameeds_lang') || 'en';
 
+        // Automatic menu translation system. Original Supabase menu data is never modified.
+        const menuTranslationCache = JSON.parse(localStorage.getItem('hameeds_menu_translation_cache') || '{}');
+        let translationRequestVersion = 0;
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+            }[ch]));
+        }
+
+        async function translateTextAuto(text, targetLang) {
+            const sourceText = String(text ?? '').trim();
+            if (!sourceText || targetLang === 'en') return sourceText;
+
+            const cacheKey = `${targetLang}::${sourceText}`;
+            if (menuTranslationCache[cacheKey]) return menuTranslationCache[cacheKey];
+
+            try {
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(sourceText)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Translation HTTP ${response.status}`);
+                const data = await response.json();
+                const translated = Array.isArray(data?.[0])
+                    ? data[0].map(part => part?.[0] || '').join('')
+                    : sourceText;
+
+                if (translated) {
+                    menuTranslationCache[cacheKey] = translated;
+                    localStorage.setItem('hameeds_menu_translation_cache', JSON.stringify(menuTranslationCache));
+                    return translated;
+                }
+            } catch (error) {
+                console.warn('Menu translation failed:', error);
+            }
+            return sourceText;
+        }
+
+        function getOriginalItemName(item) {
+            return item.name_en || item.name || item.name_bn || '';
+        }
+
+        async function translateMenuForCurrentLanguage(items = menuItems) {
+            const version = ++translationRequestVersion;
+            if (!items.length || currentLang === 'en') {
+                if (version === translationRequestVersion) {
+                    renderCategories();
+                    renderTopPopular();
+                }
+                return;
+            }
+
+            const uniqueTexts = [...new Set(items.flatMap(item => [
+                getOriginalItemName(item),
+                item.category || ''
+            ]).filter(Boolean))];
+
+            await Promise.all(uniqueTexts.map(text => translateTextAuto(text, currentLang)));
+
+            if (version === translationRequestVersion) {
+                renderCategories();
+                renderTopPopular();
+            }
+        }
+
+        function getMenuDisplayName(item) {
+            const original = getOriginalItemName(item);
+            if (currentLang === 'en') return original;
+            return menuTranslationCache[`${currentLang}::${original}`] || original;
+        }
+
+        function getCategoryDisplayName(category) {
+            if (!category) return '';
+            if (currentLang === 'en') return category;
+            return menuTranslationCache[`${currentLang}::${category}`] || category;
+        }
+
         const translations = {
             en: {
                 subtitle: "Dine-In & Takeaway Ordering System",
@@ -489,6 +565,13 @@
             currentLang = lang;
             localStorage.setItem('hameeds_lang', lang);
             applyLanguage(lang);
+            if (menuItems.length) {
+                // Rebuild buttons immediately so category selection always works.
+                renderCategories();
+                renderTopPopular();
+                // Translate category/item names in the background, then refresh.
+                translateMenuForCurrentLanguage(menuItems);
+            }
         }
 
         function applyLanguage(lang) {
@@ -583,7 +666,10 @@
             for(let i=1; i<=30; i++) {
                 let opt = document.createElement('option');
                 opt.value = prefix + i;
-                opt.innerText = `Table ${prefix}${i}`;
+                const tableLabel = currentLang === 'en' ? 'Table' : ({
+                    ms:'Meja', bn:'টেবিল', hi:'टेबल', ta:'மேசை', ar:'طاولة', zh:'桌'
+                }[currentLang] || 'Table');
+                opt.innerText = `${tableLabel} ${prefix}${i}`;
                 tableSelect.appendChild(opt);
             }
         }
@@ -602,24 +688,48 @@
             menuItems = data || [];
             renderCategories();
             renderTopPopular();
+            if (currentLang !== 'en') {
+                translateMenuForCurrentLanguage(menuItems);
+            }
         }
 
         function renderCategories() {
             const container = document.getElementById('categoryContainer');
-            const categories = [...new Set(menuItems.map(i => i.category))];
-            container.innerHTML = `<button onclick="renderTopPopular()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold whitespace-nowrap">Top 15 Popular</button>`;
+            const categories = [...new Set(menuItems.map(i => i.category).filter(Boolean))];
+            const topPopularText = currentLang === 'en'
+                ? 'Top 15 Popular'
+                : (translations[currentLang]?.topPopular || 'Top 15 Popular Items');
+
+            // Build category buttons with real event listeners. This avoids inline
+            // onclick parsing problems when a category contains quotes/apostrophes.
+            container.innerHTML = '';
+
+            const topBtn = document.createElement('button');
+            topBtn.type = 'button';
+            topBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold whitespace-nowrap';
+            topBtn.textContent = topPopularText;
+            topBtn.addEventListener('click', () => renderTopPopular());
+            container.appendChild(topBtn);
+
             categories.forEach(cat => {
-                container.innerHTML += `<button onclick="filterCategory('${cat}')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold whitespace-nowrap">${cat}</button>`;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold whitespace-nowrap';
+                btn.textContent = getCategoryDisplayName(cat);
+                btn.dataset.category = cat;
+                btn.addEventListener('click', () => filterCategory(cat));
+                container.appendChild(btn);
             });
         }
 
         function renderTopPopular() {
-            document.getElementById('menuTitle').innerText = "Top 15 Popular Items";
+            document.getElementById('menuTitle').innerText =
+                translations[currentLang]?.topPopular || 'Top 15 Popular Items';
             renderMenu(menuItems.filter(i => i.is_popular));
         }
 
         function filterCategory(cat) {
-            document.getElementById('menuTitle').innerText = cat;
+            document.getElementById('menuTitle').innerText = getCategoryDisplayName(cat);
             renderMenu(menuItems.filter(i => i.category === cat));
         }
 
@@ -632,7 +742,7 @@
             }
             items.forEach(item => {
                 let price = currentOrderType === 'takeaway' && item.takeaway_price ? item.takeaway_price : item.price;
-                let itemName = currentLang === 'bn' && item.name_bn ? item.name_bn : (item.name_en || item.name);
+                let itemName = getMenuDisplayName(item);
                 const imgSrc = item.image_url || 'images/logo.png';
 
                 container.innerHTML += `
@@ -641,7 +751,9 @@
                             <h3 class="font-bold text-gray-800 text-base mb-1">${itemName}</h3>
                             <p class="text-blue-600 font-semibold mb-3">RM${Number(price).toFixed(2)}</p>
                             <button onclick="addToCart(${item.id}, ${price})" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium w-full shadow-sm transition">
-                                Add to Cart
+                                ${escapeHtml(currentLang === 'en' ? 'Add to Cart' : ({
+                                    ms:'Tambah ke Troli', bn:'কার্টে যোগ করুন', hi:'कार्ट में जोड़ें', ta:'கார்ட்டில் சேர்', ar:'أضف إلى السلة', zh:'加入购物车'
+                                }[currentLang] || 'Add to Cart'))}
                             </button>
                         </div>
                         <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center" onclick="openImageViewer('${imgSrc}', '${itemName}')">
@@ -676,7 +788,10 @@
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
             if(totalQty > 0) {
                 bar.classList.remove('hidden');
-                document.getElementById('cartCount').innerText = `${totalQty} Items`;
+                const itemWord = currentLang === 'en' ? 'Items' : ({
+                    ms: 'Item', bn: 'আইটেম', hi: 'आइटम', ta: 'பொருட்கள்', ar: 'عنصر', zh: '件'
+                }[currentLang] || 'Items');
+                document.getElementById('cartCount').innerText = `${totalQty} ${itemWord}`;
                 document.getElementById('cartSubtotal').innerText = `RM${subtotal.toFixed(2)}`;
             } else {
                 bar.classList.add('hidden');
@@ -689,7 +804,9 @@
 
             const container = document.getElementById('cartItemsListContainer');
             if(cart.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 py-4">Your cart is empty.</p>';
+                container.innerHTML = `<p class="text-center text-gray-500 py-4">${escapeHtml(currentLang === 'en' ? 'Your cart is empty.' : ({
+                    ms:'Troli anda kosong.', bn:'আপনার কার্ট খালি।', hi:'आपका कार्ट खाली है।', ta:'உங்கள் கார்ட் காலியாக உள்ளது.', ar:'سلة التسوق فارغة.', zh:'您的购物车是空的。'
+                }[currentLang] || 'Your cart is empty.'))}</p>`;
             } else {
                 container.innerHTML = cart.map((i, index) => {
                     let name = currentLang === 'bn' && i.name_bn ? i.name_bn : (i.name_en || i.name);
