@@ -983,42 +983,33 @@
     closeInvoiceListModal();
     
     try {
-        // যদি invoiceId স্ট্রিং বা নাম্বার যাই হোক না কেন, তাকে সঠিকভাবে কুয়েরি করা
-        const { data: invoices, error: invError } = await _supabase
+        // ইনভয়েস আইডি সংখ্যায় রূপান্তর করে সরাসরি Supabase ফিল্টার ব্যবহার করা
+        const cleanId = Number(invoiceId);
+
+        const { data: invoice, error: invError } = await _supabase
             .from('invoices')
-            .select('*');
+            .select('*')
+            .eq('id', cleanId)
+            .single();
 
-        if (invError || !invoices) {
-            alert('Could not connect to invoices table.');
+        if (invError || !invoice) {
+            alert('Invoice not found in database.');
             return;
         }
 
-        // জাভাস্ক্রিপ্ট দিয়ে লিস্ট থেকে নির্দিষ্ট ইনভয়েসটি খুঁজে নেওয়া (টাইপ মিসম্যাচ এড়াতে)
-        const invoice = invoices.find(i => String(i.id) === String(invoiceId));
-
-        if (!invoice) {
-            alert('Invoice not found.');
-            return;
-        }
-
-        // এবার orders টেবিল থেকে অর্ডারটি খুঁজে নেওয়া
-        const { data: orders, error: orderError } = await _supabase
+        // order_id দিয়ে orders টেবিল থেকে সঠিক অর্ডারটি কুয়েরি করা
+        const { data: order, error: orderError } = await _supabase
             .from('orders')
-            .select('*');
+            .select('*')
+            .eq('id', invoice.order_id)
+            .single();
 
-        if (orderError || !orders) {
-            alert('Could not connect to orders table.');
-            return;
-        }
-
-        const order = orders.find(o => String(o.id) === String(invoice.order_id));
-
-        if (!order) {
+        if (orderError || !order) {
             alert('Associated order not found.');
             return;
         }
 
-        // ইনভয়েসের সঠিক লেটেস্ট অ্যামাউন্ট অর্ডারে বসিয়ে দেওয়া
+        // ইনভয়েসের সঠিক লেটেস্ট অ্যামাউন্ট এবং পেমেন্ট মেথড অর্ডারে সেট করা
         order.total_amount = invoice.total_amount;
         order.payment_method = invoice.payment_method;
         order.invoice_created_at = invoice.created_at;
@@ -1030,7 +1021,8 @@
         console.error('Error in viewInvoiceDetails:', err);
         alert('An error occurred while loading invoice details.');
     }
-               }
+            }
+        
             
         
         
