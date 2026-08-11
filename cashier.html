@@ -983,26 +983,32 @@
     closeInvoiceListModal();
     
     try {
-        // ইনভয়েস আইডি সংখ্যায় রূপান্তর করে সরাসরি Supabase ফিল্টার ব্যবহার করা
-        const cleanId = Number(invoiceId);
+        console.log("Looking for Invoice ID:", invoiceId); // কনসোলে দেখতে পাবেন ঠিক কী আইডি পাস হচ্ছে
 
+        // আইডিটি স্ট্রিং বা নাম্বার যাই হোক না কেন, সরাসরি ফিল্টার করা
         const { data: invoice, error: invError } = await _supabase
             .from('invoices')
             .select('*')
-            .eq('id', cleanId)
-            .single();
+            .eq('id', invoiceId)
+            .maybeSingle(); // single() এর বদলে maybeSingle() ব্যবহার করা হলো যাতে ক্র্যাশ না করে
 
-        if (invError || !invoice) {
-            alert('Invoice not found in database.');
+        if (invError) {
+            console.error('Supabase error:', invError);
+            alert('Database error: ' + invError.message);
             return;
         }
 
-        // order_id দিয়ে orders টেবিল থেকে সঠিক অর্ডারটি কুয়েরি করা
+        if (!invoice) {
+            alert('Invoice not found for ID: ' + invoiceId);
+            return;
+        }
+
+        // order_id দিয়ে orders টেবিল থেকে সঠিক অর্ডারটি আনা
         const { data: order, error: orderError } = await _supabase
             .from('orders')
             .select('*')
             .eq('id', invoice.order_id)
-            .single();
+            .maybeSingle();
 
         if (orderError || !order) {
             alert('Associated order not found.');
@@ -1019,9 +1025,10 @@
 
     } catch (err) {
         console.error('Error in viewInvoiceDetails:', err);
-        alert('An error occurred while loading invoice details.');
+        alert('An unexpected error occurred.');
     }
-            }
+        }
+        
         
             
         
