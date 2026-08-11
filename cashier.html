@@ -550,37 +550,31 @@
     
     try {
         const inputId = Number(idParam);
-        let invoice = null;
 
-        // ১. ইনভয়েস আইডি দিয়ে ইনভয়েস খোঁজা
-        const { data: invById } = await _supabase
+        // ১. সরাসরি invoices টেবিল থেকে ইনভয়েস আনা
+        const { data: invoice, error: invError } = await _supabase
             .from('invoices')
             .select('*')
             .eq('id', inputId)
             .maybeSingle();
 
-        if (invById) {
-            invoice = invById;
-        } else {
-            // ২. না পেলে অর্ডার আইডি দিয়ে লেটেস্ট ইনভয়েস খোঁজা
-            const { data: invByOrder } = await _supabase
+        if (invError || !invoice) {
+            // যদি ইনভয়েস আইডি দিয়ে না পায়, তবে order_id দিয়ে চেষ্টা করা
+            const { data: invList } = await _supabase
                 .from('invoices')
                 .select('*')
                 .eq('order_id', inputId)
                 .order('created_at', { ascending: false })
                 .limit(1);
 
-            if (invByOrder && invByOrder.length > 0) {
-                invoice = invByOrder[0];
+            if (!invList || invList.length === 0) {
+                alert('Invoice not found.');
+                return;
             }
+            invoice = invList[0];
         }
 
-        if (!invoice) {
-            alert('Invoice not found for ID: ' + idParam);
-            return;
-        }
-
-        // ৩. order_id দিয়ে orders টেবিল থেকে মূল অর্ডারটি আনা
+        // ২. orders টেবিল থেকে অর্ডার আনা
         const { data: order, error: orderError } = await _supabase
             .from('orders')
             .select('*')
@@ -592,17 +586,18 @@
             return;
         }
 
-        // ৪. সবচেয়ে গুরুত্বপূর্ণ: অর্ডারের টোটাল অ্যামাউন্ট সরাসরি ইনভয়েসের টোটাল দিয়ে ওভাররাইট করে দেওয়া
+        // ৩. ইনভয়েসের সঠিক অ্যামাউন্ট অর্ডারে সেট করা
         order.total_amount = Number(invoice.total_amount);
 
-        // ৫. মডাল ওপেন করা
+        // ৪. মডাল ওপেন করা
         openOrderDetails(order, 'invoice_view');
 
     } catch (err) {
         console.error('Error in viewInvoiceDetails:', err);
-        alert('An unexpected error occurred.');
+        alert('An error occurred: ' + err.message);
     }
-                                                                          }
+                }
+                  
         
 
         async function renderModalItems(orderId, editable = true) {
