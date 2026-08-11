@@ -979,31 +979,42 @@
             document.getElementById('invoiceListModal').classList.add('hidden');
         }
 
-        async function viewInvoiceDetails(invoiceId) {
+        async function viewInvoiceDetails(idParam) {
     closeInvoiceListModal();
     
     try {
-        console.log("Looking for Invoice ID:", invoiceId); // কনসোলে দেখতে পাবেন ঠিক কী আইডি পাস হচ্ছে
+        const inputId = Number(idParam);
+        let invoice = null;
 
-        // আইডিটি স্ট্রিং বা নাম্বার যাই হোক না কেন, সরাসরি ফিল্টার করা
-        const { data: invoice, error: invError } = await _supabase
+        // ১. সরাসরি ইনভয়েস আইডি দিয়ে ইনভয়েস খোঁজা
+        const { data: invById } = await _supabase
             .from('invoices')
             .select('*')
-            .eq('id', invoiceId)
-            .maybeSingle(); // single() এর বদলে maybeSingle() ব্যবহার করা হলো যাতে ক্র্যাশ না করে
+            .eq('id', inputId)
+            .maybeSingle();
 
-        if (invError) {
-            console.error('Supabase error:', invError);
-            alert('Database error: ' + invError.message);
-            return;
+        if (invById) {
+            invoice = invById;
+        } else {
+            // ২. না পেলে অর্ডার আইডি দিয়ে লেটেস্ট ইনভয়েস খোঁজা
+            const { data: invByOrder } = await _supabase
+                .from('invoices')
+                .select('*')
+                .eq('order_id', inputId)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (invByOrder && invByOrder.length > 0) {
+                invoice = invByOrder[0];
+            }
         }
 
         if (!invoice) {
-            alert('Invoice not found for ID: ' + invoiceId);
+            alert('Invoice not found for ID: ' + idParam);
             return;
         }
 
-        // order_id দিয়ে orders টেবিল থেকে সঠিক অর্ডারটি আনা
+        // ৩. order_id দিয়ে orders টেবিল থেকে মূল অর্ডারটি আনা
         const { data: order, error: orderError } = await _supabase
             .from('orders')
             .select('*')
@@ -1015,12 +1026,18 @@
             return;
         }
 
-        // ইনভয়েসের সঠিক লেটেস্ট অ্যামাউন্ট এবং পেমেন্ট মেথড অর্ডারে সেট করা
-        order.total_amount = invoice.total_amount;
+        // ৪. নিখুঁতভাবে ইনভয়েসের টোটাল অ্যামাউন্ট এবং অন্যান্য ডাটা অর্ডারে বসানো
+        order.total_amount = Number(invoice.total_amount); // ইনভয়েসের সঠিক অ্যামাউন্ট
+        order.subtotal = Number(invoice.total_amount); // সাবটোটাল বা টোটাল যেন অমিল না হয়
         order.payment_method = invoice.payment_method;
         order.invoice_created_at = invoice.created_at;
+        
+        // যদি মডালে দেখানোর জন্য আলাদা কোনো গ্র্যান্ড টোটাল বা ফাইনাল অ্যামাউন্ট প্রপার্টি থাকে
+        if (order.hasOwnProperty('final_amount')) {
+            order.final_amount = Number(invoice.total_amount);
+        }
 
-        // মডাল ওপেন করা
+        // ৫. মডাল ওপেন করা
         openOrderDetails(order, 'invoice_view');
 
     } catch (err) {
@@ -1028,6 +1045,7 @@
         alert('An unexpected error occurred.');
     }
         }
+        
         
         
             
