@@ -105,6 +105,12 @@
                 </div>
             </div>
 
+            <div class="mb-4 flex items-center gap-2">
+                <button onclick="toggleMenuSearch()" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg font-bold text-sm shadow">🔎 <span data-i18n="searchItem">Search Item</span></button>
+                <div id="menuSearchWrap" class="hidden flex-1">
+                    <input id="menuSearchInput" type="search" oninput="searchMenuItems(this.value)" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Search menu item..." data-i18n-placeholder="searchItemPlaceholder">
+                </div>
+            </div>
             <div class="mb-6 flex gap-3 overflow-x-auto pb-2" id="categoryContainer"></div>
             <h3 class="text-2xl font-bold mb-4 text-gray-800" id="menuTitle" data-i18n="topPopular">Top 15 Popular Items</h3>
             <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-24"></div>
@@ -181,6 +187,33 @@
         </div>
     </div>
 
+    <!-- Item Modifier Modal -->
+    <div id="modifierModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModifierModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black font-bold text-xl">✕</button>
+            <h3 class="text-xl font-bold text-gray-800 mb-1" data-i18n="modifyItemTitle">Modify Item</h3>
+            <p id="modifierItemName" class="text-sm font-semibold text-blue-700 mb-4"></p>
+            <div class="space-y-2 mb-4" id="modifierOptions">
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="No Onion"> <span>No Onion</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="Less Spicy"> <span>Less Spicy</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="Extra Spicy"> <span>Extra Spicy</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="No Chili"> <span>No Chili</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="Less Salt"> <span>Less Salt</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="Extra Sauce"> <span>Extra Sauce</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="Less Ice"> <span>Less Ice</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="No Ice"> <span>No Ice</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="Less Sugar"> <span>Less Sugar</span></label>
+                <label class="flex items-center gap-2 border rounded-lg p-2 cursor-pointer"><input type="checkbox" value="No Sugar"> <span>No Sugar</span></label>
+            </div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Special Request</label>
+            <textarea id="modifierCustomNote" rows="3" class="w-full border rounded-lg p-2 text-sm" placeholder="Write your own request..."></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeModifierModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 rounded-xl font-semibold">Cancel</button>
+                <button onclick="saveModifier()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold">Save Modification</button>
+            </div>
+        </div>
+    </div>
+
     <!-- লগইন ও রেজিস্ট্রেশন মোডাল -->
     <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
@@ -227,7 +260,10 @@
 
         let currentOrderType = 'dine_in';
         let menuItems = [];
+        let topSellingMenuItems = [];
         let cart = [];
+        let activeCategory = null;
+        let modifierCartIndex = null;
         let loggedInCustomer = JSON.parse(localStorage.getItem('hameeds_customer')) || null;
         let currentLang = localStorage.getItem('hameeds_lang') || 'en';
 
@@ -310,6 +346,9 @@
         const translations = {
             en: {
                 subtitle: "Dine-In & Takeaway Ordering System",
+                searchItem: "Search Item",
+                searchItemPlaceholder: "Search menu item...",
+                modifyItemTitle: "Modify Item",
                 login: "Login",
                 liveChat: "Live Chat",
                 menuAndProfile: "Menu & Profile",
@@ -556,10 +595,23 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const savedCart = JSON.parse(localStorage.getItem('hameeds_cart') || '[]');
+                if (Array.isArray(savedCart)) {
+                    cart = savedCart.map(i => ({ ...i, quantity: Number(i.quantity) || 1, modifiers: Array.isArray(i.modifiers) ? i.modifiers : [], modifierNote: i.modifierNote || '' }));
+                }
+            } catch (e) { console.warn('Cart restore failed:', e); }
             document.getElementById('langSelect').value = currentLang;
             applyLanguage(currentLang);
             updateLoginUI();
+            updateCartBar();
         });
+
+        function saveCart() {
+            localStorage.setItem('hameeds_cart', JSON.stringify(cart));
+        }
+
+        window.addEventListener('beforeunload', saveCart);
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -608,8 +660,8 @@
             document.getElementById('homeView').classList.remove('hidden');
             document.getElementById('orderView').classList.add('hidden');
             document.getElementById('historyView').classList.add('hidden');
-            document.getElementById('cartBar').classList.add('hidden');
-            cart = [];
+            document.getElementById('cartBar').classList.toggle('hidden', cart.length === 0);
+            saveCart();
         }
 
         async function showOrderHistory() {
@@ -687,9 +739,90 @@
             console.log('Fetched Menu Data:', data);
             menuItems = data || [];
             renderCategories();
-            renderTopPopular();
+
+            // Top 15 is calculated automatically from real sales in orders/order_items.
+            // It does not depend on menu_items.is_popular.
+            await loadTopSellingItems();
+
             if (currentLang !== 'en') {
                 translateMenuForCurrentLanguage(menuItems);
+            } else {
+                renderTopPopular();
+            }
+        }
+
+        async function loadTopSellingItems() {
+            topSellingMenuItems = [];
+
+            try {
+                // Only paid/confirmed/completed-style orders count as actual sales.
+                // Pending/unpaid orders are not counted.
+                const { data: orderRows, error: ordersError } = await _supabase
+                    .from('orders')
+                    .select('id,status,payment_status');
+
+                if (ordersError) {
+                    console.error('Top Sales Orders Error:', ordersError);
+                    renderTopPopular();
+                    return;
+                }
+
+                const validOrderIds = new Set(
+                    (orderRows || [])
+                        .filter(o => {
+                            const status = String(o.status || '').toLowerCase();
+                            const payment = String(o.payment_status || '').toLowerCase();
+
+                            const paidStatuses = ['paid', 'completed', 'confirmed', 'served', 'delivered', 'ready'];
+                            const cancelledStatuses = ['cancelled', 'canceled', 'rejected', 'void', 'refunded'];
+
+                            if (cancelledStatuses.includes(status)) return false;
+                            if (cancelledStatuses.includes(payment)) return false;
+
+                            return paidStatuses.includes(status) || paidStatuses.includes(payment);
+                        })
+                        .map(o => o.id)
+                );
+
+                if (!validOrderIds.size) {
+                    renderTopPopular();
+                    return;
+                }
+
+                const { data: salesRows, error: itemsError } = await _supabase
+                    .from('order_items')
+                    .select('order_id,menu_item_id,quantity');
+
+                if (itemsError) {
+                    console.error('Top Sales Order Items Error:', itemsError);
+                    renderTopPopular();
+                    return;
+                }
+
+                const sales = {};
+                (salesRows || []).forEach(row => {
+                    if (!validOrderIds.has(row.order_id)) return;
+
+                    const menuId = Number(row.menu_item_id);
+                    const qty = Number(row.quantity) || 0;
+                    if (!menuId || qty <= 0) return;
+
+                    sales[menuId] = (sales[menuId] || 0) + qty;
+                });
+
+                topSellingMenuItems = Object.entries(sales)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 15)
+                    .map(([menuId, quantity]) => {
+                        const item = menuItems.find(m => Number(m.id) === Number(menuId));
+                        return item ? { ...item, sold_quantity: quantity } : null;
+                    })
+                    .filter(Boolean);
+
+                renderTopPopular();
+            } catch (error) {
+                console.error('Top 15 Sales Calculation Error:', error);
+                renderTopPopular();
             }
         }
 
@@ -725,12 +858,41 @@
         function renderTopPopular() {
             document.getElementById('menuTitle').innerText =
                 translations[currentLang]?.topPopular || 'Top 15 Popular Items';
-            renderMenu(menuItems.filter(i => i.is_popular));
+
+            // Always show the live sales-ranked Top 15.
+            renderMenu(topSellingMenuItems);
         }
 
         function filterCategory(cat) {
+            activeCategory = cat;
+            const q = (document.getElementById('menuSearchInput')?.value || '').trim().toLowerCase();
             document.getElementById('menuTitle').innerText = getCategoryDisplayName(cat);
-            renderMenu(menuItems.filter(i => i.category === cat));
+            let items = menuItems.filter(i => i.category === cat);
+            if (q) items = items.filter(i => getOriginalItemName(i).toLowerCase().includes(q));
+            renderMenu(items);
+        }
+
+        function toggleMenuSearch() {
+            const wrap = document.getElementById('menuSearchWrap');
+            wrap.classList.toggle('hidden');
+            if (!wrap.classList.contains('hidden')) document.getElementById('menuSearchInput').focus();
+        }
+
+        function searchMenuItems(query) {
+            const q = String(query || '').trim().toLowerCase();
+            if (!q) {
+                if (activeCategory) filterCategory(activeCategory);
+                else renderTopPopular();
+                return;
+            }
+            const results = menuItems.filter(i => {
+                const name = getOriginalItemName(i).toLowerCase();
+                const cat = String(i.category || '').toLowerCase();
+                const translated = getMenuDisplayName(i).toLowerCase();
+                return name.includes(q) || cat.includes(q) || translated.includes(q);
+            });
+            document.getElementById('menuTitle').innerText = currentLang === 'en' ? `Search Results (${results.length})` : `Search (${results.length})`;
+            renderMenu(results);
         }
 
         function renderMenu(items) {
@@ -745,10 +907,16 @@
                 let itemName = getMenuDisplayName(item);
                 const imgSrc = item.image_url || 'images/logo.png';
 
+                const safeItemName = escapeHtml(itemName);
+                const soldText = item.sold_quantity
+                    ? `<p class="text-xs text-gray-500 mb-2">${escapeHtml(currentLang === 'en' ? 'Sold' : ({ms:'Terjual',bn:'বিক্রি',hi:'बिका',ta:'விற்பனை',ar:'تم البيع',zh:'已售'}[currentLang] || 'Sold'))}: ${Number(item.sold_quantity)}</p>`
+                    : '';
+
                 container.innerHTML += `
                     <div class="bg-white rounded-xl shadow p-4 flex justify-between items-center relative border border-gray-100">
                         <div class="flex-1 pr-3">
-                            <h3 class="font-bold text-gray-800 text-base mb-1">${itemName}</h3>
+                            <h3 class="font-bold text-gray-800 text-base mb-1">${safeItemName}</h3>
+                            ${soldText}
                             <p class="text-blue-600 font-semibold mb-3">RM${Number(price).toFixed(2)}</p>
                             <button onclick="addToCart(${item.id}, ${price})" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium w-full shadow-sm transition">
                                 ${escapeHtml(currentLang === 'en' ? 'Add to Cart' : ({
@@ -756,7 +924,7 @@
                                 }[currentLang] || 'Add to Cart'))}
                             </button>
                         </div>
-                        <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center" onclick="openImageViewer('${imgSrc}', '${itemName}')">
+                        <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center" onclick="openImageViewer('${String(imgSrc).replace(/'/g, "\\'")}', '${String(itemName).replace(/'/g, "\\'")}')">
                             <img src="${imgSrc}" alt="${itemName}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/80'">
                         </div>
                     </div>
@@ -776,9 +944,11 @@
 
         function addToCart(id, price) {
             const item = menuItems.find(m => m.id === id);
-            const exist = cart.find(c => c.id === id);
+            if (!item) return;
+            const exist = cart.find(c => c.id === id && !(c.modifiers?.length || c.modifierNote));
             if(exist) { exist.quantity += 1; }
-            else { cart.push({ ...item, price, quantity: 1 }); }
+            else { cart.push({ ...item, price, quantity: 1, modifiers: [], modifierNote: '' }); }
+            saveCart();
             updateCartBar();
         }
 
@@ -809,12 +979,13 @@
                 }[currentLang] || 'Your cart is empty.'))}</p>`;
             } else {
                 container.innerHTML = cart.map((i, index) => {
-                    let name = currentLang === 'bn' && i.name_bn ? i.name_bn : (i.name_en || i.name);
+                    let name = getMenuDisplayName(i);
                     return `
                         <div class="flex justify-between items-center border-b pb-2">
                             <div>
-                                <h4 class="font-bold text-sm text-gray-800">${name}</h4>
+                                <h4 class="font-bold text-sm text-gray-800">${escapeHtml(name)}</h4>
                                 <p class="text-xs text-gray-500">RM${Number(i.price).toFixed(2)} x ${i.quantity}</p>
+                                ${(i.modifiers?.length || i.modifierNote) ? `<p class="text-xs text-blue-700 mt-1">${escapeHtml([...(i.modifiers||[]), i.modifierNote].filter(Boolean).join(', '))}</p>` : ''}
                             </div>
                             <div class="flex items-center gap-2">
                                 <button onclick="changeCartQty(${index}, -1)" class="bg-gray-200 px-2 py-0.5 rounded text-sm font-bold">-</button>
@@ -837,6 +1008,7 @@
             if(cart[index].quantity <= 0) {
                 cart.splice(index, 1);
             }
+            saveCart();
             updateCartBar();
             openCartModal();
             if(cart.length === 0) {
@@ -883,15 +1055,47 @@
             document.getElementById('modalTotal').innerText = `RM${total.toFixed(2)}`;
 
             const list = document.getElementById('checkoutItemsList');
-            list.innerHTML = cart.map(i => {
-                let name = currentLang === 'bn' && i.name_bn ? i.name_bn : (i.name_en || i.name);
-                return `<div class="flex justify-between text-sm"><span>${name} x ${i.quantity}</span><span>RM${(i.price*i.quantity).toFixed(2)}</span></div>`;
+            list.innerHTML = cart.map((i, index) => {
+                let name = getMenuDisplayName(i);
+                const modifierText = [...(i.modifiers || []), i.modifierNote || ''].filter(Boolean).join(', ');
+                return `<button type="button" onclick="openModifierModal(${index})" class="w-full text-left border-b py-2 hover:bg-blue-50 rounded-lg px-2">
+                    <div class="flex justify-between text-sm"><span class="font-semibold">${escapeHtml(name)} x ${i.quantity}</span><span>RM${(i.price*i.quantity).toFixed(2)}</span></div>
+                    ${modifierText ? `<div class="text-xs text-blue-700 mt-1">${escapeHtml(modifierText)}</div>` : `<div class="text-xs text-gray-400 mt-1">Tap to modify</div>`}
+                </button>`;
             }).join('');
             
             document.getElementById('checkoutModal').classList.remove('hidden');
         }
 
         function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+
+        function openModifierModal(index) {
+            if (!cart[index]) return;
+            modifierCartIndex = index;
+            const item = cart[index];
+            document.getElementById('modifierItemName').innerText = getMenuDisplayName(item);
+            document.querySelectorAll('#modifierOptions input[type="checkbox"]').forEach(cb => {
+                cb.checked = (item.modifiers || []).includes(cb.value);
+            });
+            document.getElementById('modifierCustomNote').value = item.modifierNote || '';
+            document.getElementById('modifierModal').classList.remove('hidden');
+        }
+
+        function closeModifierModal() {
+            modifierCartIndex = null;
+            document.getElementById('modifierModal').classList.add('hidden');
+        }
+
+        function saveModifier() {
+            if (modifierCartIndex === null || !cart[modifierCartIndex]) return;
+            const selected = [...document.querySelectorAll('#modifierOptions input[type="checkbox"]:checked')].map(cb => cb.value);
+            const note = document.getElementById('modifierCustomNote').value.trim();
+            cart[modifierCartIndex].modifiers = selected;
+            cart[modifierCartIndex].modifierNote = note;
+            saveCart();
+            closeModifierModal();
+            openCheckoutModal();
+        }
 
         async function submitOrder() {
             const name = document.getElementById('checkoutName').value;
@@ -934,15 +1138,36 @@
                 order_id: orderData.id,
                 menu_item_id: i.id,
                 quantity: i.quantity,
-                price: i.price
+                price: i.price,
+                modifiers: [
+                    ...(i.modifiers || []).map(text => ({ text, price: 0 })),
+                    ...(i.modifierNote ? [{ text: i.modifierNote, price: 0 }] : [])
+                ]
             }));
 
-            const { error: itemsError } = await _supabase.from('order_items').insert(orderItems);
+            let { error: itemsError } = await _supabase.from('order_items').insert(orderItems);
+            if(itemsError) {
+                // Compatibility fallback for databases that use modifier_notes instead.
+                const fallbackItems = cart.map(i => ({
+                    order_id: orderData.id,
+                    menu_item_id: i.id,
+                    quantity: i.quantity,
+                    price: i.price,
+                    modifier_notes: [...(i.modifiers || []), i.modifierNote || ''].filter(Boolean).join(', ') || null
+                }));
+                const retry = await _supabase.from('order_items').insert(fallbackItems);
+                itemsError = retry.error;
+            }
             if(itemsError) {
                 console.error('Order Items Insert Error:', itemsError);
+                alert('Order items could not be saved. Please try again.');
+                return;
             }
 
             alert('Order placed successfully! Pending Cashier verification.');
+            cart = [];
+            saveCart();
+            updateCartBar();
             closeCheckoutModal();
             showHome();
         }
