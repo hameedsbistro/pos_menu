@@ -17,7 +17,7 @@
             <button onclick="toggleSidebar()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
-            <img src="images/logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover" onerror="this.src='https://via.placeholder.com/80'">
+            <img src="images/logo.png" alt="Logo" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover" onerror="this.onerror=null;this.src='images/logo.png'">
             <div>
                 <h1 class="text-lg font-bold uppercase tracking-wider">Restoran Hameeds Bistro</h1>
                 <p class="text-xs text-yellow-300" data-i18n="subtitle">Dine-In & Takeaway Ordering System</p>
@@ -903,7 +903,7 @@
                 return;
             }
             items.forEach(item => {
-                let price = currentOrderType === 'takeaway' && item.takeaway_price ? item.takeaway_price : item.price;
+                let price = currentOrderType === 'takeaway' && item.takeaway_price != null ? Number(item.takeaway_price) : Number(item.dine_in_price || 0);
                 let itemName = getMenuDisplayName(item);
                 const imgSrc = item.image_url || 'images/logo.png';
 
@@ -925,7 +925,7 @@
                             </button>
                         </div>
                         <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center" onclick="openImageViewer('${String(imgSrc).replace(/'/g, "\\'")}', '${String(itemName).replace(/'/g, "\\'")}')">
-                            <img src="${imgSrc}" alt="${itemName}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/80'">
+                            <img src="${imgSrc}" alt="${itemName}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='images/logo.png'">
                         </div>
                     </div>
                 `;
