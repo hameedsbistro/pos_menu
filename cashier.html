@@ -438,6 +438,8 @@
             <button onclick="openNewOrderPosModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">NEW ORDER</button>
             <button onclick="openInvoiceListModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">INVOICE LIST</button>
             <button onclick="openLastReceiptModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">LAST RECEIPT</button>
+            <button onclick="openCloseAuthModal('SHIFT')" class="bg-amber-600 hover:bg-amber-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">SHIFT CLOSE</button>
+            <button onclick="openCloseAuthModal('EOD')" class="bg-purple-700 hover:bg-purple-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">EOD CLOSE</button>
         </aside>
     </div>
 
@@ -711,6 +713,24 @@
             <div class="mt-4 pt-3 border-t flex justify-end">
                 <button onclick="closeInvoiceListModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Shift / EOD Close Authentication Modal -->
+    <div id="closeAuthModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <button onclick="closeCloseAuthModal()" class="absolute top-3 right-3 bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded-full font-bold">&times;</button>
+            <h3 id="closeAuthTitle" class="font-bold text-xl text-gray-800 mb-1">Shift Close</h3>
+            <p class="text-xs text-gray-500 mb-4">Re-enter your cashier username and password to confirm this close.</p>
+            <form onsubmit="submitCloseAuth(event)" class="space-y-3">
+                <input id="closeAuthEmail" type="email" required class="w-full border px-3 py-2 rounded-xl text-sm" placeholder="Username / Email">
+                <input id="closeAuthPassword" type="password" required class="w-full border px-3 py-2 rounded-xl text-sm" placeholder="Password">
+                <div id="closeAuthError" class="hidden text-red-600 text-xs"></div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCloseAuthModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold">Confirm</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -2698,6 +2718,81 @@
 
         function openAdminPage() {
             window.location.href = 'admin.html';
+        }
+
+        // ==================== SHIFT / EOD CLOSE ====================
+        let closeTypePending = null;
+        function openCloseAuthModal(type) {
+            closeTypePending = type;
+            document.getElementById('closeAuthTitle').textContent = type === 'EOD' ? 'EOD Close' : 'Shift Close';
+            document.getElementById('closeAuthEmail').value = '';
+            document.getElementById('closeAuthPassword').value = '';
+            document.getElementById('closeAuthError').classList.add('hidden');
+            document.getElementById('closeAuthModal').classList.remove('hidden');
+            setTimeout(()=>document.getElementById('closeAuthEmail').focus(),50);
+        }
+        function closeCloseAuthModal(){ document.getElementById('closeAuthModal').classList.add('hidden'); closeTypePending=null; }
+        async function submitCloseAuth(event){
+            event.preventDefault();
+            const email=document.getElementById('closeAuthEmail').value.trim();
+            const password=document.getElementById('closeAuthPassword').value;
+            const err=document.getElementById('closeAuthError');
+            err.classList.add('hidden');
+            try{
+                const {data:user,error}=await _supabase.from('profiles').select('*').eq('email',email).eq('password',password).maybeSingle();
+                const allowed=['Admin','Manager','Cashier','Staff'];
+                if(error||!user||!allowed.includes(user.role)) throw new Error('Invalid username/email or password.');
+                const session=JSON.parse(localStorage.getItem('cashier_session')||'{}');
+                if(session.email && session.email.toLowerCase()!==email.toLowerCase()) throw new Error('Please use the credentials of the cashier currently logged in.');
+                await saveCloseRecord(closeTypePending,user);
+                closeCloseAuthModal();
+            }catch(e){ err.textContent=e.message||'Authentication failed.'; err.classList.remove('hidden'); }
+        }
+        function localDayStartEnd(dateStr){
+            const [y,m,d]=dateStr.split('-').map(Number);
+            const start=new Date(y,m-1,d,0,0,0,0); const end=new Date(y,m-1,d,23,59,59,999);
+            return {start,end};
+        }
+        async function buildCloseSnapshot(dateStr){
+            const {start,end}=localDayStartEnd(dateStr);
+            const {data:invoices,error:ie}=await _supabase.from('invoices').select('*').gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:true});
+            if(ie) throw ie;
+            const rows=invoices||[];
+            const orderIds=rows.map(x=>x.order_id).filter(Boolean);
+            let items=[]; let orders=[];
+            if(orderIds.length){
+                const ir=await _supabase.from('order_items').select('*').in('order_id',orderIds); if(ir.error) throw ir.error; items=ir.data||[];
+                const or=await _supabase.from('orders').select('*').in('id',orderIds); if(!or.error) orders=or.data||[];
+            }
+            const totalSales=rows.reduce((s,r)=>s+Number(r.total_amount||0),0);
+            let grossSubtotal=0; items.forEach(i=>grossSubtotal+=Number(i.price||0)*Number(i.quantity||0));
+            const sst=Number((grossSubtotal*0.06).toFixed(2));
+            const preRound=grossSubtotal+sst;
+            const rounding=Number((totalSales-preRound).toFixed(2));
+            const catMap={};
+            const menuIds=[...new Set(items.map(i=>i.menu_item_id).filter(Boolean))];
+            let menus=[]; if(menuIds.length){ const mr=await _supabase.from('menu_menu_item').select('*').in('id',menuIds); if(!mr.error) menus=mr.data||[]; }
+            const menuById={}; menus.forEach(m=>menuById[String(m.id)]=m);
+            const itemMap={};
+            items.forEach(i=>{
+                const m=menuById[String(i.menu_item_id)]||{}; const name=m.name||m.name_en||i.menu_item_id||'Unknown'; const cat=m.category||'Uncategorized'; const q=Number(i.quantity||0), val=Number(i.price||0)*q;
+                itemMap[name]=(itemMap[name]||0)+q; catMap[cat]=(catMap[cat]||0)+val;
+            });
+            const netCash=rows.filter(r=>String(r.payment_method||'').toLowerCase()==='cash').reduce((s,r)=>s+Number(r.total_amount||0),0);
+            return {date:dateStr,total_sales:Number(totalSales.toFixed(2)),sst:Number(sst.toFixed(2)),rounding:Number(rounding.toFixed(2)),net_cash:Number(netCash.toFixed(2)),category_sales:catMap,item_sales:itemMap,invoice_count:rows.length,order_count:orders.length};
+        }
+        async function saveCloseRecord(type,user){
+            const date=getLocalAttendanceDate();
+            const snapshot=await buildCloseSnapshot(date);
+            const {data:existing,error:findErr}=await _supabase.from('shift_closures').select('shift_no').eq('close_date',date).eq('close_type',type).order('shift_no',{ascending:false}).limit(1);
+            if(findErr) throw new Error('The shift_closures table is missing or not accessible: '+findErr.message);
+            let shiftNo=1;
+            if(type==='SHIFT') shiftNo=(existing&&existing.length?Number(existing[0].shift_no||0)+1:1);
+            else shiftNo=0;
+            const payload={close_type:type,close_date:date,shift_no:shiftNo,closed_by:user.full_name||user.email,closed_by_email:user.email,closed_at:new Date().toISOString(),total_sales:snapshot.total_sales,sst_amount:snapshot.sst,rounding_amount:snapshot.rounding,net_cash:snapshot.net_cash,invoice_count:snapshot.invoice_count,order_count:snapshot.order_count,category_sales:snapshot.category_sales,item_sales:snapshot.item_sales,report_json:snapshot};
+            const {error}=await _supabase.from('shift_closures').insert([payload]);
+            if(error) throw error;
+            alert(type==='EOD'?`EOD Close saved for ${date}.`:`Shift ${shiftNo} Close saved for ${date}.`);
         }
 
         // ==================== ATTENDANCE ====================
