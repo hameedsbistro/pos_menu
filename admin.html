@@ -251,12 +251,12 @@ async function bulkUploadCsv(){
   if(error){status.textContent=error.message;return}
   const sample=existing?.[0]||{};
   const keys={
-    name:fieldName(sample,'name','item_name','menu_name','item'),
+    name:fieldName(sample,'name_en','item_name','menu_name','item'),
     category:fieldName(sample,'category','categories','cat'),
     dine:fieldName(sample,'price','dine_in_price','dinein_price','dine_in','dinein','dine_price'),
     take:fieldName(sample,'takeaway_price','take_away_price','takeaway','take_away','takeawayprice','take_price')
   };
-  if(!keys.name){status.textContent='Could not find the menu name_en column in public.menu_items.';return}
+  if(!keys.name){status.textContent='Could not find the name_en column in public.menu_items.';return}
   const byName={};
   (existing||[]).forEach(x=>byName[String(x[keys.name]||'').trim().toLowerCase()]=x);
   let done=0,added=0,updated=0,failed=0;
