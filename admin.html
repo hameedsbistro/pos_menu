@@ -136,19 +136,150 @@ async function loadSummary(){
 function renderCategoryChart(cats){const ctx=document.getElementById('categoryChart');if(categoryChart)categoryChart.destroy();categoryChart=new Chart(ctx,{type:'bar',data:{labels:Object.keys(cats),datasets:[{label:'Sales (RM)',data:Object.values(cats)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}})}
 
 function parseCSV(text){const rows=[];let row=[],cell='',quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quote&&text[i+1]==='"'){cell+='"';i++}else quote=!quote}else if(c===','&&!quote){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);cell='';if(row.some(v=>v.trim()!==''))rows.push(row);row=[]}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}if(!rows.length)return[];const headers=rows.shift().map(h=>h.trim().toLowerCase());return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]??'').trim()]))).filter(r=>Object.values(r).some(Boolean))}
-function normalizeCSVRow(r){const get=(...keys)=>{for(const k of keys)if(r[k]!==undefined)return r[k];return ''};return{name:get('name','item_name'),category:get('category'),dine_in_price:get('price','dine_in_price','dine in price','dinein_price'),takeaway_price:get('takeaway_price','take away price','takeaway')};}
-async function loadMenu(){const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){document.getElementById('menuItems').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}menuData=(data||[]).slice().sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''))||String(a.name||a.name_en||a.item_name||'').localeCompare(String(b.name||b.name_en||b.item_name||'')));menuColumns=new Set(menuData[0]?Object.keys(menuData[0]):[]);const cats=[...new Set(menuData.map(x=>x.category).filter(Boolean))].sort();const sel=document.getElementById('categorySelect');sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');document.getElementById('menuItems').innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>'; }
-function renderMenuCategory(){const cat=document.getElementById('categorySelect').value;const box=document.getElementById('menuItems');if(!cat){box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';return}const rows=menuData.filter(x=>x.category===cat);box.innerHTML=rows.map(m=>`<div class="card p-4"><div class="grid lg:grid-cols-[90px_1fr_140px_140px_130px] gap-3 items-center"><div><img id="img-${esc(String(m.id))}" src="${esc(getImage(m))}" class="w-20 h-20 rounded-xl object-cover border" onerror="this.style.display='none'"></div><div><label class="text-[10px] font-bold text-slate-400">ITEM NAME</label><input id="name-${esc(String(m.id))}" value="${esc(m.name||m.name_en||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"><label class="text-[10px] font-bold text-slate-400 mt-2 block">CATEGORY</label><input id="cat-${esc(String(m.id))}" value="${esc(m.category||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">DINE-IN</label><input id="dine-${esc(String(m.id))}" value="${esc(m.price??m.dinein_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">TAKEAWAY</label><input id="take-${esc(String(m.id))}" value="${esc(m.takeaway_price??m.take_away_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">IMAGE</label><input id="file-${esc(String(m.id))}" type="file" accept="image/*" class="w-full text-[10px] mt-1"><button onclick="saveMenuItem('${esc(String(m.id))}')" class="mt-2 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-bold">Save Item</button></div></div></div>`).join('')||'<div class="card p-4 text-slate-500">No items in this category.</div>'}
-function getImage(m){return m.image_url||m.image||m.image_path||m.photo_url||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E'}
-async function uploadImage(file,id){if(!file)return null;const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path=`menu/${id}-${Date.now()}.${ext}`;const up=await db.storage.from(MENU_BUCKET).upload(path,file,{upsert:true,contentType:file.type});if(up.error)throw new Error('Image upload failed: '+up.error.message);const pub=db.storage.from(MENU_BUCKET).getPublicUrl(path);return pub.data.publicUrl}
-async function saveMenuItem(id){const old=menuData.find(x=>String(x.id)===String(id));if(!old)return;const payload={};if(menuColumns.has('name'))payload.name=document.getElementById('name-'+id).value.trim();if(menuColumns.has('category'))payload.category=document.getElementById('cat-'+id).value.trim();if (menuColumns.has('price')) {
-    payload.price = Number(
-        document.getElementById('dine-' + id).value || 0
-    );else if (menuColumns.has('price')){payload.price=Number(document.getElementById('dine-'+id).value||0);if(menuColumns.has('takeaway_price'))payload.takeaway_price=Number(document.getElementById('take-'+id).value||0);else if(menuColumns.has('take_away_price'))payload.take_away_price=Number(document.getElementById('take-'+id).value||0);const file=document.getElementById('file-'+id).files[0];try{if(file){const url=await uploadImage(file,id);if(menuColumns.has('image_url'))payload.image_url=url;else if(menuColumns.has('image'))payload.image=url;else if(menuColumns.has('image_path'))payload.image_path=url;else throw new Error('No image column found in menu_items. Add image_url (recommended).')}const {error}=await db.from(MENU_TABLE).update(payload).eq('id',id);if(error)throw error;toast('Menu item saved.');await loadMenu();document.getElementById('categorySelect').value=payload.category||old.category;renderMenuCategory()}catch(e){toast(e.message,false)}}
+function fieldName(row,...names){
+  for(const n of names) if(Object.prototype.hasOwnProperty.call(row,n)) return n;
+  return null;
+}
+function valueOf(row,...names){
+  const k=fieldName(row,...names);
+  return k ? row[k] : '';
+}
+function normalizeCSVRow(r){
+  const get=(...keys)=>{for(const k of keys) if(r[k]!==undefined) return r[k]; return ''};
+  return {
+    name:get('name','item_name','menu_name','item'),
+    category:get('category','categories','cat'),
+    dinein_price:get('price','dine_in_price','dine in price','dinein_price','dinein','dine_in'),
+    takeaway_price:get('takeaway_price','take away price','take_away_price','takeaway','take_away','takeawayprice')
+  };
+}
+async function loadMenu(){
+  const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);
+  if(error){document.getElementById('menuItems').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}
+  menuData=(data||[]).slice();
+  menuColumns=new Set(menuData[0]?Object.keys(menuData[0]):[]);
+  const nameKey=menuData[0]?fieldName(menuData[0],'name','item_name','menu_name','item'):null;
+  const catKey=menuData[0]?fieldName(menuData[0],'category','categories','cat'):null;
+  const dineKey=menuData[0]?fieldName(menuData[0],'price','dine_in_price','dinein_price','dine_in','dinein','dine_price'):null;
+  const takeKey=menuData[0]?fieldName(menuData[0],'takeaway_price','take_away_price','takeaway','take_away','takeawayprice','take_price'):null;
+  menuData.sort((a,b)=>String(catKey?a[catKey]||'':'').localeCompare(String(catKey?b[catKey]||'':''))
+    ||String(nameKey?a[nameKey]||'':'').localeCompare(String(nameKey?b[nameKey]||'':'')));
+  menuData._keys={nameKey,catKey,dineKey,takeKey};
+  const cats=[...new Set(menuData.map(x=>catKey?x[catKey]:'').filter(Boolean))].sort();
+  const sel=document.getElementById('categorySelect');
+  sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  document.getElementById('menuItems').innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';
+}
+function menuName(m){return valueOf(m,'name','item_name','menu_name','item')}
+function menuCategory(m){return valueOf(m,'category','categories','cat')}
+function menuDine(m){return valueOf(m,'price','dine_in_price','dinein_price','dine_in','dinein','dine_price')}
+function menuTake(m){return valueOf(m,'takeaway_price','take_away_price','takeaway','take_away','takeawayprice','take_price')}
+function renderMenuCategory(){
+  const cat=document.getElementById('categorySelect').value;
+  const box=document.getElementById('menuItems');
+  if(!cat){box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';return}
+  const rows=menuData.filter(x=>menuCategory(x)===cat);
+  box.innerHTML=rows.map(m=>`<div class="card p-4">
+    <div class="grid lg:grid-cols-[90px_1fr_140px_140px_160px] gap-3 items-center">
+      <div><img id="img-${esc(String(m.id))}" src="${esc(getImage(m))}" class="w-20 h-20 rounded-xl object-cover border" onerror="this.style.display='none'"></div>
+      <div>
+        <label class="text-[10px] font-bold text-slate-400">ITEM NAME</label>
+        <input id="name-${esc(String(m.id))}" value="${esc(menuName(m))}" class="w-full border rounded-lg px-2 py-2 text-sm">
+        <label class="text-[10px] font-bold text-slate-400 mt-2 block">CATEGORY</label>
+        <input id="cat-${esc(String(m.id))}" value="${esc(menuCategory(m))}" class="w-full border rounded-lg px-2 py-2 text-sm">
+      </div>
+      <div><label class="text-[10px] font-bold text-slate-400">DINE-IN PRICE</label><input id="dine-${esc(String(m.id))}" value="${esc(menuDine(m))}" class="w-full border rounded-lg px-2 py-2 text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-400">TAKEAWAY PRICE</label><input id="take-${esc(String(m.id))}" value="${esc(menuTake(m))}" class="w-full border rounded-lg px-2 py-2 text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-400">IMAGE</label><input id="file-${esc(String(m.id))}" type="file" accept="image/*" class="w-full text-[10px] mt-1"><button onclick="saveMenuItem('${esc(String(m.id))}')" class="mt-2 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-bold">Save Item</button></div>
+    </div>
+  </div>`).join('')||'<div class="card p-4 text-slate-500">No items in this category.</div>';
+}
+function getImage(m){return valueOf(m,'image_url','image','image_path','photo_url','photo','imageurl')||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E'}
+const MENU_BUCKETS=['menu-images','menu_items','images','menu'];
+async function uploadImage(file,id){
+  if(!file)return null;
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const path=`menu/${id}-${Date.now()}.${ext}`;
+  let lastError=null;
+  for(const bucket of MENU_BUCKETS){
+    const up=await db.storage.from(bucket).upload(path,file,{upsert:true,contentType:file.type});
+    if(!up.error){
+      const pub=db.storage.from(bucket).getPublicUrl(path);
+      return pub.data.publicUrl;
+    }
+    lastError=up.error;
+  }
+  throw new Error('Image upload failed: Storage bucket not found or not accessible. Tried: '+MENU_BUCKETS.join(', ')+'. Last error: '+(lastError?.message||'unknown'));
+}
+async function saveMenuItem(id){
+  const old=menuData.find(x=>String(x.id)===String(id));if(!old)return;
+  const payload={};
+  const nameKey=fieldName(old,'name','item_name','menu_name','item');
+  const catKey=fieldName(old,'category','categories','cat');
+  const dineKey=fieldName(old,'price','dine_in_price','dinein_price','dine_in','dinein','dine_price');
+  const takeKey=fieldName(old,'takeaway_price','take_away_price','takeaway','take_away','takeawayprice','take_price');
+  if(nameKey)payload[nameKey]=document.getElementById('name-'+id).value.trim();
+  if(catKey)payload[catKey]=document.getElementById('cat-'+id).value.trim();
+  if(dineKey)payload[dineKey]=Number(document.getElementById('dine-'+id).value||0);
+  if(takeKey)payload[takeKey]=Number(document.getElementById('take-'+id).value||0);
+  const file=document.getElementById('file-'+id).files[0];
+  try{
+    if(file){
+      const url=await uploadImage(file,id);
+      const imageKey=fieldName(old,'image_url','image','image_path','photo_url','photo','imageurl');
+      if(!imageKey)throw new Error('Image uploaded but no image column exists in menu_items. Add an image_url column to save the image address.');
+      payload[imageKey]=url;
+    }
+    const {error}=await db.from(MENU_TABLE).update(payload).eq('id',id);
+    if(error)throw error;
+    toast('Menu item saved.');
+    const selected=payload[catKey]||menuCategory(old);
+    await loadMenu();
+    document.getElementById('categorySelect').value=selected;
+    renderMenuCategory();
+  }catch(e){toast(e.message,false)}
+}
 async function saveCategoryName(){const old=document.getElementById('categorySelect').value;if(!old)return;const n=prompt('New category name:',old);if(!n||n.trim()===old)return;const rows=menuData.filter(x=>x.category===old);const ids=rows.map(x=>x.id);if(!ids.length)return;const {error}=await db.from(MENU_TABLE).update({category:n.trim()}).in('id',ids);if(error)toast(error.message,false);else{toast('Category updated.');await loadMenu();document.getElementById('categorySelect').value=n.trim();renderMenuCategory()}}
-async function bulkUploadCsv(){const file=document.getElementById('menuCsv').files[0];if(!file){toast('Choose menu.csv first.',false);return}const status=document.getElementById('bulkStatus');status.textContent='Reading CSV...';const rows=parseCSV(await file.text()).map(normalizeCSVRow).filter(r=>r.name);if(!rows.length){status.textContent='No valid rows found.';return}const {data:existing,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){status.textContent=error.message;return}const byName={};(existing||[]).forEach(x=>byName[String(x.name||x.name_en||'').trim().toLowerCase()]=x);let done=0,added=0,updated=0,failed=0;for(let i=0;i<rows.length;i+=10){const batch=rows.slice(i,i+10);await Promise.all(batch.map(async r=>{const old=byName[r.name.toLowerCase()];const p={};if(menuColumns.size===0)menuColumns=new Set(Object.keys(existing?.[0]||{}));if(menuColumns.has('name'))p.name=r.name;if(menuColumns.has('category'))p.category=r.category;if(menuColumns.has('dine_in_price'))p.dine_in_price=Number(r.dine_in_price||0);if(menuColumns.has('takeaway_price'))p.takeaway_price=Number(r.takeaway_price||0);try{if(old?.id){const q=await db.from(MENU_TABLE).update(p).eq('id',old.id);if(q.error)throw q.error;updated++}else{const q=await db.from(MENU_TABLE).insert([p]);if(q.error)throw q.error;added++}}catch(e){console.error(e);failed++}finally{done++;status.textContent=`${done}/${rows.length} processed · ${added} added · ${updated} updated · ${failed} failed`;await new Promise(requestAnimationFrame)}}));}
-status.textContent=`Done: ${added} added · ${updated} updated · ${failed} failed`;await loadMenu();}
-
+async function bulkUploadCsv(){
+  const file=document.getElementById('menuCsv').files[0];
+  if(!file){toast('Choose menu.csv first.',false);return}
+  const status=document.getElementById('bulkStatus');
+  status.textContent='Reading CSV...';
+  const rows=parseCSV(await file.text()).map(normalizeCSVRow).filter(r=>r.name);
+  if(!rows.length){status.textContent='No valid rows found.';return}
+  const {data:existing,error}=await db.from(MENU_TABLE).select('*').limit(5000);
+  if(error){status.textContent=error.message;return}
+  const sample=existing?.[0]||{};
+  const keys={
+    name:fieldName(sample,'name','item_name','menu_name','item'),
+    category:fieldName(sample,'category','categories','cat'),
+    dine:fieldName(sample,'price','dine_in_price','dinein_price','dine_in','dinein','dine_price'),
+    take:fieldName(sample,'takeaway_price','take_away_price','takeaway','take_away','takeawayprice','take_price')
+  };
+  if(!keys.name){status.textContent='Could not find the menu item-name column in public.menu_items.';return}
+  const byName={};
+  (existing||[]).forEach(x=>byName[String(x[keys.name]||'').trim().toLowerCase()]=x);
+  let done=0,added=0,updated=0,failed=0;
+  for(let i=0;i<rows.length;i+=10){
+    const batch=rows.slice(i,i+10);
+    await Promise.all(batch.map(async r=>{
+      const old=byName[r.name.toLowerCase()];
+      const p={};
+      p[keys.name]=r.name;
+      if(keys.category)p[keys.category]=r.category;
+      if(keys.dine)p[keys.dine]=Number(r.dinein_price||0);
+      if(keys.take)p[keys.take]=Number(r.takeaway_price||0);
+      try{
+        if(old?.id){const q=await db.from(MENU_TABLE).update(p).eq('id',old.id);if(q.error)throw q.error;updated++}
+        else{const q=await db.from(MENU_TABLE).insert([p]);if(q.error)throw q.error;added++}
+      }catch(e){console.error(e);failed++}
+      finally{done++;status.textContent=`${done}/${rows.length} processed · ${added} added · ${updated} updated · ${failed} failed`}
+    }));
+    await new Promise(requestAnimationFrame);
+  }
+  status.textContent=`Done: ${added} added · ${updated} updated · ${failed} failed`;
+  await loadMenu();
+}
 async function loadReportDate(){const date=document.getElementById('reportDate').value||today();if(currentReportType==='SHIFT')await loadShiftList(date);else await loadEod(date)}
 function showReportType(type){currentReportType=type;document.getElementById('shiftReportBtn').className=type==='SHIFT'?'flex-1 bg-emerald-600 text-white rounded-xl py-2 text-sm font-bold':'flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold';document.getElementById('eodReportBtn').className=type==='EOD'?'flex-1 bg-purple-700 text-white rounded-xl py-2 text-sm font-bold':'flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold';document.getElementById('shiftPicker').classList.toggle('hiddenx',type==='EOD');loadReportDate()}
 function closeDateOf(r){const v=r?.close_date??r?.business_date??r?.closing_date??r?.date??r?.closed_date; if(v) return String(v).slice(0,10); if(r?.closed_at) return new Date(r.closed_at).toISOString().slice(0,10); return ''}
