@@ -1,0 +1,3050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hameeds Bistro - Cashier Login & Panel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="icon" href="https://your-image-url.com/icon.png" type="image/x-icon">
+    <style>
+        .z-9999 { z-index: 9999 !important; }
+
+        /* Print / Receipt Styling */
+        #printReceiptContent { display: none; }
+
+        .receipt-print {
+            width: 72mm;
+            max-width: 72mm;
+            margin: 0 auto;
+            padding: 2mm 0;
+            background: #fff;
+            color: #000;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            line-height: 1.4;
+            font-weight: 700;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: geometricPrecision;
+        }
+        .receipt-print,
+        .receipt-print * {
+            font-weight: 700 !important;
+        }
+        .receipt-print .receipt-shop-name {
+            font-family: 'Times New Roman', Times, serif !important;
+            font-weight: 900 !important;
+        }
+        .receipt-print .receipt-total {
+            font-size: 17px !important;
+            font-weight: 900 !important;
+        }
+        .receipt-print .receipt-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding-bottom: 7px;
+            margin-bottom: 7px;
+            border-bottom: 1.5px dashed #333;
+        }
+        .receipt-print .receipt-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            flex: 0 0 28px;
+            image-rendering: -webkit-optimize-contrast;
+        }
+        .receipt-print .receipt-shop-name {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 19px;
+            line-height: 1.05;
+            font-weight: 900;
+            letter-spacing: .35px;
+            white-space: nowrap;
+        }
+        .receipt-print .receipt-title {
+            font-size: 10px;
+            font-weight: 900;
+            margin-top: 3px;
+            letter-spacing: .6px;
+        }
+        .receipt-print .receipt-meta {
+            text-align: center;
+            font-size: 10.5px;
+            line-height: 1.5;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+        .receipt-print .receipt-items {
+            border-top: 1px dashed #777;
+            border-bottom: 1px dashed #777;
+            padding: 6px 0;
+            margin: 6px 0;
+        }
+        .receipt-print .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin: 2px 0;
+            font-size: 12.5px;
+            font-weight: 700;
+        }
+        .receipt-print .receipt-row .name {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        .receipt-print .receipt-row .amount {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .receipt-print .receipt-totals {
+            font-size: 12.5px;
+            line-height: 1.55;
+            font-weight: 700;
+        }
+        .receipt-print .receipt-total {
+            font-size: 17px;
+            font-weight: 900;
+            border-top: 1px solid #222;
+            padding-top: 4px;
+            margin-top: 3px;
+        }
+        .receipt-print .receipt-status {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 900;
+            margin-top: 8px;
+            letter-spacing: .5px;
+        }
+
+        @media print {
+            html, body {
+                width: 100%;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #printReceiptContent,
+            #printReceiptContent * {
+                visibility: visible !important;
+            }
+            #printReceiptContent {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 72mm !important;
+                max-width: 72mm !important;
+                min-height: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: #fff !important;
+                color: #000 !important;
+                border: none !important;
+                box-sizing: border-box !important;
+            }
+            .receipt-print {
+                width: 72mm !important;
+                max-width: 72mm !important;
+                margin: 0 !important;
+                padding: 2mm 1mm !important;
+                font-size: 13px !important;
+                color: #000 !important;
+                background: #fff !important;
+                box-sizing: border-box !important;
+            }
+            @page {
+                size: 80mm auto;
+                margin: 0;
+            }
+        }
+    </style>
+
+<style>
+/* ================= DESKTOP CATEGORY STRIP ================= */
+.pos-categories-bar {
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  gap:6px !important;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+}
+.pos-categories-bar::-webkit-scrollbar { height:6px; }
+.pos-category-btn {
+  flex:0 0 auto !important;
+  white-space:nowrap !important;
+  min-width:max-content !important;
+}
+
+/* ================= RESPONSIVE CASHIER + MOBILE POS ================= */
+@media (max-width: 768px) {
+  html, body { width:100%; min-width:0; overflow:hidden; }
+
+  /* Main cashier home screen */
+  #mainPanel {
+    width:100% !important; height:100dvh !important; min-height:100dvh !important;
+    display:flex !important; flex-direction:column !important; overflow:hidden !important;
+  }
+  #mainPanel > .flex-1 { width:100% !important; min-width:0 !important; height:auto !important; flex:1 1 auto !important; }
+  #mainPanel header {
+    flex:0 0 auto !important; padding:8px 10px !important; min-height:58px !important;
+    gap:8px !important;
+  }
+  #mainPanel header > div:first-child { min-width:0 !important; gap:8px !important; }
+  #mainPanel header img { width:38px !important; height:38px !important; flex-shrink:0 !important; }
+  #mainPanel header h1 { font-size:14px !important; }
+  #mainPanel header .text-xs { font-size:9px !important; }
+  #mainPanel header > div:last-child { gap:4px !important; flex-shrink:0 !important; }
+  #mainPanel header > div:last-child > div:first-child { display:none !important; }
+  #mainPanel header button { padding:7px 8px !important; font-size:9px !important; }
+  #mainPanel header button svg { width:17px !important; height:17px !important; }
+
+  #mainPanel main { padding:10px !important; min-height:0 !important; overflow-y:auto !important; }
+  #mainPanel main h2 { font-size:16px !important; margin-bottom:8px !important; }
+  #pendingOrdersContainer { min-width:0 !important; }
+  #pendingOrdersContainer > * { max-width:100% !important; }
+  #pendingOrdersContainer > * { padding:10px !important; border-radius:12px !important; gap:8px !important; }
+  #pendingOrdersContainer > * > div:first-child { width:100% !important; min-width:0 !important; }
+  #pendingOrdersContainer > * > div:last-child { width:100% !important; display:grid !important; grid-template-columns:1fr auto auto !important; gap:5px !important; align-items:center !important; }
+  #pendingOrdersContainer > * > div:last-child span { font-size:12px !important; margin-right:0 !important; }
+  #pendingOrdersContainer > * > div:last-child button { padding:8px 8px !important; font-size:9px !important; white-space:nowrap !important; }
+
+  /* Quick actions become a compact bottom toolbar */
+  #mainPanel > aside {
+    width:100% !important; height:auto !important; min-height:64px !important;
+    flex:0 0 auto !important; padding:7px !important; display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:6px !important;
+    justify-content:stretch !important;
+  }
+  #mainPanel > aside > div { display:none !important; }
+  #mainPanel > aside button { width:100% !important; padding:10px 5px !important; font-size:10px !important; border-radius:9px !important; }
+
+  /* New Order setup */
+  #newOrderSetupModal { padding:8px !important; align-items:flex-start !important; overflow-y:auto !important; }
+  #newOrderSetupModal > div { width:100% !important; max-width:none !important; max-height:calc(100dvh - 16px) !important; overflow-y:auto !important; border-radius:14px !important; }
+  #newOrderSetupModal .p-5 { padding:12px !important; }
+  #newOrderSetupModal .bg-gray-900 { padding:12px !important; }
+  #newOrderSetupModal h3 { font-size:16px !important; }
+  #newOrderSetupModal select { font-size:14px !important; min-height:46px !important; }
+  #newOrderSetupModal .grid.grid-cols-2 button { padding:12px 6px !important; font-size:11px !important; }
+  #newOrderSetupModal .flex.gap-3.mt-6 { position:sticky; bottom:0; background:#fff; padding-top:8px; margin-top:12px !important; }
+
+  /* Full-screen POS on phone */
+  #posSystemModal { padding:0 !important; align-items:stretch !important; overflow:hidden !important; }
+  #posSystemModal .pos-shell {
+    width:100% !important; max-width:none !important; height:100dvh !important; max-height:100dvh !important;
+    border-radius:0 !important; border:0 !important; flex-direction:column !important; overflow:hidden !important;
+  }
+  #posSystemModal .pos-cart-pane {
+    width:100% !important; height:50dvh !important; min-height:0 !important; flex:0 0 50dvh !important;
+    border-right:0 !important; border-bottom:1px solid #444 !important; overflow:hidden !important;
+  }
+  #posSystemModal .pos-menu-pane {
+    width:100% !important; height:50dvh !important; min-height:0 !important; flex:0 0 50dvh !important;
+  }
+  #posSystemModal .pos-cart-pane > * { flex-shrink:0 !important; }
+  #posSystemModal #posCartItemsList {
+    min-height:45px !important; flex:1 1 auto !important; overflow-y:auto !important;
+    padding:4px !important; font-size:10px !important;
+  }
+  #posSystemModal .pos-cart-pane .bg-gray-800 { font-size:9px !important; padding:6px 7px !important; }
+  #posSystemModal .pos-cart-pane .bg-gray-200 { font-size:9px !important; padding:4px 6px !important; }
+  #posSystemModal #posOrderNoteInput { min-height:30px !important; height:30px !important; }
+  #posSystemModal .pos-cart-pane .bg-gray-900 { padding:5px 7px !important; }
+  #posSystemModal .pos-cart-pane .bg-gray-900 .text-sm { font-size:10px !important; }
+
+  /* Action buttons MUST remain visible on payment screen */
+  #posSystemModal .pos-cart-pane > .grid.grid-cols-3 {
+    display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    flex:0 0 auto !important; gap:3px !important; padding:4px !important;
+  }
+  #posSystemModal .pos-cart-pane > .grid.grid-cols-3 button {
+    display:block !important; visibility:visible !important; opacity:1 !important;
+    min-height:38px !important; height:38px !important; padding:5px 2px !important;
+    font-size:8px !important; line-height:1.05 !important;
+  }
+  #posSystemModal .pos-cart-pane > .p-2.bg-gray-300 {
+    display:flex !important; flex:0 0 auto !important; padding:5px !important; gap:5px !important;
+  }
+  #posSystemModal .pos-cart-pane > .p-2.bg-gray-300 button {
+    display:block !important; visibility:visible !important; opacity:1 !important;
+    min-height:40px !important; height:40px !important; padding:8px 5px !important; font-size:10px !important;
+  }
+  #posSystemModal .pos-cart-pane > .p-2.bg-gray-300 button:first-child { flex:0 0 27% !important; }
+  #posSystemModal .pos-cart-pane > .p-2.bg-gray-300 button:last-child { flex:1 1 auto !important; }
+
+  /* Menu header/category/item area */
+  #posSystemModal .pos-menu-pane > div:first-child { padding:5px 6px !important; min-height:40px !important; }
+  #posSystemModal .pos-menu-pane > div:first-child .flex.gap-2 { gap:4px !important; }
+  #posSystemModal .pos-menu-pane > div:first-child button { padding:6px 7px !important; font-size:9px !important; }
+  #posSystemModal .pos-categories-bar {
+    display:flex !important; flex-wrap:nowrap !important; overflow-x:auto !important; overflow-y:hidden !important;
+    gap:5px !important; padding:6px !important; min-height:44px !important; max-height:48px !important;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  #posSystemModal .pos-categories-bar::-webkit-scrollbar { display:none; }
+  #posSystemModal .pos-category-btn {
+    flex:0 0 auto !important; white-space:nowrap !important; min-width:max-content !important;
+    min-height:32px !important; padding:7px 10px !important; font-size:9px !important;
+  }
+  #posSystemModal .pos-menu-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; padding:5px !important;
+    overflow-y:auto !important; align-content:start !important;
+  }
+  #posSystemModal .pos-menu-grid button { height:68px !important; min-height:68px !important; padding:5px !important; border-radius:8px !important; }
+  #posSystemModal .pos-menu-grid button span:first-child { font-size:9px !important; line-height:1.1 !important; }
+  #posSystemModal .pos-menu-grid button span:last-child { font-size:9px !important; margin-top:2px !important; }
+
+  /* Payment screen on phone: compact and scroll-safe */
+  #posSystemModal #posRightPaneContainer { min-height:0 !important; overflow-y:auto !important; overflow-x:hidden !important; }
+  #posSystemModal #posRightPaneContainer > div:first-of-type { flex:0 0 auto !important; min-height:46px !important; }
+  #posSystemModal #posRightPaneContainer .flex-1.p-4 {
+    padding:7px !important; gap:8px !important; overflow:visible !important; flex-direction:column !important;
+  }
+  #posSystemModal #posRightPaneContainer .flex-1.p-4 > .flex-1 { width:100% !important; min-height:auto !important; flex:0 0 auto !important; overflow:visible !important; }
+  #posSystemModal #posRightPaneContainer .flex-1.p-4 > .w-\[320px\] {
+    width:100% !important; min-height:auto !important; flex:0 0 auto !important; padding:7px !important;
+  }
+  #posSystemModal #posRightPaneContainer .flex-1.p-4 > .flex-1 .grid.grid-cols-2 {
+    display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  #posSystemModal #posRightPaneContainer .flex-1.p-4 > .flex-1 .grid.grid-cols-2 button {
+    min-height:52px !important; font-size:11px !important; padding:8px 4px !important;
+  }
+  #posSystemModal #posPaymentSummaryLine { font-size:10px !important; line-height:1.35 !important; }
+  #posSystemModal #posRightPaneContainer input { width:72px !important; font-size:11px !important; padding:5px !important; }
+  #posSystemModal #posRightPaneContainer .grid.grid-cols-2 { gap:5px !important; }
+  #posSystemModal #posRightPaneContainer .grid.grid-cols-2 button { padding:8px 4px !important; font-size:9px !important; }
+  #posSystemModal #posRightPaneContainer .grid.grid-cols-3 { gap:5px !important; }
+  #posSystemModal #posRightPaneContainer .grid.grid-cols-3 button { padding:8px 3px !important; font-size:14px !important; }
+  #posSystemModal #posRightPaneContainer #posEnteredAmountDisplay { font-size:18px !important; padding:8px !important; }
+  #posSystemModal #posRightPaneContainer button[onclick*="posProcessPayment('Cash')"] { min-height:42px !important; font-size:14px !important; }
+}
+
+@media (max-width:380px) {
+  #mainPanel header { padding:6px 7px !important; }
+  #mainPanel header h1 { font-size:12px !important; }
+  #mainPanel header > div:last-child button { padding:6px !important; }
+  #mainPanel > aside { min-height:60px !important; padding:5px !important; gap:4px !important; }
+  #mainPanel > aside button { padding:9px 3px !important; font-size:9px !important; }
+  #posSystemModal .pos-cart-pane { height:50dvh !important; flex-basis:50dvh !important; }
+  #posSystemModal .pos-menu-pane { height:50dvh !important; flex-basis:50dvh !important; }
+  #posSystemModal .pos-menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  #posSystemModal .pos-menu-grid button { height:66px !important; min-height:66px !important; }
+  #posSystemModal .pos-cart-pane > .grid.grid-cols-3 button { font-size:7px !important; }
+}
+</style>
+
+</head>
+<body class="bg-gray-100 font-sans overflow-hidden">
+
+    <!-- ==================== LOGIN SECTION ==================== -->
+    <div id="loginSection" class="flex h-screen w-screen items-center justify-center bg-gray-900 absolute inset-0 z-50">
+        <div class="bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <div class="text-center mb-6">
+                <img src="images/logo.png" alt="Logo" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-600 mx-auto mb-2" onerror="this.src='https://via.placeholder.com/60'">
+                <h1 class="font-bold text-2xl text-gray-900">Hameeds Bistro</h1>
+                <p class="text-xs text-gray-500 mt-1">Cashier Panel Login</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+                    <input type="email" id="loginEmail" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="cashier@bistro.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow transition">
+                    Login to Panel
+                </button>
+            </form>
+            <div id="loginError" class="text-red-500 text-xs text-center mt-3 hidden"></div>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN CASHIER PANEL ==================== -->
+    <div id="mainPanel" class="flex h-screen w-screen hidden">
+        
+        <div class="flex-1 flex flex-col h-full overflow-hidden">
+            <!-- Header Panel -->
+            <header class="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="images/logo.png" alt="Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-600" onerror="this.src='https://via.placeholder.com/50'">
+                    <div class="flex flex-col">
+                        <h1 class="font-bold text-lg text-gray-900 leading-tight">Hameeds Bistro</h1>
+                        <div class="flex items-center space-x-2 mt-0.5">
+                            <span class="text-xs text-gray-500 font-medium">Welcome:</span>
+                            <span id="cashierName" class="text-xs font-bold text-emerald-700">Cashier</span>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-0.5">
+                            <span class="text-xs text-gray-500 font-medium">Role:</span>
+                            <span id="cashierRole" class="text-xs uppercase font-bold text-blue-600">Cashier</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <div class="flex flex-col space-y-1">
+                        <button onclick="doCheckIn()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">Check-In</button>
+                        <button onclick="doCheckOut()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium shadow-sm transition text-center">Check-Out</button>
+                    </div>
+
+                    <div class="relative">
+                        <button onclick="openNotificationModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center relative" title="New Order Notifications">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white hidden">0</span>
+                        </button>
+                    </div>
+
+                    <button onclick="refreshCashierSystem()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-xl text-sm font-medium shadow-sm transition flex items-center justify-center" title="Refresh System">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+
+                    <button onclick="openAdminPage()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">Admin</button>
+                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-xs font-medium shadow-sm transition flex items-center gap-1">Logout</button>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 bg-gray-50 overflow-y-auto">
+                <div class="mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Current Orders</h2>
+                </div>
+                <div id="pendingOrdersContainer" class="space-y-3"></div>
+            </main>
+        </div>
+
+        <!-- Right Sidebar Panel -->
+        <aside class="w-56 bg-gray-900 text-white flex flex-col p-4 justify-start space-y-3 shadow-xl flex-shrink-0">
+            <div class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Quick Actions</div>
+            <button onclick="openNewOrderPosModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">NEW ORDER</button>
+            <button onclick="openInvoiceListModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">INVOICE LIST</button>
+            <button onclick="openLastReceiptModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">LAST RECEIPT</button>
+            <button onclick="openCloseAuthModal('SHIFT')" class="bg-amber-600 hover:bg-amber-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">SHIFT CLOSE</button>
+            <button onclick="openCloseAuthModal('EOD')" class="bg-purple-700 hover:bg-purple-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">EOD CLOSE</button>
+        </aside>
+    </div>
+
+    <!-- ==================== NEW ORDER SETUP MODAL ==================== -->
+    <div id="newOrderSetupModal" class="fixed inset-0 bg-black bg-opacity-80 z-9999 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-gray-900 text-white px-5 py-4 flex justify-between items-center">
+                <div><h3 class="font-bold text-lg">New Order</h3><p class="text-xs text-gray-400">Select order type and table</p></div>
+                <button onclick="closeNewOrderSetupModal()" class="bg-gray-700 hover:bg-gray-600 w-8 h-8 rounded-full font-bold">&times;</button>
+            </div>
+            <div class="p-5">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Order Type</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="orderTypeDineInBtn" onclick="selectNewOrderType('Dine In')" class="border-2 border-emerald-500 bg-emerald-50 text-emerald-700 py-4 rounded-xl font-bold hover:bg-emerald-100 transition">🍽️ DINE IN</button>
+                    <button id="orderTypeTakeAwayBtn" onclick="selectNewOrderType('Take Away')" class="border-2 border-gray-200 bg-gray-50 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-100 transition">🥡 TAKE AWAY</button>
+                </div>
+                <div id="dineInTableSelection" class="mt-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Select Table No.</label>
+                    <select id="newOrderTableSelect" class="w-full border-2 border-gray-200 px-4 py-3 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">-- Select Table --</option>
+                        <optgroup label="INDOOR">
+                            <option value="A1 / INDOOR">A1</option><option value="A2 / INDOOR">A2</option><option value="A3 / INDOOR">A3</option><option value="A4 / INDOOR">A4</option><option value="A5 / INDOOR">A5</option>
+                            <option value="A6 / INDOOR">A6</option><option value="A7 / INDOOR">A7</option><option value="A8 / INDOOR">A8</option><option value="A9 / INDOOR">A9</option><option value="A10 / INDOOR">A10</option>
+                            <option value="A11 / INDOOR">A11</option><option value="A12 / INDOOR">A12</option><option value="A13 / INDOOR">A13</option><option value="A14 / INDOOR">A14</option><option value="A15 / INDOOR">A15</option>
+                            <option value="A16 / INDOOR">A16</option><option value="A17 / INDOOR">A17</option><option value="A18 / INDOOR">A18</option><option value="A19 / INDOOR">A19</option><option value="A20 / INDOOR">A20</option>
+                            <option value="A21 / INDOOR">A21</option><option value="A22 / INDOOR">A22</option><option value="A23 / INDOOR">A23</option><option value="A24 / INDOOR">A24</option><option value="A25 / INDOOR">A25</option>
+                            <option value="A26 / INDOOR">A26</option><option value="A27 / INDOOR">A27</option><option value="A28 / INDOOR">A28</option><option value="A29 / INDOOR">A29</option><option value="A30 / INDOOR">A30</option>
+                        </optgroup>
+                        <optgroup label="OUTDOOR">
+                            <option value="B1 / OUTDOOR">B1</option><option value="B2 / OUTDOOR">B2</option><option value="B3 / OUTDOOR">B3</option><option value="B4 / OUTDOOR">B4</option><option value="B5 / OUTDOOR">B5</option>
+                            <option value="B6 / OUTDOOR">B6</option><option value="B7 / OUTDOOR">B7</option><option value="B8 / OUTDOOR">B8</option><option value="B9 / OUTDOOR">B9</option><option value="B10 / OUTDOOR">B10</option>
+                            <option value="B11 / OUTDOOR">B11</option><option value="B12 / OUTDOOR">B12</option><option value="B13 / OUTDOOR">B13</option><option value="B14 / OUTDOOR">B14</option><option value="B15 / OUTDOOR">B15</option>
+                            <option value="B16 / OUTDOOR">B16</option><option value="B17 / OUTDOOR">B17</option><option value="B18 / OUTDOOR">B18</option><option value="B19 / OUTDOOR">B19</option><option value="B20 / OUTDOOR">B20</option>
+                            <option value="B21 / OUTDOOR">B21</option><option value="B22 / OUTDOOR">B22</option><option value="B23 / OUTDOOR">B23</option><option value="B24 / OUTDOOR">B24</option><option value="B25 / OUTDOOR">B25</option>
+                            <option value="B26 / OUTDOOR">B26</option><option value="B27 / OUTDOOR">B27</option><option value="B28 / OUTDOOR">B28</option><option value="B29 / OUTDOOR">B29</option><option value="B30 / OUTDOOR">B30</option>
+                        </optgroup>
+                        <optgroup label="1ST FLOOR">
+                            <option value="C1 / 1ST FLOOR">C1</option><option value="C2 / 1ST FLOOR">C2</option><option value="C3 / 1ST FLOOR">C3</option><option value="C4 / 1ST FLOOR">C4</option><option value="C5 / 1ST FLOOR">C5</option>
+                            <option value="C6 / 1ST FLOOR">C6</option><option value="C7 / 1ST FLOOR">C7</option><option value="C8 / 1ST FLOOR">C8</option><option value="C9 / 1ST FLOOR">C9</option><option value="C10 / 1ST FLOOR">C10</option>
+                            <option value="C11 / 1ST FLOOR">C11</option><option value="C12 / 1ST FLOOR">C12</option><option value="C13 / 1ST FLOOR">C13</option><option value="C14 / 1ST FLOOR">C14</option><option value="C15 / 1ST FLOOR">C15</option>
+                            <option value="C16 / 1ST FLOOR">C16</option><option value="C17 / 1ST FLOOR">C17</option><option value="C18 / 1ST FLOOR">C18</option><option value="C19 / 1ST FLOOR">C19</option><option value="C20 / 1ST FLOOR">C20</option>
+                            <option value="C21 / 1ST FLOOR">C21</option><option value="C22 / 1ST FLOOR">C22</option><option value="C23 / 1ST FLOOR">C23</option><option value="C24 / 1ST FLOOR">C24</option><option value="C25 / 1ST FLOOR">C25</option>
+                            <option value="C26 / 1ST FLOOR">C26</option><option value="C27 / 1ST FLOOR">C27</option><option value="C28 / 1ST FLOOR">C28</option><option value="C29 / 1ST FLOOR">C29</option><option value="C30 / 1ST FLOOR">C30</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div id="takeAwaySelection" class="mt-5 hidden">
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <div class="text-xs text-amber-700 font-semibold uppercase tracking-wide">Auto Generated Take Away No.</div>
+                        <div id="newOrderTakeAwayNo" class="text-2xl font-extrabold text-amber-900 mt-1">TAKEAWAY/1</div>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeNewOrderSetupModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-bold text-sm">CANCEL</button>
+                    <button onclick="continueNewOrderToPos()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-sm">CONTINUE TO ORDER</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== NEW ORDER & PAYMENT POS LAYOUT MODAL ==================== -->
+    <div id="posSystemModal" class="fixed inset-0 bg-black bg-opacity-80 z-9999 hidden flex items-center justify-center p-2">
+        <div class="pos-shell bg-[#1e1e1e] w-full max-w-7xl h-[95vh] rounded-xl shadow-2xl flex overflow-hidden border border-gray-700 text-white select-none relative">
+            
+            <!-- LEFT COLUMN: ORDER RECEIPT TICKET VIEW -->
+            <div class="pos-cart-pane w-[380px] bg-white text-black flex flex-col border-r border-gray-300 flex-shrink-0">
+                <!-- Top Info Header -->
+                <div class="bg-gray-800 text-white px-3 py-2 flex justify-between items-center text-xs font-bold">
+                    <div>TABLE : <span id="posDisplayTable" class="text-emerald-400">A60 / INDOOR</span></div>
+                    <div>CARD NO : <span id="posDisplayCard" class="text-yellow-400">1003</span></div>
+                    <div>PAX : <span id="posDisplayPax" class="text-blue-400">5</span></div>
+                </div>
+
+                <!-- Items Header Column Titles -->
+                <div class="bg-gray-200 text-gray-700 grid grid-cols-12 px-3 py-1.5 text-xs font-bold border-b">
+                    <div class="col-span-7">Description</div>
+                    <div class="col-span-2 text-center">Qty</div>
+                    <div class="col-span-3 text-right">Amount</div>
+                </div>
+
+                <!-- Items Scrollable List -->
+                <div id="posCartItemsList" class="flex-1 overflow-y-auto p-2 space-y-1 bg-white text-xs divide-y divide-gray-100">
+                    <!-- Dynamic Cart Items -->
+                </div>
+
+                <!-- Note Section -->
+                <div class="p-2 border-t bg-gray-50 text-xs">
+                    <span class="font-bold text-gray-700">Note:</span>
+                    <input type="text" id="posOrderNoteInput" placeholder="Add order note..." class="w-full border px-2 py-1 rounded mt-1 text-xs text-black focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+
+                <!-- Summary Totals Footer -->
+                <div class="bg-gray-900 text-white p-3 space-y-1 text-xs">
+                    <div class="flex justify-between text-gray-300">
+                        <span>Item Qty</span>
+                        <span id="posSummaryItemQty" class="font-bold">0</span>
+                        <span>Sub Total</span>
+                        <span id="posSummarySubTotal" class="font-bold">RM0.00</span>
+                    </div>
+                    <div class="flex justify-between text-gray-300">
+                        <span>Srvc Chrg.</span>
+                        <span id="posSummarySrvc">0.00</span>
+                        <span>SST (6%)</span>
+                        <span id="posSummarySst" class="font-bold">RM0.00</span>
+                    </div>
+                    <div class="flex justify-between text-emerald-400 font-extrabold text-sm pt-1 border-t border-gray-700">
+                        <span>TOTAL AMOUNT</span>
+                        <span>RM</span>
+                        <span id="posSummaryTotalAmount" class="text-base">0.00</span>
+                    </div>
+                </div>
+
+                <!-- Bottom Action Buttons Grid -->
+                <div class="grid grid-cols-3 gap-1 p-2 bg-gray-200">
+                    <button onclick="posActionOrderNote()" class="bg-[#8B4513] hover:bg-[#A0522D] text-white py-2 px-1 rounded text-xs font-bold text-center shadow">ORDER NOTE</button>
+                    <button onclick="posActionGuestCheck()" class="bg-[#8B4513] hover:bg-[#A0522D] text-white py-2 px-1 rounded text-xs font-bold text-center shadow">GUEST CHECK</button>
+                    <button onclick="posActionHold()" class="bg-[#483D8B] hover:bg-[#6A5ACD] text-white py-2 px-1 rounded text-xs font-bold text-center shadow">HOLD</button>
+                </div>
+                <div class="p-2 bg-gray-300 flex gap-2">
+                    <button onclick="closePosModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded text-xs">CANCEL</button>
+                    <button onclick="openPosPaymentInterface()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded text-sm shadow flex items-center justify-center gap-2">
+                        <span>💵💳</span> PAYMENT
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN (DYNAMIC VIEW: MENU GRID OR PAYMENT PANEL) -->
+            <div id="posRightPaneContainer" class="pos-menu-pane flex-1 flex flex-col bg-[#2b2b2b] overflow-hidden">
+                <!-- Top Navigation Bar -->
+                <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
+                    <button type="button" onclick="togglePosOrderMode()" id="posOrderModeToggle" class="bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 shadow hover:opacity-90">
+                        <span>🍽️</span> DINE IN
+                    </button>
+                    <div class="flex gap-2">
+                        <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>📝</span> MODIFIER</button>
+                        <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>🔍</span> SEARCH</button>
+                        <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>❤️</span> FAVOURITE</button>
+                        <button class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1"><span>≡</span> MORE</button>
+                    </div>
+                </div>
+
+                <!-- Categories Bar -->
+                <div id="posCategoriesBar" class="pos-categories-bar grid grid-cols-5 gap-1.5 p-2 bg-[#333] flex-shrink-0">
+                    <!-- Dynamic Categories -->
+                </div>
+
+                <!-- Menu Items Interactive Grid -->
+                <div id="posMenuItemsGrid" class="pos-menu-grid flex-1 p-2 overflow-y-auto grid grid-cols-5 gap-2 content-start">
+                    <!-- Dynamic Menu Buttons -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
+            <button onclick="closeOrderModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            <h3 id="modalOrderTitle" class="font-bold text-xl text-gray-800 mb-1">Order Details</h3>
+            <p id="modalOrderMeta" class="text-xs text-gray-500 mb-4"></p>
+            
+            <div class="border rounded-xl p-3 mb-4 max-h-48 overflow-y-auto bg-gray-50 space-y-2" id="modalOrderItemsList"></div>
+            
+            <div id="extraItemSectionContainer" class="border-t pt-3 flex-1 flex flex-col">
+                <h4 class="font-semibold text-gray-700 text-sm mb-2">Add Extra Item from Menu:</h4>
+                <div class="flex gap-2 mb-3">
+                    <select id="extraMenuItemSelect" class="flex-1 border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
+                    <button onclick="addExtraItemToOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Add</button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mt-4 pt-3 border-t" id="modalFooterContainer">
+                <div>
+                    <button id="modalDeclineBtn" onclick="promptDeclineOrderFromModal()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium">Cancel Order</button>
+                </div>
+                <div class="flex space-x-3" id="modalActionButtonsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <button onclick="closePaymentModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            <h3 class="font-bold text-xl text-gray-800 mb-1">Complete Payment</h3>
+            <p id="paymentOrderInfo" class="text-xs text-gray-500 mb-4"></p>
+            <div class="bg-gray-50 p-4 rounded-xl border mb-4">
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-600">Total Amount:</span>
+                    <span id="paymentTotalAmount" class="font-bold text-lg text-emerald-600">RM0.00</span>
+                </div>
+            </div>
+            <div class="space-y-3 mb-5">
+                <label class="block text-sm font-medium text-gray-700">Select Payment Method:</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="completePayment('Cash')" class="border-2 border-emerald-500 bg-emerald-50 text-emerald-700 py-3 rounded-xl font-semibold text-sm hover:bg-emerald-100 transition">Cash</button>
+                    <button onclick="completePayment('QR / Online')" class="border-2 border-blue-500 bg-blue-50 text-blue-700 py-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition">QR / Online</button>
+                </div>
+            </div>
+            <button onclick="closePaymentModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium">Cancel</button>
+        </div>
+    </div>
+
+    <div id="modifyItemModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-5 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <button onclick="closeModifyItemModal()" class="absolute top-3 right-3 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold">&times;</button>
+            <h3 class="font-bold text-lg text-gray-800 mb-1">Modify Item</h3>
+            <p id="modifyItemName" class="text-xs text-gray-500 mb-3"></p>
+            <div id="modifierOptions" class="space-y-2 max-h-48 overflow-y-auto mb-3"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <input id="modifierTextInput" type="text" placeholder="Modifier / special request" class="border rounded-xl px-3 py-2 text-sm">
+                <input id="modifierPriceInput" type="number" step="0.01" placeholder="Price Change (+/- RM)" class="border rounded-xl px-3 py-2 text-sm">
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-3">
+                <button type="button" onclick="setPosItemMode(posActiveModifierIndex, 'Dine In'); openModifyItemModal(posActiveModifierIndex)" class="bg-emerald-100 border border-emerald-500 text-emerald-800 py-2 rounded-xl font-bold text-xs">🍽️ DINE IN</button>
+                <button type="button" onclick="setPosItemMode(posActiveModifierIndex, 'Take Away'); openModifyItemModal(posActiveModifierIndex)" class="bg-amber-100 border border-amber-500 text-amber-800 py-2 rounded-xl font-bold text-xs">🥡 TAKEAWAY</button>
+            </div>
+            <div class="flex gap-2 mt-3">
+                <button onclick="deletePosCartItem(posActiveModifierIndex); closeModifyItemModal()" class="bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl font-semibold px-3">DELETE ITEM</button>
+                <button onclick="closeModifyItemModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl font-semibold">Cancel</button>
+                <button onclick="saveItemModification()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl font-semibold">Save Modify</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paymentResultModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-sm w-full shadow-2xl relative mx-4 text-center">
+            <button onclick="closePaymentResultModal()" class="absolute top-3 right-3 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold">&times;</button>
+            <div id="paymentResultContent" class="pt-2"></div>
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button onclick="printPaymentResultReceipt()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold">🖨️ Print Receipt</button>
+                <button onclick="savePaymentResultPdf()" class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm">📄 Save as PDF</button>
+                <button onclick="closePaymentResultModal()" class="bg-gray-800 hover:bg-gray-900 text-white py-2.5 rounded-xl font-bold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-xl w-full shadow-2xl relative mx-4 max-h-[85vh] flex flex-col">
+            <button onclick="closeNotificationModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            <h3 class="font-bold text-xl text-gray-800 mb-2">Customer Order Notifications</h3>
+            <p class="text-xs text-gray-500 mb-4">Review incoming customer orders.</p>
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1" id="incomingOrdersList"></div>
+            <div class="mt-4 pt-3 border-t flex justify-end">
+                <button onclick="closeNotificationModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="declineModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <h3 class="font-bold text-lg text-gray-800 mb-2">Decline Order</h3>
+            <p class="text-xs text-gray-500 mb-3">Please provide a reason for declining this order:</p>
+            <textarea id="declineReasonInput" rows="3" class="w-full border p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4" placeholder="Type reason here..."></textarea>
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeDeclineModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Cancel</button>
+                <button onclick="submitDeclineOrder()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Confirm Decline</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice List Modal -->
+    <div id="invoiceListModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[85vh] flex flex-col">
+            <button onclick="closeInvoiceListModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            <h3 class="font-bold text-xl text-gray-800 mb-2">Completed Invoices List</h3>
+            <p class="text-xs text-gray-500 mb-4">All paid and completed orders history from Invoices table.</p>
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1" id="invoiceListContainer">
+                <p class="text-xs text-gray-500">Loading invoices...</p>
+            </div>
+            <div class="mt-4 pt-3 border-t flex justify-end">
+                <button onclick="closeInvoiceListModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shift / EOD Close Authentication Modal -->
+    <div id="closeAuthModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-9999 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <button onclick="closeCloseAuthModal()" class="absolute top-3 right-3 bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded-full font-bold">&times;</button>
+            <h3 id="closeAuthTitle" class="font-bold text-xl text-gray-800 mb-1">Shift Close</h3>
+            <p class="text-xs text-gray-500 mb-4">Re-enter your cashier username and password to confirm this close.</p>
+            <form onsubmit="submitCloseAuth(event)" class="space-y-3">
+                <input id="closeAuthEmail" type="email" required class="w-full border px-3 py-2 rounded-xl text-sm" placeholder="Username / Email">
+                <input id="closeAuthPassword" type="password" required class="w-full border px-3 py-2 rounded-xl text-sm" placeholder="Password">
+                <div id="closeAuthError" class="hidden text-red-600 text-xs"></div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCloseAuthModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-semibold">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Last Receipt Modal -->
+    <div id="lastReceiptModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
+            <button onclick="closeLastReceiptModal()" class="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-full font-bold flex items-center justify-center text-lg">&times;</button>
+            <h3 class="font-bold text-xl text-gray-800 mb-2">Last Receipt / Invoice</h3>
+            <p class="text-xs text-gray-500 mb-4">Details from the Invoices table.</p>
+            
+            <div id="lastReceiptContent" class="bg-gray-50 p-4 rounded-xl border text-xs space-y-2 mb-4">
+                <p class="text-gray-500">Loading last receipt...</p>
+            </div>
+            
+            <div class="flex justify-end flex-wrap gap-2">
+                <button onclick="printLastReceipt()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">🖨️ Print Receipt</button>
+                <button onclick="saveLastReceiptPdf()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">📄 Save as PDF</button>
+                <button onclick="closeLastReceiptModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated receipt print area. It is populated immediately before printing. -->
+    <div id="printReceiptContent" aria-hidden="true"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Business details printed on every Guest Check and Paid Receipt.
+        const BUSINESS_NAME = 'HAMEEDS BISTRO';
+        const BUSINESS_ADDRESS = 'No.-11, Jalan KLIA Avenue, Pusat Perdagangan KLIA Avenue, Sepang, 43900';
+        const BUSINESS_TEL = '+60 387059807';
+        const BUSINESS_EMAIL = 'prokashlaptop@gmail.com';
+        // Actual SST registration ID was not supplied in the request, so it is left as N/A.
+        // Replace this value with the restaurant's official SST ID when available.
+        const SST_ID = 'N/A';
+
+
+        let currentActiveOrderId = null;
+        let activeOrderData = null;
+        let orderToDeclineId = null;
+
+        let posCart = []; 
+        let posCategories = [];
+        let posMenuItems = [];
+        let posSelectedCategory = null;
+        let posEnteredAmountString = "";
+        let posTargetOrderId = null;
+        let posDiscountPercent = 0;
+        let posDiscountAmount = 0;
+        let posPaymentTransactionId = "";
+        let posOrderMode = "Dine In";
+        let posLastPaymentSummary = null;
+        let posActiveModifierIndex = null;
+        let posSearchTerm = "";
+
+        // ==================== NEW ORDER ALERT SOUND ====================
+        // New pending order: 3 fast/loud beeps, then a repeating voice message
+        // that includes the order's table/location. The alert stops immediately
+        // when the cashier presses that notification's OPEN button.
+        let newOrderAlertTimer = null;
+        let newOrderAlertVoiceTimer = null;
+        let newOrderAlertActive = false;
+        let newOrderAlertAudioContext = null;
+        let newOrderAlertSpeaking = false;
+        let newOrderAlertOrderId = null;
+        const newOrderAlertMutedOrderIds = new Set();
+
+        async function ensureAlertAudioReady() {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return null;
+                if (!newOrderAlertAudioContext) newOrderAlertAudioContext = new AC();
+                if (newOrderAlertAudioContext.state === 'suspended') {
+                    try {
+                        const resumeResult = newOrderAlertAudioContext.resume();
+                        if (resumeResult && typeof resumeResult.catch === 'function') resumeResult.catch(() => {});
+                    } catch (e) {}
+                }
+                return newOrderAlertAudioContext;
+            } catch (e) {
+                console.log('Alert audio unavailable:', e);
+                return null;
+            }
+        }
+
+        function playNewOrderBeep() {
+            ensureAlertAudioReady().then(ctx => {
+                if (!ctx || !newOrderAlertActive) return;
+                try {
+                    const now = ctx.currentTime;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(1250, now);
+                    gain.gain.setValueAtTime(0.0001, now);
+                    gain.gain.exponentialRampToValueAtTime(1.0, now + 0.006);
+                    gain.gain.setValueAtTime(1.0, now + 0.095);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.14);
+                } catch (e) {}
+            });
+        }
+
+        function speakNewOrder(tableId) {
+            if (!newOrderAlertActive || !('speechSynthesis' in window) || newOrderAlertSpeaking) return;
+            try {
+                const table = String(tableId || 'Take Away').trim();
+                const announcement = `Hameeds Bistro, you have a new order from ${table}.`;
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(announcement);
+                utter.lang = 'en-US';
+                utter.rate = 0.9;
+                utter.pitch = 1;
+                utter.volume = 1;
+                newOrderAlertSpeaking = true;
+                utter.onend = () => {
+                    newOrderAlertSpeaking = false;
+                    if (newOrderAlertActive) {
+                        clearTimeout(newOrderAlertVoiceTimer);
+                        newOrderAlertVoiceTimer = setTimeout(() => speakNewOrder(table), 120);
+                    }
+                };
+                utter.onerror = () => {
+                    newOrderAlertSpeaking = false;
+                    if (newOrderAlertActive) {
+                        clearTimeout(newOrderAlertVoiceTimer);
+                        newOrderAlertVoiceTimer = setTimeout(() => speakNewOrder(table), 500);
+                    }
+                };
+                window.speechSynthesis.speak(utter);
+            } catch (e) {
+                newOrderAlertSpeaking = false;
+            }
+        }
+
+        function startNewOrderAlert(order) {
+            if (!order || order.id == null) return;
+            const orderId = String(order.id);
+            if (newOrderAlertMutedOrderIds.has(orderId)) return;
+            if (newOrderAlertActive && String(newOrderAlertOrderId) === orderId) return;
+
+            stopNewOrderAlert();
+            newOrderAlertActive = true;
+            newOrderAlertOrderId = order.id;
+
+            // Exactly three fast, loud beeps first.
+            let beepCount = 0;
+            const beep = () => {
+                if (!newOrderAlertActive) return;
+                playNewOrderBeep();
+                beepCount += 1;
+                if (beepCount < 3) {
+                    newOrderAlertTimer = setTimeout(beep, 145);
+                } else {
+                    newOrderAlertTimer = setTimeout(() => {
+                        newOrderAlertTimer = null;
+                        if (newOrderAlertActive) speakNewOrder(order.table_id || 'Take Away');
+                    }, 180);
+                }
+            };
+            beep();
+        }
+
+        function stopNewOrderAlert() {
+            newOrderAlertActive = false;
+            newOrderAlertOrderId = null;
+            newOrderAlertSpeaking = false;
+            clearTimeout(newOrderAlertTimer);
+            clearTimeout(newOrderAlertVoiceTimer);
+            newOrderAlertTimer = null;
+            newOrderAlertVoiceTimer = null;
+            try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
+        }
+
+        // Login/taps are used only to unlock Android Chrome audio. The Bell is
+        // NOT required for a new-order alert.
+        document.addEventListener('pointerdown', () => { ensureAlertAudioReady(); }, { passive: true });
+
+        // Money helpers: keep all calculations in exact sen/cents to avoid
+        // floating-point values such as 0.019999999999 becoming visible on receipts.
+        function roundMoney(amount) {
+            const n = Number(amount) || 0;
+            return Math.round((n + Number.EPSILON) * 100) / 100;
+        }
+
+        function roundToNearest5Sen(amount) {
+            // Malaysian cash rounding: nearest RM0.05.
+            // The result can differ from the pre-round total by at most RM0.02.
+            const cents = Math.round((Number(amount) || 0) * 100);
+            return Math.round(cents / 5) * 5 / 100;
+        }
+
+        function getRoundingDifference(preRoundTotal, roundedTotal) {
+            // Always display a clean 2-decimal sen amount: -0.02 ... +0.02.
+            return roundMoney((Number(roundedTotal) || 0) - roundMoney(preRoundTotal));
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            // Login is a direct user gesture, so unlock the phone's audio output
+            // here. Realtime orders can then play immediately without tapping Bell.
+            ensureAlertAudioReady();
+            try { if ('speechSynthesis' in window) window.speechSynthesis.getVoices(); } catch (e) {}
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.classList.add('hidden');
+
+            const { data, error } = await _supabase
+                .from('profiles')
+                .select('*')
+                .eq('email', email)
+                .eq('password', password)
+                .maybeSingle();
+
+            const allowedRoles = ['Admin', 'Manager', 'Cashier', 'Staff'];
+
+            if (error || !data || !allowedRoles.includes(data.role)) {
+                errorDiv.innerText = "Invalid login credentials or unauthorized role.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            localStorage.setItem('cashier_session', JSON.stringify(data));
+            // Login is a user gesture: use it to unlock mobile audio for future realtime alerts.
+            ensureAlertAudioReady();
+            applyUserSession(data);
+        }
+
+        function applyUserSession(data) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('mainPanel').classList.remove('hidden');
+            
+            document.getElementById('cashierName').innerText = data.full_name || data.email.split('@')[0];
+            document.getElementById('cashierRole').innerText = data.role;
+
+            loadPendingOrders();
+            fetchIncomingOrders(false);
+            setupRealtimeSubscription();
+        }
+
+        function setupRealtimeSubscription() {
+            try {
+                _supabase
+                    .channel('public:orders')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+                        loadPendingOrders();
+                        fetchIncomingOrders(true);
+                        const row = payload && payload.new ? payload.new : null;
+                        if (row && String(row.status || '').toLowerCase() === 'pending' && !newOrderAlertMutedOrderIds.has(String(row.id))) {
+                            startNewOrderAlert(row);
+                        }
+                    })
+                    .subscribe();
+            } catch (e) {
+                console.log("Realtime subscription fallback enabled");
+            }
+        }
+
+        async function handleLogout() {
+            stopNewOrderAlert();
+            localStorage.removeItem('cashier_session');
+            document.getElementById('mainPanel').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+        }
+
+        async function loadPendingOrders() {
+            const container = document.getElementById('pendingOrdersContainer');
+            container.innerHTML = '<p class="text-gray-500 text-sm">Loading current orders...</p>';
+
+            const { data, error } = await _supabase
+                .from('orders')
+                .select('*')
+                .eq('status', 'accepted')
+                .eq('payment_status', 'Pending')
+                .order('created_at', { ascending: false });
+
+            if(error) {
+                container.innerHTML = '<p class="text-red-500 text-sm">Failed to load orders.</p>';
+                return;
+            }
+
+            if(!data || data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">No active current orders available.</p>';
+                return;
+            }
+
+            container.innerHTML = data.map(order => `
+                <div class="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-gray-800 text-base">Order ID: #${order.id}</span>
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">Accepted</span>
+                        </div>
+                        <p class="text-xs text-gray-600">Table / Location: <span class="font-semibold text-gray-800">${order.table_id || 'N/A'}</span></p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-base text-emerald-600 mr-2">RM${Number(order.total_amount || 0).toFixed(2)}</span>
+                        <button onclick='openOrderDetailsById(${order.id}, "current")' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
+                        <button onclick='openPaymentModalFromListId(${order.id}, ${order.total_amount || 0})' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Payment</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function openOrderDetailsById(orderId, sourceType = 'current') {
+            // IMPORTANT: tapping ANY notification's Open button acknowledges the
+            // notification screen immediately. Stop ALL sound/voice at once, even
+            // if several pending orders exist. The notification cards remain visible.
+            if (sourceType === 'incoming') {
+                stopNewOrderAlert();
+                try {
+                    const { data: pendingNow } = await _supabase
+                        .from('orders')
+                        .select('id')
+                        .eq('status', 'pending');
+                    (pendingNow || []).forEach(o => newOrderAlertMutedOrderIds.add(String(o.id)));
+                } catch (e) {
+                    // At minimum acknowledge the tapped order locally.
+                }
+                newOrderAlertMutedOrderIds.add(String(orderId));
+            }
+            const { data: order } = await _supabase.from('orders').select('*').eq('id', orderId).single();
+            if(!order) return;
+            openOrderDetails(order, sourceType);
+        }
+
+        async function openOrderDetails(order, sourceType = 'current') {
+            currentActiveOrderId = order.id;
+            activeOrderData = order;
+            document.getElementById('modalOrderTitle').innerText = `Order ID: #${order.id}`;
+            document.getElementById('modalOrderMeta').innerText = `Table: ${order.table_id || 'N/A'}`;
+            
+            const actionContainer = document.getElementById('modalActionButtonsContainer');
+            const extraSection = document.getElementById('extraItemSectionContainer');
+            const declineBtn = document.getElementById('modalDeclineBtn');
+
+            if (sourceType === 'incoming') {
+                extraSection.classList.remove('hidden');
+                declineBtn.classList.remove('hidden');
+                actionContainer.innerHTML = `
+                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
+                    <button onclick="sendOrderToKitchen()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Accept & Send to Kitchen</button>
+                `;
+                await renderModalItems(order.id, true);
+                loadMenuForDropdown();
+            } else if (sourceType === 'completed' || sourceType === 'invoice_view') {
+                extraSection.classList.add('hidden');
+                declineBtn.classList.add('hidden');
+                
+                const { data: invData } = await _supabase.from('invoices').select('*').eq('order_id', order.id).maybeSingle();
+                const paymentMethod = invData ? invData.payment_method : 'N/A';
+                const invoiceDate = invData ? new Date(invData.created_at).toLocaleString() : new Date(order.created_at).toLocaleString();
+                
+                const sessionData = JSON.parse(localStorage.getItem('cashier_session') || '{}');
+                const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
+
+                document.getElementById('modalOrderMeta').innerHTML = `
+                    Table: ${order.table_id || 'N/A'}<br>
+                    Date: ${invoiceDate}<br>
+                    Payment Method: <span class="font-semibold text-emerald-600">${paymentMethod}</span><br>
+                    Cashier: <span class="font-semibold text-gray-700">${cashierLabel}</span>
+                `;
+
+                actionContainer.innerHTML = `
+                    <button onclick="printPaidReceipt(${order.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium">🖨️ Print Receipt</button>
+                    <button onclick="savePaidReceiptPdf(${order.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">📄 Save as PDF</button>
+                    <button onclick="recallOrder(${order.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium">Recall</button>
+                    <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium">Close</button>
+                `;
+                await renderReadOnlyModalItems(order.id, order.total_amount);
+            } else {
+                // CURRENT ORDER: show only the existing order items.
+                // Do not show the inline "Add Extra Item from Menu" section.
+                // "Add More Items" opens the normal POS/order page for this same order.
+                extraSection.classList.add('hidden');
+                declineBtn.classList.remove('hidden');
+                actionContainer.innerHTML = `
+                    <button onclick="addMoreItemsToCurrentOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Add More Items</button>
+                    <button onclick="promptDeclineOrderFromModal()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl text-sm font-medium">Cancel Order</button>
+                    <button onclick="closeOrderModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
+                `;
+                await renderModalItems(order.id, true);
+            }
+
+            document.getElementById('orderDetailModal').classList.remove('hidden');
+        }
+
+        async function renderModalItems(orderId, editable = true) {
+            const itemsContainer = document.getElementById('modalOrderItemsList');
+            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading items...</p>';
+
+            const { data: items, error } = await _supabase
+                .from('order_items')
+                .select('*')
+                .eq('order_id', orderId);
+            
+            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en, price');
+            const menuMap = {};
+            if (menuData) {
+                menuData.forEach(m => { menuMap[m.id] = m; });
+            }
+            
+            if (error || !items || items.length === 0) {
+                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found in this order.</p>';
+                await recalulateAndUpdateOrderTotal(orderId);
+                return;
+            }
+
+            itemsContainer.innerHTML = '';
+            
+            items.forEach(item => {
+                // FIXED: সঠিক নাম রেন্ডার করার লজিক (ফলব্যাক হিসেবে 'Item #' এভয়েড করা হয়েছে)
+                const itemName = menuMap[item.menu_item_id]
+                    ? menuMap[item.menu_item_id].name_en
+                    : 'Unknown Item';
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex justify-between items-center py-2 border-b text-xs";
+                
+                if (editable) {
+                    itemDiv.innerHTML = `
+                        <div class="flex-1 pr-2">
+                            <span class="font-medium text-gray-800 block">${itemName}</span>
+                            <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="flex items-center border rounded-lg overflow-hidden bg-white">
+                                <button type="button" class="decrease-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">-</button>
+                                <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
+                                <button type="button" class="increase-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
+                            </div>
+                            <span class="font-bold text-emerald-600 w-16 text-right">RM${(item.price * item.quantity).toFixed(2)}</span>
+                            <button type="button" class="remove-btn text-red-600 hover:text-red-800 font-bold px-2.5 py-1 bg-red-50 rounded">✕</button>
+                        </div>
+                    `;
+
+                    itemDiv.querySelector('.decrease-btn').addEventListener('click', async () => {
+                        await updateItemQuantity(item.id, item.quantity - 1, orderId);
+                    });
+                    itemDiv.querySelector('.increase-btn').addEventListener('click', async () => {
+                        await updateItemQuantity(item.id, item.quantity + 1, orderId);
+                    });
+                    itemDiv.querySelector('.remove-btn').addEventListener('click', async () => {
+                        await removeItemFromOrder(item.id, orderId);
+                    });
+                } else {
+                    itemDiv.innerHTML = `
+                        <div class="flex-1 pr-2">
+                            <span class="font-medium text-gray-800 block">${itemName} (x${item.quantity})</span>
+                            <span class="text-gray-500">RM${Number(item.price || 0).toFixed(2)} each</span>
+                        </div>
+                        <div class="font-bold text-emerald-600 text-right">RM${(item.price * item.quantity).toFixed(2)}</div>
+                    `;
+                }
+
+                itemsContainer.appendChild(itemDiv);
+            });
+            
+            if (editable) {
+                await recalulateAndUpdateOrderTotal(orderId);
+            }
+        }
+
+        async function renderReadOnlyModalItems(orderId, totalAmount) {
+            const itemsContainer = document.getElementById('modalOrderItemsList');
+            itemsContainer.innerHTML = '<p class="text-xs text-gray-500">Loading receipt items...</p>';
+
+            const { data: items, error } = await _supabase
+                .from('order_items')
+                .select('*')
+                .eq('order_id', orderId);
+
+            const { data: menuData } = await _supabase
+                .from('menu_items')
+                .select('id, name_en');
+
+            // IMPORTANT: View Order must use the saved invoice discount/payment values.
+            // It must not recalculate the bill as if there were no discount.
+            const { data: invoice } = await _supabase
+                .from('invoices')
+                .select('*')
+                .eq('order_id', orderId)
+                .maybeSingle();
+
+            const menuMap = {};
+            if (menuData) menuData.forEach(m => { menuMap[m.id] = m.name_en; });
+
+            if (error || !items || items.length === 0) {
+                itemsContainer.innerHTML = '<p class="text-xs text-gray-500">No items found.</p>';
+                return;
+            }
+
+            let subtotal = 0;
+            items.forEach(i => {
+                subtotal += Number(i.price || 0) * Number(i.quantity || 0);
+            });
+
+            // Read discount from the invoice first; localStorage is only a fallback
+            // for older invoices that were saved before discount columns existed.
+            let extra = {};
+            try {
+                extra = JSON.parse(localStorage.getItem('invoice_extra_' + orderId) || '{}');
+            } catch (e) {}
+
+            const discountPercent = Number(invoice?.discount_percent ?? extra.discount_percent ?? 0) || 0;
+            const savedDiscountAmount = Number(invoice?.discount_amount ?? extra.discount_amount ?? 0) || 0;
+
+            // Keep the same discount rule used by the payment/receipt system.
+            const percentDiscount = subtotal * Math.min(Math.max(discountPercent, 0), 100) / 100;
+            const discount = Math.min(subtotal, Math.max(0, savedDiscountAmount) + percentDiscount);
+            const taxable = Math.max(0, subtotal - discount);
+            const sst = roundMoney(taxable * 0.06);
+            const calculatedTotal = taxable + sst;
+            const calculatedRounded = roundToNearest5Sen(calculatedTotal);
+
+            // For a paid invoice, invoice.total_amount is the authoritative amount paid.
+            // This is what View Order must show, instead of recalculating an undiscounted total.
+            const finalTotal = Number(invoice?.total_amount ?? totalAmount ?? calculatedRounded);
+            const roundingDiff = getRoundingDifference(calculatedTotal, finalTotal);
+            const roundingFormatted = `${roundingDiff >= 0 ? '+' : ''}RM${roundingDiff.toFixed(2)}`;
+
+            itemsContainer.innerHTML = items.map(item => {
+                const itemName = menuMap[item.menu_item_id] || 'Unknown Item';
+                return `
+                    <div class="flex justify-between items-center py-1.5 border-b text-xs">
+                        <span class="font-medium text-gray-800">${itemName} (x${item.quantity})</span>
+                        <span class="font-bold text-gray-700">RM${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('') + `
+                <div class="pt-2 mt-2 border-t space-y-1 text-xs">
+                    <div class="flex justify-between text-gray-600"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
+                    ${discount > 0 ? `<div class="flex justify-between text-red-600"><span>Discount${discountPercent > 0 ? ` (${discountPercent.toFixed(2)}%)` : ''}:</span><span>-RM${discount.toFixed(2)}</span></div>` : ''}
+                    <div class="flex justify-between text-gray-600"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
+                    <div class="flex justify-between text-gray-600"><span>Rounding:</span><span>${roundingFormatted}</span></div>
+                    <div class="flex justify-between font-bold text-emerald-600 text-sm pt-1 border-t"><span>Total Amount:</span><span>RM${finalTotal.toFixed(2)}</span></div>
+                </div>
+            `;
+        }
+
+        async function updateItemQuantity(itemId, newQty, orderId) {
+            if (newQty <= 0) {
+                await removeItemFromOrder(itemId, orderId);
+                return;
+            }
+            const { error } = await _supabase
+                .from('order_items')
+                .update({ quantity: newQty })
+                .eq('id', itemId);
+
+            if (!error) {
+                await renderModalItems(orderId, true);
+            } else {
+                alert('Failed to update quantity.');
+            }
+        }
+
+        async function removeItemFromOrder(itemId, orderId) {
+            const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
+            if (!error) {
+                await renderModalItems(orderId, true);
+            } else {
+                alert('Failed to remove item from database.');
+            }
+        }
+
+        async function recalulateAndUpdateOrderTotal(orderId) {
+            const { data: items } = await _supabase
+                .from('order_items')
+                .select('price, quantity')
+                .eq('order_id', orderId);
+
+            let subtotal = 0;
+            if (items) {
+                items.forEach(i => { subtotal += (Number(i.price) * Number(i.quantity)); });
+            }
+
+            const sst = roundMoney(subtotal * 0.06);
+            const calculatedTotal = subtotal + sst;
+            const finalTotal = roundToNearest5Sen(calculatedTotal);
+
+            await _supabase
+                .from('orders')
+                .update({ total_amount: finalTotal })
+                .eq('id', orderId);
+                
+            loadPendingOrders();
+        }
+
+        function closeOrderModal() { 
+            document.getElementById('orderDetailModal').classList.add('hidden'); 
+        }
+
+        async function loadMenuForDropdown() {
+            const select = document.getElementById('extraMenuItemSelect');
+            const { data } = await _supabase.from('menu_items').select('id, name_en, price');
+            if(data) {
+                select.innerHTML = data.map(m => `<option value="${m.id}" data-price="${m.price}" data-name="${m.name_en}">${m.name_en} - RM${m.price}</option>`).join('');
+            }
+        }
+
+        async function addExtraItemToOrder() {
+            const select = document.getElementById('extraMenuItemSelect');
+            const opt = select.options[select.selectedIndex];
+            if(!opt) return;
+
+            const { error } = await _supabase.from('order_items').insert([{
+                order_id: currentActiveOrderId,
+                menu_item_id: Number(opt.value),
+                price: parseFloat(opt.getAttribute('data-price')),
+                quantity: 1
+            }]);
+
+            if (error) {
+                alert('Failed to add item: ' + error.message);
+                return;
+            }
+            
+            await renderModalItems(currentActiveOrderId, true);
+        }
+
+        function openPaymentModalFromListId(orderId, totalAmount) {
+            posTargetOrderId = orderId;
+            openPosSystemModalWithOrder(orderId, totalAmount);
+        }
+
+        function proceedToPaymentFromModal() {
+            closeOrderModal();
+            openPaymentModalFromListId(activeOrderData.id, activeOrderData.total_amount);
+        }
+
+        // Open the normal POS/order page for the currently opened order so the
+        // cashier can add more items to the same order. This does NOT create a
+        // new order; posTargetOrderId keeps the existing order ID attached.
+        async function addMoreItemsToCurrentOrder() {
+            if (!activeOrderData || !activeOrderData.id) {
+                alert('No active order selected.');
+                return;
+            }
+            const orderId = activeOrderData.id;
+            const total = Number(activeOrderData.total_amount || 0);
+            closeOrderModal();
+            await openPosSystemModalWithOrder(orderId, total);
+        }
+
+        function closePaymentModal() { 
+            document.getElementById('paymentModal').classList.add('hidden'); 
+        }
+
+        async function completePayment(method) {
+            const { data: orderItems, error: itemsError } = await _supabase.from('order_items').select('*').eq('order_id', currentActiveOrderId);
+            if(itemsError){ alert('Failed to read order items: '+itemsError.message); return; }
+
+            let subtotal = 0;
+            (orderItems || []).forEach(i => { subtotal += Number(i.price || 0) * Number(i.quantity || 0); });
+            const sst = roundMoney(subtotal * 0.06);
+            const finalTotal = roundToNearest5Sen(subtotal + sst);
+
+            const { data: orderData, error: orderFetchError } = await _supabase
+                .from('orders').select('*').eq('id', currentActiveOrderId).single();
+            if(orderFetchError || !orderData){
+                alert('Order not found: '+(orderFetchError ? orderFetchError.message : 'Unknown error'));
+                return;
+            }
+
+            // PAYMENT = HOLD + PAYMENT. The invoice must be saved before we
+            // remove the order from Current Orders.
+            const basicInvoice = {
+                order_id: orderData.id,
+                table_id: orderData.table_id || 'N/A',
+                total_amount: finalTotal,
+                payment_method: method
+            };
+
+            const { data: existingInvoice, error: invoiceFindError } = await _supabase
+                .from('invoices').select('id').eq('order_id', orderData.id)
+                .order('created_at', {ascending:false}).limit(1).maybeSingle();
+
+            if(invoiceFindError){
+                alert('Unable to check invoice: '+invoiceFindError.message);
+                return;
+            }
+
+            let invoiceError = null;
+            if(existingInvoice){
+                const r = await _supabase.from('invoices').update(basicInvoice).eq('id', existingInvoice.id);
+                invoiceError = r.error;
+            }else{
+                const r = await _supabase.from('invoices').insert([basicInvoice]);
+                invoiceError = r.error;
+            }
+
+            if(invoiceError){
+                alert('Payment was NOT completed because the invoice could not be saved: '+invoiceError.message);
+                return;
+            }
+
+            const { error: orderError } = await _supabase.from('orders')
+                .update({ status:'Completed', payment_status:'Paid', total_amount:finalTotal })
+                .eq('id', currentActiveOrderId);
+            if(orderError){
+                alert('Invoice was saved, but order status could not be updated: '+orderError.message);
+                return;
+            }
+
+            alert(`Payment completed via ${method} and successfully saved to Invoices table!`);
+            closePaymentModal();
+            closeOrderModal();
+            await loadPendingOrders();
+            await fetchIncomingOrders();
+        }
+
+        async function sendOrderToKitchen() {
+            if (!currentActiveOrderId) {
+                alert('No active order selected.');
+                return;
+            }
+
+            const { error } = await _supabase
+                .from('orders')
+                .update({ status: 'accepted' })
+                .eq('id', currentActiveOrderId);
+
+            if (!error) {
+                alert('Order accepted and sent successfully to Kitchen and Current Orders!');
+                closeOrderModal();
+                await loadPendingOrders();
+                await fetchIncomingOrders();
+            } else {
+                alert('Failed to send order.');
+            }
+        }
+
+        function openNotificationModal() {
+            // Opening the notification panel means the cashier is looking at the
+            // notification. Silence the alert immediately, without removing any
+            // notification cards. Any currently pending cards are acknowledged
+            // for sound purposes; a later NEW order can alert again.
+            stopNewOrderAlert();
+            document.getElementById('notificationModal').classList.remove('hidden');
+            fetchIncomingOrders();
+        }
+        
+        function closeNotificationModal() { 
+            document.getElementById('notificationModal').classList.add('hidden'); 
+        }
+
+        async function fetchIncomingOrders(shouldAlert = false) {
+            const { data, error } = await _supabase
+                .from('orders')
+                .select('*')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if(error) return;
+
+            const badge = document.getElementById('notificationBadge');
+            const container = document.getElementById('incomingOrdersList');
+            const pending = Array.isArray(data) ? data : [];
+            const pendingIds = new Set(pending.map(o => String(o.id)));
+
+            if(pending.length > 0) {
+                badge.innerText = pending.length;
+                badge.classList.remove('hidden');
+                container.innerHTML = pending.map(o => `
+                    <div class="border p-3 rounded-xl bg-gray-50 space-y-2 text-xs">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-sm text-gray-900">Order #${o.id}</span>
+                                <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick='openOrderDetailsById(${o.id}, "incoming")' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">Open</button>
+                                <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // On the first fetch after login, remember existing pending orders without alerting.
+                // Realtime changes are the trigger for the phone-style alert.
+                if (shouldAlert) {
+                    const newlyArrived = pending.find(o => !knownPendingOrderIds.has(String(o.id)));
+                    if (newlyArrived) startNewOrderAlert(newlyArrived);
+                }
+            } else {
+                badge.classList.add('hidden');
+                container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
+                if (newOrderAlertActive) stopNewOrderAlert();
+            }
+
+            knownPendingOrderIds = pendingIds;
+        }
+
+        async function openInvoiceListModal() {
+            document.getElementById('invoiceListModal').classList.remove('hidden');
+            const container = document.getElementById('invoiceListContainer');
+            container.innerHTML = '<p class="text-xs text-gray-500">Loading invoices...</p>';
+
+            const { data, error } = await _supabase
+                .from('invoices')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                container.innerHTML = '<p class="text-red-500 text-xs">Failed to load invoices.</p>';
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-xs text-center py-4">No invoices found in table.</p>';
+                return;
+            }
+
+            container.innerHTML = data.map(inv => `
+                <div class="border p-3 rounded-xl bg-gray-50 flex justify-between items-center text-xs">
+                    <div>
+                        <span class="font-bold text-gray-800 text-sm">Invoice ID: #${inv.id} (Order #${inv.order_id})</span>
+                        <p class="text-gray-500">Table: ${inv.table_id || 'N/A'} | Method: ${inv.payment_method || 'N/A'} | Date: ${new Date(inv.created_at).toLocaleString()}</p>
+                        <span class="text-emerald-700 font-semibold">Status: Paid</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-emerald-600 text-sm block mb-1">RM${Number(inv.total_amount || 0).toFixed(2)}</span>
+                        <button onclick="viewInvoiceDetails(${inv.order_id})" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded-lg text-xs">View Order</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function closeInvoiceListModal() {
+            document.getElementById('invoiceListModal').classList.add('hidden');
+        }
+
+        async function viewInvoiceDetails(orderId) {
+            closeInvoiceListModal();
+            const { data: order } = await _supabase.from('orders').select('*').eq('id', orderId).single();
+            if (order) {
+                openOrderDetails(order, 'invoice_view');
+            }
+        }
+
+        async function recallOrder(orderId) {
+            try {
+                // When an invoice is recalled, remove that invoice record first.
+                // This makes the Invoice List clear the recalled invoice and makes
+                // Last Receipt automatically fall back to the previous invoice.
+                const { data: invoice, error: invoiceFindError } = await _supabase
+                    .from('invoices')
+                    .select('id, order_id')
+                    .eq('order_id', orderId)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (invoiceFindError) throw invoiceFindError;
+
+                if (invoice && invoice.id) {
+                    const { error: invoiceDeleteError } = await _supabase
+                        .from('invoices')
+                        .delete()
+                        .eq('id', invoice.id);
+                    if (invoiceDeleteError) throw invoiceDeleteError;
+                }
+
+                // Clear any locally cached payment/discount data for the recalled invoice.
+                localStorage.removeItem('invoice_extra_' + orderId);
+
+                // Return the order to Current Orders as an unpaid/active order.
+                const { error: orderError } = await _supabase
+                    .from('orders')
+                    .update({ status: 'accepted', payment_status: 'Pending' })
+                    .eq('id', orderId);
+
+                if (orderError) throw orderError;
+
+                alert(`Order #${orderId} has been successfully recalled to Current Orders!`);
+                closeOrderModal();
+                loadPendingOrders();
+
+                // Refresh Invoice List so the recalled invoice disappears immediately.
+                const invoiceListModal = document.getElementById('invoiceListModal');
+                if (invoiceListModal && !invoiceListModal.classList.contains('hidden')) {
+                    await openInvoiceListModal();
+                }
+            } catch (error) {
+                console.error('Recall invoice error:', error);
+                alert('Failed to recall order/invoice: ' + (error.message || error));
+            }
+        }
+
+        async function openLastReceiptModal() {
+            document.getElementById('lastReceiptModal').classList.remove('hidden');
+            const contentDiv = document.getElementById('lastReceiptContent');
+            contentDiv.innerHTML = '<p class="text-xs text-gray-500">Fetching last receipt...</p>';
+
+            const { data, error } = await _supabase
+                .from('invoices')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (error || !data) {
+                contentDiv.innerHTML = '<p class="text-red-500 text-xs">No recent invoice found.</p>';
+                return;
+            }
+
+            const { data: items } = await _supabase
+                .from('order_items')
+                .select('*')
+                .eq('order_id', data.order_id);
+
+            const { data: menuData } = await _supabase.from('menu_items').select('id, name_en');
+            const menuMap = {};
+            if (menuData) menuData.forEach(m => { menuMap[m.id] = m.name_en; });
+
+            // LAST RECEIPT must show the same saved discount calculation as the real receipt.
+            // Never recalculate it as an undiscounted bill.
+            let subtotal = 0;
+            if (items) items.forEach(i => { subtotal += Number(i.price || 0) * Number(i.quantity || 0); });
+
+            let extra = {};
+            try { extra = JSON.parse(localStorage.getItem('invoice_extra_' + data.order_id) || '{}'); } catch (e) {}
+
+            const discountPercent = Number(data.discount_percent ?? extra.discount_percent ?? 0) || 0;
+            const savedDiscountAmount = Number(data.discount_amount ?? extra.discount_amount ?? 0) || 0;
+            const percentDiscount = subtotal * Math.min(Math.max(discountPercent, 0), 100) / 100;
+            const discount = Math.min(subtotal, Math.max(0, savedDiscountAmount) + percentDiscount);
+            const taxable = Math.max(0, subtotal - discount);
+            const sst = roundMoney(taxable * 0.06);
+            const calculatedTotal = taxable + sst;
+            const savedTotal = Number(data.total_amount);
+            const finalTotal = Number.isFinite(savedTotal) ? savedTotal : roundToNearest5Sen(calculatedTotal);
+            const roundingDiff = getRoundingDifference(calculatedTotal, finalTotal);
+
+            const sstFormatted = sst.toFixed(2);
+            const roundingFormatted = `${roundingDiff >= 0 ? '+' : ''}RM${roundingDiff.toFixed(2)}`;
+            const finalTotalFormatted = finalTotal.toFixed(2);
+
+            let itemsHtml = '<div style="border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; padding: 6px 0; margin: 6px 0;" class="space-y-1">';
+            if (items && items.length > 0) {
+                items.forEach(item => {
+                    const itemName = menuMap[item.menu_item_id] || 'Unknown Item';
+                    itemsHtml += `
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>${itemName} (x${item.quantity})</span>
+                            <span>RM${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                itemsHtml += '<div>No item details available.</div>';
+            }
+            itemsHtml += '</div>';
+
+            const sessionData = JSON.parse(localStorage.getItem('cashier_session') || '{}');
+            const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
+            const discountLabel = discountPercent > 0
+                ? `Discount (${discountPercent.toFixed(2)}%)`
+                : 'Discount';
+
+            contentDiv.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;gap:7px;border-bottom:2px dashed #333;padding-bottom:8px;margin-bottom:8px;">
+                    <img src="images/logo.png" alt="Hameeds Bistro Logo" style="width:28px;height:28px;object-fit:contain;image-rendering:-webkit-optimize-contrast;">
+                    <div style="text-align:left;">
+                        <h2 style="font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;line-height:1;margin:0;color:#111;">Hameeds Bistro</h2>
+                        <div style="font-size:10px;font-weight:800;letter-spacing:.6px;margin-top:3px;">LAST PAID RECEIPT</div>
+                    </div>
+                </div>
+                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 2px;">Invoice #${data.id} (Order #${data.order_id}) | Table: ${data.table_id || 'N/A'}</div>
+                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 2px;">Date: ${new Date(data.created_at).toLocaleString()}</div>
+                <div style="text-align: center; font-size: 10px; color: #555; margin-bottom: 6px;">Cashier: ${cashierLabel} | Method: ${data.payment_method || 'N/A'}</div>
+                ${itemsHtml}
+                <div style="font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between; color: #444;"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
+                    ${discount > 0 ? `<div style="display: flex; justify-content: space-between; color: #444;"><span>${discountLabel}:</span><span>-RM${discount.toFixed(2)}</span></div>` : ''}
+                    <div style="display: flex; justify-content: space-between; color: #444;"><span>SST (6%):</span><span>RM${sstFormatted}</span></div>
+                    <div style="display: flex; justify-content: space-between; color: #444;"><span>Rounding:</span><span>${roundingFormatted}</span></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; color: #111; padding-top: 4px; border-top: 1px solid #ddd;">
+                        <span>Total Amount:</span>
+                        <span style="color: #059669;">RM${finalTotalFormatted}</span>
+                    </div>
+                </div>
+                <div style="text-align: center; color: #059669; font-weight: bold; margin-top: 8px; font-size: 11px;">STATUS: PAID</div>
+            `;
+        }
+
+        function closeLastReceiptModal() {
+            document.getElementById('lastReceiptModal').classList.add('hidden');
+        }
+
+        function promptDeclineOrder(orderId) {
+            // Decline immediately acknowledges/silences the incoming-order alert.
+            stopNewOrderAlert();
+            orderToDeclineId = orderId;
+            document.getElementById('declineReasonInput').value = '';
+            document.getElementById('declineModal').classList.remove('hidden');
+        }
+
+        function promptDeclineOrderFromModal() {
+            if (!currentActiveOrderId) return;
+            closeOrderModal();
+            promptDeclineOrder(currentActiveOrderId);
+        }
+
+        function closeDeclineModal() {
+            document.getElementById('declineModal').classList.add('hidden');
+            orderToDeclineId = null;
+        }
+
+        async function submitDeclineOrder() {
+            const reason = document.getElementById('declineReasonInput').value.trim();
+            if(!reason) {
+                alert('Please type a reason for declining.');
+                return;
+            }
+
+            const { error } = await _supabase
+                .from('orders')
+                .update({ status: 'Cancelled', decline_reason: reason })
+                .eq('id', orderToDeclineId);
+
+            if(!error) {
+                alert('Order declined successfully.');
+                closeDeclineModal();
+                fetchIncomingOrders();
+                loadPendingOrders();
+            } else {
+                alert('Failed to decline order.');
+            }
+        }
+
+        // ==================== NEW ORDER TYPE / TABLE SELECTION ====================
+        let newOrderType = 'Dine In';
+        let newOrderTableId = '';
+
+        async function openNewOrderPosModal() {
+            posTargetOrderId = null;
+            posCart = [];
+            posEnteredAmountString = "";
+            posDiscountPercent = 0;
+            posDiscountAmount = 0;
+            newOrderType = 'Dine In';
+            newOrderTableId = '';
+
+            document.getElementById('newOrderTableSelect').value = '';
+            document.getElementById('newOrderTakeAwayNo').innerText = 'TAKEAWAY/1';
+            selectNewOrderType('Dine In');
+            document.getElementById('newOrderSetupModal').classList.remove('hidden');
+
+            await refreshNextTakeAwayNumber();
+        }
+
+        function closeNewOrderSetupModal() {
+            document.getElementById('newOrderSetupModal').classList.add('hidden');
+        }
+
+        function selectNewOrderType(type) {
+            newOrderType = type;
+            const dineBtn = document.getElementById('orderTypeDineInBtn');
+            const takeBtn = document.getElementById('orderTypeTakeAwayBtn');
+            const dineSection = document.getElementById('dineInTableSelection');
+            const takeSection = document.getElementById('takeAwaySelection');
+
+            if (type === 'Dine In') {
+                dineBtn.className = 'border-2 border-emerald-500 bg-emerald-50 text-emerald-700 py-4 rounded-xl font-bold hover:bg-emerald-100 transition';
+                takeBtn.className = 'border-2 border-gray-200 bg-gray-50 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-100 transition';
+                dineSection.classList.remove('hidden');
+                takeSection.classList.add('hidden');
+            } else {
+                takeBtn.className = 'border-2 border-amber-500 bg-amber-50 text-amber-700 py-4 rounded-xl font-bold hover:bg-amber-100 transition';
+                dineBtn.className = 'border-2 border-gray-200 bg-gray-50 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-100 transition';
+                dineSection.classList.add('hidden');
+                takeSection.classList.remove('hidden');
+                refreshNextTakeAwayNumber();
+            }
+        }
+
+        async function refreshNextTakeAwayNumber() {
+            const { data, error } = await _supabase.from('orders').select('table_id').ilike('table_id', 'TAKEAWAY/%');
+            let nextNo = 1;
+
+            if (!error && data) {
+                const usedNumbers = data.map(row => {
+                    const match = String(row.table_id || '').match(/^TAKEAWAY\/(\d+)$/i);
+                    return match ? Number(match[1]) : 0;
+                }).filter(n => Number.isFinite(n) && n > 0);
+
+                if (usedNumbers.length > 0) nextNo = Math.max(...usedNumbers) + 1;
+            }
+
+            const takeawayId = `TAKEAWAY/${nextNo}`;
+            document.getElementById('newOrderTakeAwayNo').innerText = takeawayId;
+            return takeawayId;
+        }
+
+        async function continueNewOrderToPos() {
+            let selectedTable = '';
+
+            if (newOrderType === 'Dine In') {
+                selectedTable = document.getElementById('newOrderTableSelect').value;
+                if (!selectedTable) {
+                    alert('Please select a table number first.');
+                    return;
+                }
+            } else {
+                selectedTable = await refreshNextTakeAwayNumber();
+            }
+
+            newOrderTableId = selectedTable;
+            closeNewOrderSetupModal();
+
+            posTargetOrderId = null;
+            posCart = [];
+            posEnteredAmountString = "";
+            posDiscountPercent = 0;
+            posDiscountAmount = 0;
+            posOrderMode = newOrderType === 'Take Away' ? 'Take Away' : 'Dine In';
+
+            document.getElementById('posDisplayTable').innerText = selectedTable;
+            document.getElementById('posDisplayCard').innerText = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('posDisplayPax').innerText = "5";
+            document.getElementById('posOrderNoteInput').value = "";
+
+            const typeBadge = document.querySelector('#posRightPaneContainer .bg-emerald-600, #posRightPaneContainer .bg-amber-600');
+            if (typeBadge) {
+                typeBadge.innerHTML = newOrderType === 'Dine In' ? '<span>🍽️</span> DINE IN' : '<span>🥡</span> TAKE AWAY';
+                typeBadge.className = newOrderType === 'Dine In'
+                    ? 'bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2'
+                    : 'bg-amber-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2';
+            }
+
+            await fetchPosMenuData();
+            renderPosCart();
+            renderPosRightPaneMenu();
+            document.getElementById('posSystemModal').classList.remove('hidden');
+        }
+
+        async function openPosSystemModalWithOrder(orderId, totalAmount) {
+            posTargetOrderId = orderId;
+            posEnteredAmountString = "";
+
+            const { data: order } = await _supabase
+                .from('orders')
+                .select('*')
+                .eq('id', orderId)
+                .single();
+
+            const { data: items } = await _supabase
+                .from('order_items')
+                .select('*')
+                .eq('order_id', orderId);
+
+            document.getElementById('posDisplayTable').innerText =
+                order ? (order.table_id || 'A60 / INDOOR') : 'A60 / INDOOR';
+            document.getElementById('posDisplayCard').innerText = "1003";
+            document.getElementById('posDisplayPax').innerText = "5";
+
+            // Menu data MUST be loaded before resolving item names.
+            await fetchPosMenuData();
+
+            posCart = [];
+            posOrderMode = (order && String(order.table_id || '').toUpperCase().startsWith('TAKEAWAY')) ? 'Take Away' : 'Dine In';
+            let savedModifierFallback = [];
+            try { savedModifierFallback = JSON.parse(localStorage.getItem('order_modifiers_'+orderId) || '[]'); } catch(e) {}
+            if (items && items.length > 0) {
+                items.forEach((i, index) => {
+                    const menuItem = posMenuItems.find(m => String(m.id) === String(i.menu_item_id));
+                    const itemName = menuItem ? menuItem.name_en : 'Unknown Item';
+
+                    const savedPrice = Number(i.price || (menuItem ? menuItem.price : 0));
+                    const takeawayPrice = getTakeawayPrice(menuItem);
+                    const inferredMode = (takeawayPrice !== null && Math.abs(savedPrice - takeawayPrice) < 0.0001 && Math.abs(savedPrice - Number(menuItem?.price || 0)) > 0.0001) ? 'Take Away' : 'Dine In';
+                    posCart.push({
+                        menu_item_id: i.menu_item_id,
+                        name_en: itemName,
+                        price: savedPrice,
+                        quantity: Number(i.quantity || 0),
+                        order_mode: inferredMode,
+                        modifiers: Array.isArray(i.modifiers) ? i.modifiers : (Array.isArray(savedModifierFallback[index]) ? savedModifierFallback[index] : [])
+                    });
+                });
+            }
+
+            renderPosCart();
+            openPosPaymentInterface();
+            document.getElementById('posSystemModal').classList.remove('hidden');
+        }
+
+        function closePosModal() {
+            document.getElementById('posSystemModal').classList.add('hidden');
+        }
+
+        async function fetchPosMenuData() {
+            const { data: menu } = await _supabase.from('menu_items').select('*');
+            if (menu) {
+                posMenuItems = menu;
+                const cats = [...new Set(menu.map(m => m.category || 'MINUMAN'))];
+                posCategories = cats.length > 0 ? cats : ['MINUMAN', 'FRESH JUICE', 'NASI KANDAR', 'ROTI', 'WESTERN', 'MAMAK GORENG'];
+                posSelectedCategory = posCategories[0];
+            } else {
+                posCategories = ['MINUMAN', 'FRESH JUICE', 'NASI KANDAR', 'ROTI', 'WESTERN'];
+                posSelectedCategory = 'MINUMAN';
+                posMenuItems = [
+                    { id: 1, name_en: 'Air Panas', price: 0.50, category: 'MINUMAN' },
+                    { id: 2, name_en: 'Teh Tarik', price: 2.30, category: 'MINUMAN' },
+                    { id: 3, name_en: 'Roti Canai', price: 1.70, category: 'ROTI' },
+                    { id: 4, name_en: 'Tosai Biasa', price: 2.50, category: 'ROTI' }
+                ];
+            }
+        }
+
+        function renderPosCategories() {
+            const bar = document.getElementById('posCategoriesBar');
+            if (!bar) return;
+            bar.innerHTML = `
+                <button type="button" onclick="togglePosSearch()" class="pos-category-btn py-2 px-2 rounded text-xs font-bold uppercase transition bg-blue-700 hover:bg-blue-800 text-white">🔍 SEARCH</button>
+                ${posCategories.map(cat => `
+                    <button onclick="selectPosCategory('${String(cat).replace(/'/g, "\\'")}')" class="pos-category-btn py-2 px-2 rounded text-xs font-bold uppercase transition ${posSelectedCategory === cat && !posSearchTerm ? 'bg-emerald-600 text-white' : 'bg-[#444] hover:bg-[#555] text-gray-200'}">
+                        ${cat}
+                    </button>
+                `).join('')}
+            `;
+        }
+
+        function togglePosSearch() {
+            let input = document.getElementById('posSearchInput');
+            if (input) { input.focus(); return; }
+            const bar = document.getElementById('posCategoriesBar');
+            if (!bar) return;
+            input = document.createElement('input');
+            input.id = 'posSearchInput'; input.type = 'search'; input.placeholder = 'Search item name...';
+            input.className = 'w-full bg-white text-black rounded-lg px-3 py-2 text-xs font-semibold';
+            input.value = posSearchTerm;
+            input.oninput = () => { posSearchTerm = input.value.trim().toLowerCase(); renderPosRightPaneMenu(); };
+            bar.parentNode.insertBefore(input, bar.nextSibling);
+            input.focus();
+        }
+
+        function selectPosCategory(cat) {
+            posSelectedCategory = cat;
+            posSearchTerm = '';
+            const input = document.getElementById('posSearchInput');
+            if (input) input.remove();
+            renderPosRightPaneMenu();
+        }
+
+        function getTakeawayPrice(menuItem) {
+            if (!menuItem) return null;
+            const candidates = [menuItem.takeaway_price, menuItem.take_away_price, menuItem.takeawayPrice, menuItem.takeAwayPrice, menuItem.price_takeaway];
+            for (const value of candidates) {
+                if (value !== undefined && value !== null && value !== '' && Number.isFinite(Number(value))) return Number(value);
+            }
+            return null;
+        }
+
+        function getMenuDisplayPrice(menuItem, mode = posOrderMode) {
+            if (mode === 'Take Away') {
+                const tp = getTakeawayPrice(menuItem);
+                if (tp !== null) return tp;
+            }
+            return Number(menuItem?.price || 0);
+        }
+
+        function updatePosOrderModeToggle() {
+            const btn = document.getElementById('posOrderModeToggle');
+            if (!btn) return;
+            const takeaway = posOrderMode === 'Take Away';
+            btn.className = takeaway
+                ? 'bg-amber-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 shadow hover:opacity-90'
+                : 'bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 shadow hover:opacity-90';
+            btn.innerHTML = takeaway ? '<span>🥡</span> TAKE AWAY' : '<span>🍽️</span> DINE IN';
+        }
+
+        function togglePosOrderMode() {
+            posOrderMode = posOrderMode === 'Dine In' ? 'Take Away' : 'Dine In';
+            updatePosOrderModeToggle();
+            renderPosRightPaneMenu();
+        }
+
+        function renderPosRightPaneMenu() {
+            const rightPane = document.getElementById('posRightPaneContainer');
+            if (!rightPane) return;
+            rightPane.innerHTML = `
+                <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0 gap-2">
+                    <button type="button" onclick="togglePosOrderMode()" id="posOrderModeToggle" class="bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 shadow hover:opacity-90"><span>🍽️</span> DINE IN</button>
+                    <div class="flex gap-2 items-center">
+                        <div class="relative">
+                            <input id="posMenuSearchInput" type="text" autocomplete="off" placeholder="Search item..." class="w-48 bg-white text-gray-800 border border-gray-300 rounded-lg px-3 py-1.5 text-xs outline-none" oninput="filterPosMenuSearch(this.value)" onclick="event.stopPropagation()">
+                            <button type="button" onclick="document.getElementById('posMenuSearchInput').focus()" class="absolute right-1 top-1/2 -translate-y-1/2 bg-emerald-600 text-white rounded px-2 py-1 text-[10px] font-bold">🔍</button>
+                        </div>
+                        <button onclick="renderPosRightPaneMenu()" class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold">📝 MENU</button>
+                        <button onclick="openPosPaymentInterface()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-semibold">💳 PAYMENT SCREEN</button>
+                    </div>
+                </div>
+                <div id="posCategoriesBar" class="pos-categories-bar grid grid-cols-5 gap-1.5 p-2 bg-[#333] flex-shrink-0"></div>
+                <div id="posMenuItemsGrid" class="pos-menu-grid flex-1 p-2 overflow-y-auto grid grid-cols-5 gap-2 content-start"></div>`;
+            renderPosCategories(); updatePosOrderModeToggle();
+            const input=document.getElementById('posMenuSearchInput'); if(input) input.value=posSearchTerm||'';
+            renderPosMenuGrid(posSearchTerm||'');
+        }
+        function filterPosMenuSearch(value){ posSearchTerm=String(value||'').trim().toLowerCase(); renderPosMenuGrid(posSearchTerm); }
+        function renderPosMenuGrid(query=''){
+            const grid=document.getElementById('posMenuItemsGrid'); if(!grid)return;
+            const items=query?posMenuItems.filter(m=>String(m.name_en||'').toLowerCase().includes(query)||String(m.category||'').toLowerCase().includes(query)):posMenuItems.filter(m=>(m.category||'MINUMAN')===posSelectedCategory);
+            if(!items.length){grid.innerHTML='<div class="col-span-5 text-center text-gray-400 py-10 text-xs">No items found.</div>';return;}
+            const colors=['bg-[#C73E3A]','bg-[#2B6CB0]','bg-[#2F855A]','bg-[#7B341E]','bg-[#2C5282]','bg-[#1A202C]'];
+            grid.innerHTML=items.map((item,i)=>{const n=String(item.name_en||'').replace(/'/g,"\\'");const price=Number(getMenuDisplayPrice(item)||0);return `<button onclick="addPosCartItem(${item.id}, '${n}', ${price})" class="${colors[i%colors.length]} hover:opacity-90 text-white p-3 rounded-lg shadow flex flex-col justify-between items-center h-20 text-center transition border border-black/20"><span class="font-bold text-xs leading-tight line-clamp-2">${item.name_en||''}</span><span class="text-xs font-semibold bg-black/20 px-2 py-0.5 rounded mt-1">RM${price.toFixed(2)}</span>${posOrderMode==='Take Away'?'<span class="text-[8px] font-black bg-amber-500 text-black px-1.5 rounded mt-0.5">TAKEAWAY</span>':''}</button>`}).join('');
+        }
+
+        function addPosCartItem(id, name, price) {
+            const mode = posOrderMode === 'Take Away' ? 'Take Away' : 'Dine In';
+            const existing = posCart.find(i => i.menu_item_id === id && (i.order_mode || 'Dine In') === mode);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                posCart.push({ menu_item_id: id, name_en: name, price: Number(price || 0), quantity: 1, order_mode: mode });
+            }
+            renderPosCart();
+        }
+
+        function updatePosItemQty(index, delta) {
+            posCart[index].quantity += delta;
+            if (posCart[index].quantity <= 0) {
+                posCart.splice(index, 1);
+            }
+            renderPosCart();
+        }
+
+        function getModifierAdjustment(item) {
+            return (Array.isArray(item?.modifiers) ? item.modifiers : []).reduce((sum, m) => sum + Number(m?.price || 0), 0);
+        }
+        function setPosItemMode(index, mode) {
+            const item = posCart[index];
+            if (!item) return;
+            const menuItem = posMenuItems.find(m => String(m.id) === String(item.menu_item_id));
+            if (!menuItem) return;
+            const normalized = mode === 'Take Away' ? 'Take Away' : 'Dine In';
+            const base = normalized === 'Take Away' ? getTakeawayPrice(menuItem) : Number(menuItem.price || 0);
+            item.order_mode = normalized;
+            item.price = Math.max(0, Number(base === null ? menuItem.price : base) + getModifierAdjustment(item));
+            renderPosCart();
+            if (posTargetOrderId) saveCurrentPosCartToDatabase(posTargetOrderId);
+        }
+        function togglePosItemMode(index) {
+            const item = posCart[index];
+            if (item) setPosItemMode(index, item.order_mode === 'Take Away' ? 'Dine In' : 'Take Away');
+        }
+        function deletePosCartItem(index) {
+            if (!posCart[index]) return;
+            const name = posCart[index].name_en || 'this item';
+            if (!confirm(`Delete ${name} from this order?`)) return;
+            posCart.splice(index, 1);
+            renderPosCart();
+            if (posTargetOrderId) saveCurrentPosCartToDatabase(posTargetOrderId);
+        }
+
+        function renderPosCart() {
+            const list = document.getElementById('posCartItemsList');
+            if (posCart.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-400 py-6 text-xs">No items selected yet. Tap menu items to add.</div>';
+            } else {
+                list.innerHTML = posCart.map((item, idx) => {
+                    const mods = Array.isArray(item.modifiers) ? item.modifiers : [];
+                    return `
+                    <div class="py-1.5 px-1 hover:bg-gray-50 text-xs cursor-pointer" onclick="openModifyItemModal(${idx})">
+                        <div class="grid grid-cols-12 items-center">
+                            <div class="col-span-7 font-medium text-gray-800 pr-1">${item.name_en || 'Unknown Item'}<div class="text-[9px] font-black ${item.order_mode === 'Take Away' ? 'text-amber-600' : 'text-emerald-600'} uppercase mt-0.5">${item.order_mode === 'Take Away' ? 'TAKEAWAY' : 'DINE IN'}</div></div>
+                            <div class="col-span-2 flex items-center justify-center space-x-1" onclick="event.stopPropagation()">
+                                <button onclick="updatePosItemQty(${idx}, -1)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 w-5 h-5 rounded font-bold">-</button>
+                                <span class="font-bold px-1">${item.quantity}</span>
+                                <button onclick="updatePosItemQty(${idx}, 1)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 w-5 h-5 rounded font-bold">+</button>
+                            </div>
+                            <div class="col-span-3 text-right font-bold text-emerald-700">RM${(Number(item.price)*Number(item.quantity)).toFixed(2)}</div>
+                        </div>
+                        ${mods.length ? `<div class="ml-2 mt-0.5 text-[10px] text-blue-600 leading-5">${mods.map((m,mi) => `<div class="flex items-center justify-between gap-2"><span>↳ ${m.text}${Number(m.price||0) ? ` (${Number(m.price)>0?'+':''}RM${Number(m.price).toFixed(2)})` : ''}</span><button type="button" onclick="event.stopPropagation(); deleteItemModifier(${idx},${mi})" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded" title="Delete modifier">×</button></div>`).join('')}</div>` : ''}
+                    </div>`;
+                }).join('');
+            }
+            let totalQty=0, subtotal=0;
+            posCart.forEach(i=>{ totalQty += Number(i.quantity||0); subtotal += Number(i.price||0)*Number(i.quantity||0); });
+            // CURRENT ORDER always shows the normal bill total, BEFORE any temporary payment discount.
+            // Discounts are applied only in the payment interface; they must never change the
+            // order's displayed/current total or the amount stored on the order for recall.
+            const sst = roundMoney(subtotal*0.06);
+            const currentOrderTotal = roundToNearest5Sen(subtotal+sst);
+            document.getElementById('posSummaryItemQty').innerText=totalQty;
+            document.getElementById('posSummarySubTotal').innerText=`RM${subtotal.toFixed(2)}`;
+            document.getElementById('posSummarySst').innerText=`RM${sst.toFixed(2)}`;
+            document.getElementById('posSummaryTotalAmount').innerText=currentOrderTotal.toFixed(2);
+            refreshPosPaymentItemsPreview();
+        }
+
+        function refreshPosPaymentItemsPreview() {
+            const box = document.getElementById('posPaymentItemsPreview');
+            if (!box) return;
+            box.innerHTML = posCart.map((item, idx) => `<div class="border-b last:border-b-0 py-2 cursor-pointer" onclick="openModifyItemModal(${idx})"><div class="flex justify-between gap-2 text-xs font-bold"><span>${item.name_en || 'Unknown Item'}</span><span>RM${(Number(item.price||0)*Number(item.quantity||0)).toFixed(2)}</span></div><div class="text-[9px] font-black uppercase ${item.order_mode === 'Take Away' ? 'text-amber-600' : 'text-emerald-600'}">${item.order_mode === 'Take Away' ? 'TAKEAWAY' : 'DINE IN'} · QTY ${item.quantity}</div>${Array.isArray(item.modifiers) && item.modifiers.length ? `<div class="text-[9px] text-blue-600">${item.modifiers.map(m => '↳ '+m.text).join('<br>')}</div>` : ''}</div>`).join('');
+        }
+
+        function calculateDiscount(baseTotal) {
+            // Discount is applied to the final bill total (after 6% SST and 5-sen rounding),
+            // not to the food subtotal.
+            const pct = Math.max(0, Number(posDiscountPercent)||0);
+            const fixed = Math.max(0, Number(posDiscountAmount)||0);
+            const pctDiscount = baseTotal * Math.min(pct,100) / 100;
+            return Math.min(baseTotal, pctDiscount + fixed);
+        }
+
+        function syncDiscountInputs() {
+            const pct=document.getElementById('posDiscountPercentInput');
+            const amt=document.getElementById('posDiscountAmountInput');
+            if(pct) pct.value = posDiscountPercent || '';
+            if(amt) amt.value = posDiscountAmount || '';
+        }
+
+        function updatePosDiscounts() {
+            const pctInput = document.getElementById('posDiscountPercentInput');
+            const amtInput = document.getElementById('posDiscountAmountInput');
+            if (!pctInput || !amtInput) return;
+
+            // IMPORTANT: do NOT rebuild/render the payment screen while typing.
+            // Re-rendering destroys the input and makes values such as 0.05 impossible to type.
+            const pctText = pctInput.value.trim();
+            const amtText = amtInput.value.trim();
+
+            posDiscountPercent = pctText === '' || pctText === '.' ? 0 : Math.min(100, Math.max(0, parseFloat(pctText) || 0));
+            posDiscountAmount = amtText === '' || amtText === '.' ? 0 : Math.max(0, parseFloat(amtText) || 0);
+
+            const subtotal = posCart.reduce((sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 0), 0);
+            // Discount is applied AFTER SST and 5-sen rounding, on the gross bill total.
+            const sst = roundMoney(subtotal * 0.06);
+            const grossBeforeDiscount = roundToNearest5Sen(subtotal + sst);
+            const discount = calculateDiscount(grossBeforeDiscount);
+            const finalTotal = Math.max(0, grossBeforeDiscount - discount);
+
+            // Update the normal cart summary without replacing the inputs.
+            const subEl = document.getElementById('posSummarySubTotal');
+            const sstEl = document.getElementById('posSummarySst');
+            const totalEl = document.getElementById('posSummaryTotalAmount');
+            if (subEl) subEl.innerText = `RM${subtotal.toFixed(2)}`;
+            if (sstEl) sstEl.innerText = `RM${sst.toFixed(2)}`;
+            if (totalEl) totalEl.innerText = finalTotal.toFixed(2);
+
+            // Update payment screen live, keeping the current keyboard focus/value.
+            const paymentSummary = document.getElementById('posPaymentSummaryLine');
+            if (paymentSummary) {
+                paymentSummary.innerText = `SUBTOTAL RM${subtotal.toFixed(2)} | DISCOUNT -RM${discount.toFixed(2)} | SST RM${sst.toFixed(2)} | AMOUNT DUE RM${finalTotal.toFixed(2)}`;
+            }
+            updateExactCashButton(finalTotal);
+        }
+
+        function updateExactCashButton() {
+            const btn = document.getElementById('posExactCashButton');
+            if (!btn) return;
+            let subtotal = 0;
+            posCart.forEach(i => { subtotal += Number(i.price || 0) * Number(i.quantity || 0); });
+            const pctInput = document.getElementById('posDiscountPercentInput');
+            const amtInput = document.getElementById('posDiscountAmountInput');
+            const pct = pctInput ? (parseFloat(pctInput.value) || 0) : Number(posDiscountPercent || 0);
+            const fixed = amtInput ? (parseFloat(amtInput.value) || 0) : Number(posDiscountAmount || 0);
+            const sstForGross = roundMoney(subtotal * 0.06);
+            const grossBeforeDiscount = roundToNearest5Sen(roundMoney(subtotal + sstForGross));
+            const discount = Math.min(grossBeforeDiscount, grossBeforeDiscount * Math.min(Math.max(pct, 0), 100) / 100 + Math.max(fixed, 0));
+            const value = Math.max(0, grossBeforeDiscount - discount);
+            btn.dataset.amountDue = value.toFixed(2);
+            btn.innerHTML = `RM ${value.toFixed(2)}<br><span class="text-[10px] font-normal">Cash / Exact</span>`;
+        }
+
+        function handleDiscountInput() {
+            updatePosDiscounts();
+        }
+
+        function openModifyItemModal(idx) {
+            if(!posCart[idx]) return;
+            posActiveModifierIndex=idx;
+            const item=posCart[idx];
+            document.getElementById('modifyItemName').innerText=`${item.name_en || 'Unknown Item'} | ${item.order_mode === 'Take Away' ? 'TAKEAWAY' : 'DINE IN'} | Current price RM${Number(item.price).toFixed(2)}`;
+            document.getElementById('modifierTextInput').value='';
+            document.getElementById('modifierPriceInput').value='';
+            const options=[
+                'No Onion','No Spicy','Less Spicy','Extra Spicy','No Salt','Less Salt','Extra Sauce','No Sauce','Add Cheese','Add Egg'
+            ];
+            document.getElementById('modifierOptions').innerHTML=options.map((x,i)=>`<button type="button" onclick="selectQuickModifier(${i})" id="quickMod${i}" class="w-full text-left border rounded-lg px-3 py-2 text-xs hover:bg-blue-50">${x}</button>`).join('');
+            document.getElementById('modifyItemModal').classList.remove('hidden');
+        }
+        let selectedQuickModifier='';
+        function selectQuickModifier(i){
+            const el=document.getElementById('quickMod'+i);
+            selectedQuickModifier=el ? el.innerText : '';
+            document.querySelectorAll('#modifierOptions button').forEach(b=>b.classList.remove('bg-blue-100','border-blue-500'));
+            if(el) el.classList.add('bg-blue-100','border-blue-500');
+        }
+        function closeModifyItemModal(){ document.getElementById('modifyItemModal').classList.add('hidden'); posActiveModifierIndex=null; selectedQuickModifier=''; }
+
+        async function deleteItemModifier(itemIndex, modifierIndex) {
+            if (!posCart[itemIndex] || !Array.isArray(posCart[itemIndex].modifiers) || !posCart[itemIndex].modifiers[modifierIndex]) return;
+            const modifier = posCart[itemIndex].modifiers[modifierIndex];
+            const modifierText = String(modifier.text || 'Modifier');
+            if (!confirm(`Delete modifier "${modifierText}"?`)) return;
+
+            // The modifier price was added to the item's base price when saved,
+            // so remove the same adjustment when the modifier is deleted.
+            const modifierPrice = Number(modifier.price || 0);
+            if (modifierPrice !== 0) {
+                posCart[itemIndex].price = Math.max(0, Number(posCart[itemIndex].price || 0) - modifierPrice);
+            }
+
+            posCart[itemIndex].modifiers.splice(modifierIndex, 1);
+            if (posCart[itemIndex].modifiers.length === 0) delete posCart[itemIndex].modifiers;
+
+            renderPosCart();
+
+            // Keep held/existing orders synchronized with the database.
+            if (posTargetOrderId) {
+                const saved = await saveCurrentPosCartToDatabase(posTargetOrderId);
+                if (!saved) alert('Modifier deleted locally, but could not be saved to the database.');
+            }
+        }
+        async function saveItemModification(){
+            const idx=posActiveModifierIndex; if(idx===null || !posCart[idx]) return;
+            const text=(document.getElementById('modifierTextInput').value||'').trim() || selectedQuickModifier;
+            const priceVal=Number(document.getElementById('modifierPriceInput').value||0);
+
+            // Modifier price is an adjustment: +2 increases, -2 decreases.
+            if(text){
+                if(!Array.isArray(posCart[idx].modifiers)) posCart[idx].modifiers=[];
+                posCart[idx].modifiers.push({text,price:priceVal});
+            }
+            if(priceVal !== 0){
+                posCart[idx].price=Math.max(0, Number(posCart[idx].price||0)+priceVal);
+            }
+
+            const newPrice=prompt('Change item base price? Enter the NEW price, or Cancel to keep current.', Number(posCart[idx].price).toFixed(2));
+            if(newPrice!==null && newPrice.trim()!=='' && Number.isFinite(Number(newPrice)) && Number(newPrice)>=0){
+                posCart[idx].price=Number(newPrice);
+            }
+
+            renderPosCart();
+            closeModifyItemModal();
+
+            // If this is an existing held order, persist the modification immediately.
+            if(posTargetOrderId){
+                const saved=await saveCurrentPosCartToDatabase(posTargetOrderId);
+                if(!saved) alert('Modification could not be saved to the database.');
+            }
+        }
+
+        async function saveCurrentPosCartToDatabase(orderId){
+            if(!orderId) return false;
+            let subtotal=0;
+            posCart.forEach(i=>subtotal += Number(i.price||0)*Number(i.quantity||0));
+            const discount=calculateDiscount(subtotal);
+            const taxable=Math.max(0,subtotal-discount);
+            const sst=roundMoney(taxable*0.06);
+            const total=roundToNearest5Sen(taxable+sst);
+
+            const session = JSON.parse(localStorage.getItem('cashier_session') || '{}');
+            const actor = session.full_name || session.email || 'Cashier';
+
+            const {error:delErr}=await _supabase.from('order_items').delete().eq('order_id',orderId);
+            if(delErr){ console.error(delErr); return false; }
+
+            const rows=posCart.filter(i=>Number(i.quantity||0)>0).map(i=>({
+                order_id:orderId,
+                menu_item_id:Number(i.menu_item_id),
+                price:Number(i.price||0),
+                quantity:Number(i.quantity||0),
+                modifiers:Array.isArray(i.modifiers)?i.modifiers:null,
+                added_by:actor
+            }));
+
+            let {error:itemErr}=await _supabase.from('order_items').insert(rows);
+            if(itemErr){
+                const fallback=rows.map(({modifiers,added_by,...rest})=>rest);
+                const retry=await _supabase.from('order_items').insert(fallback);
+                itemErr=retry.error;
+                if(!itemErr) localStorage.setItem('order_modifiers_'+orderId,JSON.stringify(posCart.map(i=>i.modifiers||[])));
+            }
+            if(itemErr){ console.error(itemErr); return false; }
+
+            const {error:orderErr}=await _supabase.from('orders').update({
+                total_amount:total,
+                status:'accepted',
+                payment_status:'Pending',
+                ordered_by:actor,
+                source:'cashier'
+            }).eq('id',orderId);
+
+            if(orderErr){
+                const retry=await _supabase.from('orders').update({
+                    total_amount:total,
+                    status:'accepted',
+                    payment_status:'Pending'
+                }).eq('id',orderId);
+                if(retry.error){ console.error(retry.error); return false; }
+            }
+            return true;
+        }
+
+        async function openPosPaymentInterface() {
+            if (posCart.length === 0 && !posTargetOrderId) { alert('Please add at least one item to cart before payment.'); return; }
+
+            // PAYMENT BUTTON = HOLD + OPEN PAYMENT PAGE.
+            // Save the current cart first. No invoice and no Paid status are created here.
+            let paymentHoldId = posTargetOrderId;
+            if (!paymentHoldId) {
+                const tableId = document.getElementById('posDisplayTable').innerText || 'N/A';
+                const note = document.getElementById('posOrderNoteInput').value || '';
+                let subtotalForSave = 0;
+                posCart.forEach(i => subtotalForSave += Number(i.price||0) * Number(i.quantity||0));
+                const sstForSave = roundMoney(subtotalForSave * 0.06);
+                const grossForSave = roundToNearest5Sen(subtotalForSave + sstForSave);
+
+                const {data:newOrder,error:orderError} = await _supabase.from('orders').insert([{
+                    table_id: tableId,
+                    status: 'accepted',
+                    payment_status: 'Pending',
+                    total_amount: grossForSave,
+                    decline_reason: note
+                }]).select().single();
+
+                if(orderError || !newOrder){
+                    alert('Could not save the order before opening Payment: ' + (orderError ? orderError.message : 'Unknown error'));
+                    return;
+                }
+                paymentHoldId = newOrder.id;
+                posTargetOrderId = paymentHoldId;
+
+                const session = JSON.parse(localStorage.getItem('cashier_session') || '{}');
+                const cashierLabel = session.full_name || session.email || 'Cashier';
+                await _supabase.from('orders').update({ordered_by: cashierLabel, source: 'cashier'}).eq('id', paymentHoldId);
+            }
+
+            const saved = await saveCurrentPosCartToDatabase(paymentHoldId);
+            if (!saved) {
+                alert('The order could not be saved. Payment screen was not opened.');
+                return;
+            }
+
+            let subtotal=0; posCart.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));
+            const sstForGross=roundMoney(subtotal*0.06);
+            const grossBeforeDiscount=roundToNearest5Sen(roundMoney(subtotal+sstForGross));
+            const discount=calculateDiscount(grossBeforeDiscount);
+            const sst=roundMoney(subtotal*0.06);
+            const finalTotal=Math.max(0, grossBeforeDiscount-discount);
+            const rightPane=document.getElementById('posRightPaneContainer');
+            rightPane.innerHTML=`
+                <span id="posPaymentScreenMarker" class="hidden"></span>
+                <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
+                    <div class="flex items-center gap-4 text-xs text-gray-300">
+                        <label>DISCOUNT % <input id="posDiscountPercentInput" type="text" inputmode="decimal" value="${posDiscountPercent||''}" oninput="handleDiscountInput(); updateExactCashButton()" onkeyup="updateExactCashButton()" class="w-20 ml-1 px-2 py-1 rounded text-black font-bold" placeholder="0"></label>
+                        <label>DISC. AMOUNT <input id="posDiscountAmountInput" type="text" inputmode="decimal" value="${posDiscountAmount||''}" oninput="handleDiscountInput(); updateExactCashButton()" onkeyup="updateExactCashButton()" class="w-24 ml-1 px-2 py-1 rounded text-black font-bold" placeholder="0.00"></label>
+                    </div>
+                    <div class="flex gap-2"><button onclick="renderPosRightPaneMenu()" class="bg-[#3b3b3b] px-3 py-1.5 rounded text-xs font-semibold text-white">← Back to Menu</button><button onclick="closePosModal()" class="bg-red-600 px-3 py-1.5 rounded font-bold text-sm">X</button></div>
+                </div>
+                <div class="flex-1 p-4 bg-[#2b2b2b] flex gap-4 overflow-hidden">
+                    <div class="flex-1 flex flex-col space-y-3">
+                        <div id="posPaymentSummaryLine" class="text-sm font-extrabold text-yellow-400">SUBTOTAL RM${subtotal.toFixed(2)} | DISCOUNT -RM${discount.toFixed(2)} | SST RM${sst.toFixed(2)} | AMOUNT DUE RM${finalTotal.toFixed(2)}</div>
+                        <div id="posPaymentItemsPreview" class="bg-white text-black rounded-xl border border-gray-500 p-2 max-h-52 overflow-y-auto">
+                            ${posCart.map((item, idx) => `<div class="border-b last:border-b-0 py-2 cursor-pointer" onclick="openModifyItemModal(${idx})"><div class="flex justify-between gap-2 text-xs font-bold"><span>${item.name_en || 'Unknown Item'}</span><span>RM${(Number(item.price||0)*Number(item.quantity||0)).toFixed(2)}</span></div><div class="text-[9px] font-black uppercase ${item.order_mode === 'Take Away' ? 'text-amber-600' : 'text-emerald-600'}">${item.order_mode === 'Take Away' ? 'TAKEAWAY' : 'DINE IN'} · QTY ${item.quantity}</div>${Array.isArray(item.modifiers) && item.modifiers.length ? `<div class="text-[9px] text-blue-600">${item.modifiers.map(m => '↳ '+m.text).join('<br>')}</div>` : ''}</div>`).join('')}
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 bg-[#1e1e1e] p-2 rounded-xl border border-gray-700">
+                            ${[100,50,20,10].map(v=>`<button onclick="posAddEnteredCash(${v})" class="bg-[#222] border border-emerald-600/50 p-1 rounded text-center"><span class="text-[10px] text-gray-400 block">RM${v} Note</span><div class="bg-emerald-900/40 text-emerald-300 font-bold text-xs py-1 rounded">RM${v}.00</div></button>`).join('')}
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="posExactCashButton" type="button" onclick="posPayExactCash()" class="bg-emerald-700 text-white font-bold p-3 rounded-xl text-xs">RM ${finalTotal.toFixed(2)}<br><span class="text-[10px] font-normal">Cash / Exact</span></button>
+                            <button onclick="posProcessPayment('GHL Card')" class="bg-[#D69E2E] text-black font-extrabold p-3 rounded-xl text-xs"><span>GHL CARD</span><br><span class="text-[9px]">Transaction ID required</span></button>
+                            <button onclick="posProcessPayment('DuitNow QR')" class="bg-[#C53030] text-white font-bold p-3 rounded-xl text-xs"><span>📱 DUITNOW QR</span><br><span class="text-[9px]">Transaction ID required</span></button>
+                        </div>
+                    </div>
+                    <div class="w-[320px] bg-[#1a1a1a] p-3 rounded-xl border border-gray-700 flex flex-col justify-between">
+                        <div><div class="text-xs text-gray-400 mb-1 font-semibold">ENTER CASH AMOUNT</div><div id="posEnteredAmountDisplay" class="bg-white text-black font-extrabold text-xl p-3 rounded-lg text-right mb-3">${posEnteredAmountString||'0.00'}</div></div>
+                        <div class="grid grid-cols-3 gap-2 flex-1">${['1','2','3','4','5','6','7','8','9'].map(x=>`<button onclick="posKeypadAppend('${x}')" class="bg-[#333] text-white font-bold text-lg py-3 rounded-lg">${x}</button>`).join('')}<button onclick="posKeypadClear()" class="bg-[#555] text-white font-bold text-sm py-3 rounded-lg">AC</button><button onclick="posKeypadAppend('0')" class="bg-[#333] text-white font-bold text-lg py-3 rounded-lg">0</button><button onclick="posKeypadAppend('.')" class="bg-[#333] text-white font-bold text-lg py-3 rounded-lg">.</button></div>
+                        <button onclick="posProcessPayment('Cash')" class="mt-3 bg-emerald-600 text-white font-extrabold py-3 rounded-xl text-base">PAY CASH</button>
+                    </div>
+                </div>`;
+            updateExactCashButton(finalTotal);
+        }
+
+
+        function posKeypadAppend(char) {
+            posEnteredAmountString += char;
+            const disp = document.getElementById('posEnteredAmountDisplay');
+            if (disp) disp.innerText = posEnteredAmountString;
+        }
+
+        function posKeypadClear() {
+            posEnteredAmountString = "";
+            const disp = document.getElementById('posEnteredAmountDisplay');
+            if (disp) disp.innerText = '0.00';
+        }
+
+        function posAddEnteredCash(val) {
+            let current = parseFloat(posEnteredAmountString) || 0;
+            current += val;
+            posEnteredAmountString = current.toFixed(2);
+            const disp = document.getElementById('posEnteredAmountDisplay');
+            if (disp) disp.innerText = posEnteredAmountString;
+        }
+
+        function posPayExactCash() {
+            updateExactCashButton();
+            const btn = document.getElementById('posExactCashButton');
+            const amount = btn ? Number(btn.dataset.amountDue || 0) : 0;
+            posEnteredAmountString = amount.toFixed(2);
+            const display = document.getElementById('posEnteredAmountDisplay');
+            if (display) display.innerText = posEnteredAmountString;
+            posProcessPayment('Cash');
+        }
+
+        async function posProcessPayment(methodName) {
+            let subtotal=0; posCart.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));
+            const sst=roundMoney(subtotal*0.06);
+            const grossBeforeDiscount=roundToNearest5Sen(subtotal+sst);
+            const discount=calculateDiscount(grossBeforeDiscount);
+            const finalTotal=Math.max(0, roundMoney(grossBeforeDiscount-discount));
+            const orderTotal=grossBeforeDiscount;
+
+            let enteredAmount=parseFloat(posEnteredAmountString);
+            if(!Number.isFinite(enteredAmount)) enteredAmount=finalTotal;
+            let transactionId='';
+            if(methodName==='GHL Card' || methodName==='DuitNow QR'){
+                transactionId=prompt(`Enter ${methodName} Transaction ID:`);
+                if(!transactionId || !transactionId.trim()){ alert('Transaction ID is required before payment can be completed.'); return; }
+                transactionId=transactionId.trim();
+            }
+
+            const enteredCents=Math.round((Number(enteredAmount)+Number.EPSILON)*100);
+            const dueCents=Math.round((Number(finalTotal)+Number.EPSILON)*100);
+            if(methodName==='Cash' && enteredCents<dueCents){
+                alert('Insufficient Amount! Entered cash is less than the total due.'); return;
+            }
+            if(methodName==='Cash') enteredAmount=enteredCents/100;
+
+            let orderIdToProcess=posTargetOrderId;
+            // Keep tableId available for both new orders and existing held orders.
+            // Previously it was declared inside the new-order block, which caused
+            // ReferenceError: tableId is not defined at the invoice-save step.
+            const tableId=document.getElementById('posDisplayTable').innerText || 'N/A';
+            if(!orderIdToProcess){
+                const note=document.getElementById('posOrderNoteInput').value || '';
+                const {data:newOrder,error:ordErr}=await _supabase.from('orders').insert([{
+                    table_id:tableId,status:'accepted',payment_status:'Pending',
+                    total_amount:orderTotal,decline_reason:note
+                }]).select().single();
+                if(ordErr||!newOrder){ alert('Failed to save order before payment: '+(ordErr?ordErr.message:'Unknown error')); return; }
+                orderIdToProcess=newOrder.id;
+                posTargetOrderId=orderIdToProcess;
+            }
+
+            // The Payment screen itself was opened only after the cart was saved/held.
+            // Re-sync the visible cart before charging.
+            const savedBeforePayment=await saveCurrentPosCartToDatabase(orderIdToProcess);
+            if(!savedBeforePayment){
+                alert('Could not save the order before payment. Payment was not completed.');
+                return;
+            }
+
+            const paymentMethod=methodName==='Cash'?'Cash':methodName;
+            const changeAmount=methodName==='Cash'?Math.max(0,enteredAmount-finalTotal):0;
+
+            // Save a minimal invoice first. Optional fields are added separately so
+            // a missing optional column cannot prevent the invoice from being created.
+            const basicInvoice={order_id:orderIdToProcess,table_id:tableId,total_amount:finalTotal,payment_method:paymentMethod};
+            const {data:existingInvoice, error:invoiceFindError}=await _supabase.from('invoices')
+                .select('id').eq('order_id',orderIdToProcess)
+                .order('created_at',{ascending:false}).limit(1).maybeSingle();
+            if(invoiceFindError){ alert('Unable to check invoice: '+invoiceFindError.message); return; }
+
+            let invoiceId=null; let invoiceError=null;
+            if(existingInvoice){
+                const r=await _supabase.from('invoices').update(basicInvoice).eq('id',existingInvoice.id);
+                invoiceError=r.error; invoiceId=existingInvoice.id;
+            }else{
+                const r=await _supabase.from('invoices').insert([basicInvoice]).select('id').single();
+                invoiceError=r.error; if(r.data) invoiceId=r.data.id;
+            }
+            if(invoiceError){
+                alert('Payment was NOT completed because the invoice could not be saved: '+invoiceError.message); return;
+            }
+
+            // Now the payment is confirmed: remove it from Current Orders and mark Paid.
+            const {error:orderUpdateError}=await _supabase.from('orders').update({
+                status:'accepted', payment_status:'Paid', total_amount:orderTotal
+            }).eq('id',orderIdToProcess);
+            if(orderUpdateError){
+                alert('Invoice saved, but order status could not be updated: '+orderUpdateError.message); return;
+            }
+
+            // Best-effort optional invoice details. Basic invoice is already safe.
+            const optionalInvoice={
+                discount_percent:posDiscountPercent, discount_amount:discount,
+                transaction_id:transactionId, cash_received:methodName==='Cash'?enteredAmount:null,
+                change_amount:changeAmount
+            };
+            if(invoiceId){
+                const optionalResult=await _supabase.from('invoices').update(optionalInvoice).eq('id',invoiceId);
+                if(optionalResult.error){
+                    localStorage.setItem('invoice_extra_'+orderIdToProcess,JSON.stringify({
+                        discount_percent:posDiscountPercent,discount_amount:discount,transaction_id:transactionId,
+                        cash_received:methodName==='Cash'?enteredAmount:null,change_amount:changeAmount,subtotal,sst,finalTotal
+                    }));
+                }
+            }
+
+            posLastPaymentSummary={orderId:orderIdToProcess,method:paymentMethod,total:finalTotal,subtotal,discount,sst,entered:enteredAmount,change:changeAmount,transactionId};
+            showPaymentResultPopup(posLastPaymentSummary);
+            closePosModal(); closePaymentModal();
+            await loadPendingOrders();
+            await fetchIncomingOrders();
+        }
+
+        function showPaymentResultPopup(s){
+            const title=s.method==='Cash'?'CASH PAYMENT COMPLETED':s.method==='DuitNow QR'?'PAID BY DUITNOW QR':'PAID BY GHL CARD';
+            document.getElementById('paymentResultContent').innerHTML=`<div class="text-2xl font-extrabold text-emerald-600 mb-3">✓ ${title}</div><div class="space-y-2 text-sm text-left"><div class="flex justify-between"><span>Total:</span><b>RM${s.total.toFixed(2)}</b></div>${s.method==='Cash'?`<div class="flex justify-between"><span>Cash Received:</span><b>RM${s.entered.toFixed(2)}</b></div><div class="flex justify-between text-emerald-700"><span>Change:</span><b>RM${s.change.toFixed(2)}</b></div>`:''}${s.transactionId?`<div class="flex justify-between"><span>Transaction ID:</span><b class="ml-3 break-all text-right">${s.transactionId}</b></div>`:''}</div>`;
+            const m=document.getElementById('paymentResultModal'); m.classList.remove('hidden'); clearTimeout(window.paymentResultTimer); window.paymentResultTimer=setTimeout(closePaymentResultModal,20000);
+        }
+        function closePaymentResultModal(){ document.getElementById('paymentResultModal').classList.add('hidden'); clearTimeout(window.paymentResultTimer); }
+
+        function openReceiptPrintWindow(){
+            // Android Chrome is unreliable with iframe.contentWindow.print().
+            // Open the print document directly from the user's button click so
+            // the browser allows the print dialog to open on mobile.
+            const w = window.open('', '_blank');
+            if (!w) {
+                alert('Please allow pop-ups for this site to print the receipt.');
+                return null;
+            }
+            w.document.open();
+            w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Hameeds Bistro Receipt</title></head><body style="font-family:Arial,sans-serif;text-align:center;padding:20px">Preparing receipt...</body></html>');
+            w.document.close();
+            return w;
+        }
+
+        function writeReceiptToPrintWindow(w, html, autoPrint=true){
+            if(!w || w.closed) return;
+            const css = `
+                /* Adaptive paper sizing: the browser/printer's selected paper size controls the page width. */
+                @page{size:auto;margin:0}
+                html,body{width:100%!important;min-width:0!important;margin:0!important;padding:0!important;background:#fff!important;color:#000!important}
+                body{font-family:Arial,Helvetica,sans-serif!important;box-sizing:border-box!important}
+                .receipt-print,.receipt-print *{font-weight:700!important}
+                .receipt-print .receipt-shop-name{font-family:'Times New Roman',Times,serif!important;font-size:19px!important;font-weight:900!important}
+                .receipt-print .receipt-total{font-size:17px!important;font-weight:900!important}
+                .receipt-print{width:100%!important;max-width:none!important;margin:0!important;padding:3mm 3mm!important;box-sizing:border-box!important;background:#fff!important;color:#000!important;font-family:Arial,Helvetica,sans-serif!important;font-size:13px!important;line-height:1.4!important;font-weight:700!important}
+                .receipt-print .receipt-header{display:flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;padding-bottom:7px!important;margin-bottom:7px!important;border-bottom:1.5px dashed #333!important}
+                .receipt-print .receipt-logo{width:28px!important;height:28px!important;object-fit:contain!important}
+                .receipt-print .receipt-shop-name{font-family:'Times New Roman',Times,serif!important;font-size:19px!important;line-height:1.05!important;font-weight:900!important;letter-spacing:.35px!important;white-space:nowrap!important}
+                .receipt-print .receipt-title{font-size:10px!important;font-weight:800!important;margin-top:3px!important;letter-spacing:.6px!important}
+                .receipt-print .receipt-meta{text-align:center!important;font-size:10.5px!important;line-height:1.5!important;margin-bottom:7px!important}
+                .receipt-print .receipt-items{border-top:1px dashed #777!important;border-bottom:1px dashed #777!important;padding:6px 0!important;margin:6px 0!important}
+                .receipt-print .receipt-row{display:flex!important;justify-content:space-between!important;align-items:flex-start!important;gap:8px!important;margin:2px 0!important;font-size:12px!important;font-weight:700!important}
+                .receipt-print .receipt-row .name{flex:1!important;min-width:0!important;overflow-wrap:anywhere!important}
+                .receipt-print .receipt-row .amount{flex:0 0 auto!important;white-space:nowrap!important;text-align:right!important}
+                .receipt-print .receipt-totals{font-size:12.5px!important;line-height:1.55!important;font-weight:700!important}
+                .receipt-print .receipt-total{font-size:19px!important;font-weight:900!important;border-top:1px solid #222!important;padding-top:4px!important;margin-top:3px!important}
+                .receipt-print .receipt-status{text-align:center!important;font-size:11px!important;font-weight:900!important;margin-top:8px!important;letter-spacing:.5px!important}
+            `;
+            w.document.open();
+            w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Hameeds Bistro Receipt</title><style>'+css+'</style></head><body>'+html+'</body></html>');
+            w.document.close();
+            const doPrint=()=>{try{w.focus();w.print();}catch(e){console.error(e);}};
+            const imgs=Array.from(w.document.images||[]);
+            if(!imgs.length){setTimeout(doPrint,350);return;}
+            let left=imgs.length, started=false;
+            const done=()=>{if(--left<=0&&!started){started=true;setTimeout(doPrint,250)}};
+            imgs.forEach(img=>{if(img.complete)done();else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true})}});
+            setTimeout(()=>{if(!started){started=true;doPrint()}},2500);
+        }
+
+        async function getReceiptDataByOrderId(orderId){
+            const {data:order,error:orderError}=await _supabase.from('orders').select('*').eq('id',orderId).maybeSingle();
+            if(orderError) throw orderError;
+            if(!order) throw new Error('Order not found.');
+            const {data:invoice}=await _supabase.from('invoices').select('*').eq('order_id',orderId).order('created_at',{ascending:false}).limit(1).maybeSingle();
+            const {data:items,error:itemError}=await _supabase.from('order_items').select('*').eq('order_id',orderId);
+            if(itemError) throw itemError;
+            const {data:menuData}=await _supabase.from('menu_items').select('id,name_en');
+            const menuMap={}; (menuData||[]).forEach(m=>menuMap[m.id]=m.name_en);
+            let savedMods=[]; try{savedMods=JSON.parse(localStorage.getItem('order_modifiers_'+orderId)||'[]')}catch(_){ }
+            const normalized=(items||[]).map((item,index)=>({...item,modifiers:Array.isArray(item.modifiers)?item.modifiers:(Array.isArray(savedMods[index])?savedMods[index]:[])}));
+            return {order,invoice,items:normalized,menuMap};
+        }
+
+        function buildPaidReceiptHtml({order,invoice,items,menuMap}){
+            const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+            let subtotal=0;
+            const itemRows=(items||[]).map(item=>{
+                const qty=Number(item.quantity||0), price=Number(item.price||0), line=price*qty; subtotal+=line;
+                const name=menuMap[item.menu_item_id]||item.name_en||'Unknown Item';
+                const mods=Array.isArray(item.modifiers)?item.modifiers:[];
+                // Modifier price is already included in item.price. Show it beside the modifier text only;
+                // do NOT print it again as a separate amount/line total.
+                const modRows=mods.map(m=>{
+                    const mp=Number(m?.price||0); const label=esc(m?.text||'Modifier');
+                    const priceText=mp!==0?` ${mp>0?'+':''}RM${mp.toFixed(2)}`:'';
+                    return `<div class="receipt-modifier" style="font-size:10.5px;margin:0 0 1px 10px;font-weight:700">↳ ${label}${priceText}</div>`;
+                }).join('');
+                return `<div class="receipt-row"><span class="name">${esc(name)} (x${qty})</span><span class="amount">RM${line.toFixed(2)}</span></div>${modRows}`;
+            }).join('');
+            let extra={}; try{extra=JSON.parse(localStorage.getItem('invoice_extra_'+order.id)||'{}')}catch(_){ }
+            const discountPercent=Number(invoice?.discount_percent??extra.discount_percent??0)||0;
+            const savedDiscount=Number(invoice?.discount_amount??extra.discount_amount??0)||0;
+            // Receipt rounding must be calculated from the ORIGINAL bill
+            // (subtotal + 6% SST), before any discount is applied.  Discount is
+            // applied after the gross total has been rounded. This keeps the
+            // printed SST/rounding consistent with the POS and prevents values
+            // such as RM0.019 from appearing on receipts.
+            const grossSst=roundMoney(subtotal*0.06);
+            const grossBeforeRound=roundMoney(subtotal+grossSst);
+            const gross=roundToNearest5Sen(grossBeforeRound);
+            const rounding=getRoundingDifference(grossBeforeRound, gross);
+            const discount=Math.min(Math.max(0,gross),Math.max(0,savedDiscount));
+            const payable=roundMoney(Math.max(0,gross-discount));
+            const totalPaid=roundMoney(Number(invoice?.total_amount??payable));
+            const sst=grossSst;
+            const table=esc(invoice?.table_id??order.table_id??'N/A');
+            const method=esc(invoice?.payment_method??'');
+            const isPaid=!!invoice;
+            return `<div class="receipt-print">
+                <div class="receipt-header"><img src="images/logo.png" alt="Hameeds Bistro Logo" class="receipt-logo"><div><div class="receipt-shop-name">${esc(BUSINESS_NAME)}</div><div class="receipt-title">${isPaid?'FINAL RECEIPT':'GUEST CHECK'}</div></div></div>
+                <div class="receipt-meta">${esc(BUSINESS_ADDRESS)}<br>Tel: ${esc(BUSINESS_TEL)} | Email: ${esc(BUSINESS_EMAIL)}<br>SST ID: ${esc(SST_ID)}<br>Table: ${table}<br>Date: ${new Date(invoice?.created_at||Date.now()).toLocaleString()}${isPaid&&method?`<br>Payment: ${method}`:''}</div>
+                <div class="receipt-items">${itemRows}</div>
+                <div class="receipt-totals">
+                    <div class="receipt-row"><span class="name">Subtotal:</span><span class="amount">RM${subtotal.toFixed(2)}</span></div>
+                    <div class="receipt-row"><span class="name">SST (6%):</span><span class="amount">RM${sst.toFixed(2)}</span></div>
+                    <div class="receipt-row"><span class="name">Rounding:</span><span class="amount">${rounding>=0?'+':''}RM${rounding.toFixed(2)}</span></div>
+                    <div class="receipt-row receipt-total"><span class="name">${isPaid?'TOTAL PAID:':'TOTAL:'}</span><span class="amount">RM${totalPaid.toFixed(2)}</span></div>
+                    ${discount>0?`<div class="receipt-row"><span class="name">Discount${discountPercent>0?` (${discountPercent.toFixed(2)}%)`:''}:</span><span class="amount">- RM${discount.toFixed(2)}</span></div>`:''}
+                </div>
+                ${isPaid?'<div class="receipt-status">PAID</div>':'<div class="receipt-status">UNFINALIZED BILL / GUEST CHECK</div>'}
+            </div>`;
+        }
+
+        async function printPaymentResultReceipt(){
+            const w=openReceiptPrintWindow();
+            if(!w) return;
+            try{
+                const orderId=posLastPaymentSummary&&posLastPaymentSummary.orderId;
+                if(!orderId) throw new Error('Receipt order information is not available.');
+                const receiptData=await getReceiptDataByOrderId(orderId);
+                writeReceiptToPrintWindow(w,buildPaidReceiptHtml(receiptData));
+            }catch(error){try{w.close()}catch(_){}alert('Unable to print receipt: '+error.message)}
+        }
+
+        async function printPaidReceipt(orderId){
+            const w=openReceiptPrintWindow();
+            if(!w) return;
+            try{
+                const receiptData=await getReceiptDataByOrderId(orderId);
+                writeReceiptToPrintWindow(w,buildPaidReceiptHtml(receiptData));
+            }catch(error){try{w.close()}catch(_){}alert('Unable to print receipt: '+error.message)}
+        }
+
+        async function printLastReceipt(){
+            const w=openReceiptPrintWindow();
+            if(!w) return;
+            try{
+                const {data:invoice,error}=await _supabase.from('invoices').select('*').order('created_at',{ascending:false}).limit(1).maybeSingle();
+                if(error) throw error;
+                if(!invoice){try{w.close()}catch(_){}alert('No recent invoice found.');return;}
+                const receiptData=await getReceiptDataByOrderId(invoice.order_id);
+                writeReceiptToPrintWindow(w,buildPaidReceiptHtml(receiptData));
+            }catch(error){try{w.close()}catch(_){}alert('Unable to print last receipt: '+error.message)}
+        }
+
+        async function savePaymentResultPdf(){ await printPaymentResultReceipt(); }
+        async function savePaidReceiptPdf(orderId){ await printPaidReceipt(orderId); }
+        async function saveLastReceiptPdf(){ await printLastReceipt(); }
+
+        async function posActionGuestCheck(){
+            const w=openReceiptPrintWindow();
+            if(!w) return;
+            try{
+                if(!posCart||posCart.length===0){try{w.close()}catch(_){}alert('No items in the current order.');return;}
+                const tableId=document.getElementById('posDisplayTable').innerText||'N/A';
+                let subtotal=0; posCart.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));
+                const sst=roundMoney(subtotal*0.06), grossCalc=roundMoney(subtotal+sst), finalTotal=roundToNearest5Sen(grossCalc), roundingDiff=getRoundingDifference(grossCalc, finalTotal), discount=calculateDiscount(finalTotal);
+                const itemRows=posCart.map(item=>{
+                    const mods=Array.isArray(item.modifiers)?item.modifiers:[];
+                    const modRows=mods.map(m=>{
+                        const mp=Number(m?.price||0);
+                        const priceText=mp!==0?` + ${mp>0?'+':''}RM${Math.abs(mp).toFixed(2)}`:'';
+                        return `<div style="font-size:10.5px;margin:0 0 1px 10px;font-weight:700;white-space:nowrap;">↳ ${m.text||'Modifier'}${mp!==0?` ${mp>0?'+':'-'}RM${Math.abs(mp).toFixed(2)}`:''}</div>`;
+                    }).join('');
+                    return `<div class="receipt-row"><span class="name">${item.name_en} (x${item.quantity})</span><span class="amount">RM${(Number(item.price)*Number(item.quantity)).toFixed(2)}</span></div>${modRows}`;
+                }).join('');
+                const content=`<div class="receipt-print"><div class="receipt-header"><img src="images/logo.png" alt="Hameeds Bistro Logo" class="receipt-logo"><div><div class="receipt-shop-name">${BUSINESS_NAME}</div><div class="receipt-title">GUEST CHECK</div></div></div><div class="receipt-meta">${BUSINESS_ADDRESS}<br>Tel: ${BUSINESS_TEL} | Email: ${BUSINESS_EMAIL}<br>SST ID: ${SST_ID}<br>Table: ${tableId}<br>Date: ${new Date().toLocaleString()}</div><div class="receipt-items">${itemRows}</div><div class="receipt-totals"><div class="receipt-row"><span class="name">Subtotal:</span><span class="amount">RM${subtotal.toFixed(2)}</span></div><div class="receipt-row"><span class="name">SST (6%):</span><span class="amount">RM${sst.toFixed(2)}</span></div><div class="receipt-row"><span class="name">Rounding:</span><span class="amount">${roundingDiff>=0?'+':''}RM${roundingDiff.toFixed(2)}</span></div><div class="receipt-row receipt-total"><span class="name">TOTAL:</span><span class="amount">RM${finalTotal.toFixed(2)}</span></div>${discount>0?`<div class="receipt-row"><span class="name">Discount${posDiscountPercent?` (${Number(posDiscountPercent).toFixed(2)}%)`:''}:</span><span class="amount">- RM${discount.toFixed(2)}</span></div>`:''}</div><div class="receipt-status">UNFINALIZED BILL / GUEST CHECK</div></div>`;
+                writeReceiptToPrintWindow(w,content);
+            }catch(error){try{w.close()}catch(_){}alert('Unable to print guest check: '+error.message)}
+        }
+
+        async function posActionHold() {
+            if (!posCart || posCart.length === 0) {
+                alert('No items in the current order to hold.');
+                return;
+            }
+
+            // HOLD must save the CURRENT POS cart to Supabase immediately.
+            // This makes newly added/removed items available when the order is opened again.
+            let subtotal = 0;
+            posCart.forEach(item => {
+                subtotal += Number(item.price || 0) * Number(item.quantity || 0);
+            });
+            const sst = roundMoney(subtotal * 0.06);
+            const finalTotal = roundToNearest5Sen(subtotal + sst);
+
+            let orderIdToHold = posTargetOrderId;
+
+            // If this is a brand-new POS order, create it as an active/accepted unpaid order.
+            if (!orderIdToHold) {
+                const tableId = document.getElementById('posDisplayTable').innerText || 'A60 / INDOOR';
+                const note = document.getElementById('posOrderNoteInput').value || '';
+
+                const { data: newOrder, error: orderError } = await _supabase
+                    .from('orders')
+                    .insert([{
+                        table_id: tableId,
+                        status: 'accepted',
+                        payment_status: 'Pending',
+                        total_amount: finalTotal,
+                        decline_reason: note
+                    }])
+                    .select()
+                    .single();
+
+                if (orderError || !newOrder) {
+                    alert('Failed to hold order: ' + (orderError ? orderError.message : 'Unknown error'));
+                    return;
+                }
+                orderIdToHold = newOrder.id;
+                posTargetOrderId = orderIdToHold;
+            } else {
+                const { error: orderUpdateError } = await _supabase
+                    .from('orders')
+                    .update({
+                        status: 'accepted',
+                        payment_status: 'Pending',
+                        total_amount: finalTotal
+                    })
+                    .eq('id', orderIdToHold);
+
+                if (orderUpdateError) {
+                    alert('Failed to update held order: ' + orderUpdateError.message);
+                    return;
+                }
+            }
+
+            // Replace DB items with exactly what is currently on the POS screen.
+            const { error: deleteError } = await _supabase
+                .from('order_items')
+                .delete()
+                .eq('order_id', orderIdToHold);
+
+            if (deleteError) {
+                alert('Failed to update held order items: ' + deleteError.message);
+                return;
+            }
+
+            const heldItems = posCart
+                .map(item => ({
+                    order_id: orderIdToHold,
+                    menu_item_id: Number(item.menu_item_id),
+                    price: Number(item.price || 0),
+                    quantity: Number(item.quantity || 0),
+                    modifiers: Array.isArray(item.modifiers) ? item.modifiers : null
+                }))
+                .filter(item => item.quantity > 0 && Number.isFinite(item.menu_item_id));
+
+            if (heldItems.length > 0) {
+                let { error: insertError } = await _supabase.from('order_items').insert(heldItems);
+                if (insertError) {
+                    // Compatibility with DBs that do not yet have order_items.modifiers.
+                    const fallbackItems = heldItems.map(({modifiers, ...rest}) => rest);
+                    const retry = await _supabase.from('order_items').insert(fallbackItems);
+                    insertError = retry.error;
+                    if (!insertError) {
+                        localStorage.setItem('order_modifiers_' + orderIdToHold, JSON.stringify(posCart.map(i => i.modifiers || [])));
+                    }
+                }
+                if (insertError) {
+                    alert('Failed to save held order items: ' + insertError.message);
+                    return;
+                }
+            }
+
+            // Refresh Current Orders immediately so the new total is visible.
+            await loadPendingOrders();
+            await fetchIncomingOrders();
+
+            alert(`Order #${orderIdToHold} held successfully. Current items and prices have been saved.`);
+            closePosModal();
+        }
+
+        function openAdminPage() {
+            window.location.href = 'admin.html';
+        }
+
+        // ==================== SHIFT / EOD CLOSE ====================
+        let closeTypePending = null;
+        function openCloseAuthModal(type) {
+            closeTypePending = type;
+            document.getElementById('closeAuthTitle').textContent = type === 'EOD' ? 'EOD Close' : 'Shift Close';
+            document.getElementById('closeAuthEmail').value = '';
+            document.getElementById('closeAuthPassword').value = '';
+            document.getElementById('closeAuthError').classList.add('hidden');
+            document.getElementById('closeAuthModal').classList.remove('hidden');
+            setTimeout(()=>document.getElementById('closeAuthEmail').focus(),50);
+        }
+        function closeCloseAuthModal(){ document.getElementById('closeAuthModal').classList.add('hidden'); closeTypePending=null; }
+        async function submitCloseAuth(event){
+            event.preventDefault();
+            const email=document.getElementById('closeAuthEmail').value.trim();
+            const password=document.getElementById('closeAuthPassword').value;
+            const err=document.getElementById('closeAuthError');
+            err.classList.add('hidden');
+            try{
+                const {data:user,error}=await _supabase.from('profiles').select('*').eq('email',email).eq('password',password).maybeSingle();
+                const allowed=['Admin','Manager','Cashier','Staff'];
+                if(error||!user||!allowed.includes(user.role)) throw new Error('Invalid username/email or password.');
+                const session=JSON.parse(localStorage.getItem('cashier_session')||'{}');
+                if(session.email && session.email.toLowerCase()!==email.toLowerCase()) throw new Error('Please use the credentials of the cashier currently logged in.');
+                await saveCloseRecord(closeTypePending,user);
+                closeCloseAuthModal();
+            }catch(e){ err.textContent=e.message||'Authentication failed.'; err.classList.remove('hidden'); }
+        }
+        function localDayStartEnd(dateStr){
+            const [y,m,d]=dateStr.split('-').map(Number);
+            const start=new Date(y,m-1,d,0,0,0,0); const end=new Date(y,m-1,d,23,59,59,999);
+            return {start,end};
+        }
+        async function buildCloseSnapshot(dateStr){
+            const {start,end}=localDayStartEnd(dateStr);
+            const {data:invoices,error:ie}=await _supabase.from('invoices').select('*').gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:true});
+            if(ie) throw ie;
+            const rows=invoices||[];
+            const orderIds=rows.map(x=>x.order_id).filter(Boolean);
+            let items=[]; let orders=[];
+            if(orderIds.length){
+                const ir=await _supabase.from('order_items').select('*').in('order_id',orderIds); if(ir.error) throw ir.error; items=ir.data||[];
+                const or=await _supabase.from('orders').select('*').in('id',orderIds); if(!or.error) orders=or.data||[];
+            }
+            const totalSales=rows.reduce((s,r)=>s+Number(r.total_amount||0),0);
+            let grossSubtotal=0; items.forEach(i=>grossSubtotal+=Number(i.price||0)*Number(i.quantity||0));
+            const sst=Number((grossSubtotal*0.06).toFixed(2));
+            const preRound=grossSubtotal+sst;
+            const rounding=Number((totalSales-preRound).toFixed(2));
+            const catMap={};
+            const menuIds=[...new Set(items.map(i=>i.menu_item_id).filter(Boolean))];
+            let menus=[]; if(menuIds.length){ const mr=await _supabase.from('menu_menu_item').select('*').in('id',menuIds); if(!mr.error) menus=mr.data||[]; }
+            const menuById={}; menus.forEach(m=>menuById[String(m.id)]=m);
+            const itemMap={};
+            items.forEach(i=>{
+                const m=menuById[String(i.menu_item_id)]||{}; const name=m.name||m.name_en||i.menu_item_id||'Unknown'; const cat=m.category||'Uncategorized'; const q=Number(i.quantity||0), val=Number(i.price||0)*q;
+                itemMap[name]=(itemMap[name]||0)+q; catMap[cat]=(catMap[cat]||0)+val;
+            });
+            const netCash=rows.filter(r=>String(r.payment_method||'').toLowerCase()==='cash').reduce((s,r)=>s+Number(r.total_amount||0),0);
+            return {date:dateStr,total_sales:Number(totalSales.toFixed(2)),sst:Number(sst.toFixed(2)),rounding:Number(rounding.toFixed(2)),net_cash:Number(netCash.toFixed(2)),category_sales:catMap,item_sales:itemMap,invoice_count:rows.length,order_count:orders.length};
+        }
+        async function saveCloseRecord(type,user){
+            const date=getLocalAttendanceDate();
+            const snapshot=await buildCloseSnapshot(date);
+            const {data:existing,error:findErr}=await _supabase.from('shift_closures').select('shift_no').eq('close_date',date).eq('close_type',type).order('shift_no',{ascending:false}).limit(1);
+            if(findErr) throw new Error('The shift_closures table is missing or not accessible: '+findErr.message);
+            let shiftNo=1;
+            if(type==='SHIFT') shiftNo=(existing&&existing.length?Number(existing[0].shift_no||0)+1:1);
+            else shiftNo=0;
+            const payload={close_type:type,close_date:date,shift_no:shiftNo,closed_by:user.full_name||user.email,closed_by_email:user.email,closed_at:new Date().toISOString(),total_sales:snapshot.total_sales,sst_amount:snapshot.sst,rounding_amount:snapshot.rounding,net_cash:snapshot.net_cash,invoice_count:snapshot.invoice_count,order_count:snapshot.order_count,category_sales:snapshot.category_sales,item_sales:snapshot.item_sales,report_json:snapshot};
+            const {error}=await _supabase.from('shift_closures').insert([payload]);
+            if(error) throw error;
+            alert(type==='EOD'?`EOD Close saved for ${date}.`:`Shift ${shiftNo} Close saved for ${date}.`);
+        }
+
+        // ==================== ATTENDANCE ====================
+        // Uses the exact public.attendance table created by the supplied SQL.
+        function getLocalAttendanceDate() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        async function doCheckIn() {
+            const session = JSON.parse(localStorage.getItem('cashier_session') || '{}');
+
+            if (!session.email) {
+                alert('Please login first.');
+                return;
+            }
+
+            const staffName = session.full_name || session.email.split('@')[0];
+            const workDate = getLocalAttendanceDate();
+
+            try {
+                // Prevent multiple open Check-In records for the same staff member today.
+                const { data: openRecords, error: findError } = await _supabase
+                    .from('attendance')
+                    .select('id, check_in, check_out')
+                    .eq('staff_email', session.email)
+                    .eq('work_date', workDate)
+                    .not('check_in', 'is', null)
+                    .is('check_out', null)
+                    .limit(1);
+
+                if (findError) throw findError;
+
+                if (openRecords && openRecords.length > 0) {
+                    alert('You are already checked in today.');
+                    return;
+                }
+
+                const { error: insertError } = await _supabase
+                    .from('attendance')
+                    .insert([{
+                        staff_id: session.id != null ? String(session.id) : null,
+                        staff_name: staffName,
+                        staff_email: session.email,
+                        role: session.role || 'Staff',
+                        work_date: workDate,
+                        check_in: new Date().toISOString(),
+                        check_out: null,
+                        status: 'Present'
+                    }]);
+
+                if (insertError) throw insertError;
+
+                alert(`Check-In saved successfully for ${staffName}.`);
+            } catch (error) {
+                console.error('Check-In error:', error);
+                alert('Check-In failed: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        async function doCheckOut() {
+            const session = JSON.parse(localStorage.getItem('cashier_session') || '{}');
+
+            if (!session.email) {
+                alert('Please login first.');
+                return;
+            }
+
+            const workDate = getLocalAttendanceDate();
+
+            try {
+                // Find today's latest open Check-In for this staff member.
+                const { data: records, error: findError } = await _supabase
+                    .from('attendance')
+                    .select('id, check_in, check_out')
+                    .eq('staff_email', session.email)
+                    .eq('work_date', workDate)
+                    .not('check_in', 'is', null)
+                    .is('check_out', null)
+                    .order('check_in', { ascending: false })
+                    .limit(1);
+
+                if (findError) throw findError;
+
+                if (!records || records.length === 0) {
+                    alert('No open Check-In record was found for today. Please Check-In first.');
+                    return;
+                }
+
+                const attendanceId = records[0].id;
+
+                const { error: updateError } = await _supabase
+                    .from('attendance')
+                    .update({
+                        check_out: new Date().toISOString(),
+                        status: 'Completed'
+                    })
+                    .eq('id', attendanceId);
+
+                if (updateError) throw updateError;
+
+                alert('Check-Out saved successfully.');
+            } catch (error) {
+                console.error('Check-Out error:', error);
+                alert('Check-Out failed: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        function refreshCashierSystem() { loadPendingOrders(); fetchIncomingOrders(); alert("Refreshed!"); }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const session = localStorage.getItem('cashier_session');
+            if (session) {
+                const data = JSON.parse(session);
+                applyUserSession(data);
+            } else {
+                document.getElementById('mainPanel').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+            }
+        });
+    let cashierKeyboardTarget=null;function cashierKeyboardType(el){if(!el)return'text';const t=String(el.type||'').toLowerCase(),m=String(el.getAttribute('inputmode')||'').toLowerCase();return(t==='number'||m==='number'||m==='decimal'||m==='numeric')?'number':'text';}function showCashierVirtualKeyboard(el){if(!el||el.disabled||el.readOnly)return;cashierKeyboardTarget=el;const kb=document.getElementById('cashierVirtualKeyboard'),keys=document.getElementById('cashierKeyboardKeys'),lab=document.getElementById('cashierKeyboardTargetLabel');if(!kb||!keys)return;if(lab)lab.textContent=el.placeholder||el.name||el.id||'Keyboard';const make=k=>`<button type="button" onclick='cashierKeyboardPress(${JSON.stringify(k)})' class="bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-white rounded-lg py-2.5 px-2 text-sm font-bold ${['Space','⌫','Clear','Done'].includes(k)?'col-span-2':''}">${k}</button>`;if(cashierKeyboardType(el)==='number'){keys.className='grid grid-cols-4 gap-1.5 max-w-md mx-auto';keys.innerHTML=['7','8','9','⌫','4','5','6','.','1','2','3','-','0','00','Clear','Done'].map(make).join('')}else{keys.className='grid grid-cols-10 gap-1 max-w-5xl mx-auto';keys.innerHTML=['1','2','3','4','5','6','7','8','9','0','Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','Z','X','C','V','B','N','M','-','_','.','Space','⌫','Clear','Done'].map(make).join('')}kb.classList.remove('hidden')}function cashierKeyboardPress(k){const e=cashierKeyboardTarget;if(!e)return;if(k==='Done'){hideCashierVirtualKeyboard();return}if(k==='Clear')e.value='';else if(k==='⌫'){const s=e.selectionStart??e.value.length,x=e.selectionEnd??e.value.length;e.value=s!==x?e.value.slice(0,s)+e.value.slice(x):s?e.value.slice(0,s-1)+e.value.slice(x):e.value;try{e.setSelectionRange(Math.max(0,s-(s===x?1:0)),Math.max(0,s-(s===x?1:0)))}catch(_){}}else{const t=k==='Space'?' ':k,s=e.selectionStart??e.value.length,x=e.selectionEnd??e.value.length;let v=e.value.slice(0,s)+t+e.value.slice(x);if(cashierKeyboardType(e)==='number'){v=v.replace(/[^0-9.\-]/g,'').replace(/(?!^)-/g,'');const d=v.indexOf('.');if(d>=0)v=v.slice(0,d+1)+v.slice(d+1).replace(/\./g,'')}e.value=v;try{e.setSelectionRange(s+t.length,s+t.length)}catch(_){}}e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));try{e.focus({preventScroll:true})}catch(_){}}function hideCashierVirtualKeyboard(){const k=document.getElementById('cashierVirtualKeyboard');if(k)k.classList.add('hidden');cashierKeyboardTarget=null}document.addEventListener('focusin',e=>{const x=e.target;if((x instanceof HTMLInputElement||x instanceof HTMLTextAreaElement)&&!x.disabled&&!x.readOnly&&!x.closest('#cashierVirtualKeyboard'))showCashierVirtualKeyboard(x)});</script>
+
+<div id="cashierVirtualKeyboard" class="fixed left-0 right-0 bottom-0 z-[100000] hidden bg-gray-900 border-t border-gray-700 shadow-2xl p-2">
+  <div class="max-w-5xl mx-auto">
+    <div class="flex justify-between items-center mb-2">
+      <span id="cashierKeyboardTargetLabel" class="text-xs text-gray-300">Keyboard</span>
+      <button type="button" onclick="hideCashierVirtualKeyboard()" class="bg-gray-700 text-white px-3 py-1 rounded text-xs font-bold">Close ✕</button>
+    </div>
+    <div id="cashierKeyboardKeys"></div>
+  </div>
+</div>
+</body>
+</html>

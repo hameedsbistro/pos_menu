@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitchen Display - Hameeds Bistro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+ body{background:#eef1f5;font-family:Arial,sans-serif}
+ .receipt{background:#fff;border:1px solid #d8dde5;border-radius:14px;box-shadow:0 3px 12px rgba(0,0,0,.08);overflow:hidden}
+ .receipt-head{background:#111827;color:#fff;padding:12px 14px}
+ .receipt-body{padding:14px}
+ .item-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed #d1d5db;font-size:16px}
+ .new-receipt{border:3px solid #f59e0b}
+ .new-badge{background:#f59e0b;color:#111827}
+ #historyContainer{align-content:start;grid-auto-rows:max-content;min-height:0}
+ #historyContainer .receipt{min-width:0}
+ @media(min-width:1024px){#historyContainer{grid-template-columns:repeat(4,minmax(0,1fr))}}
+ @media(max-width:640px){.item-row{font-size:15px}.receipt-body{padding:11px}}
+</style>
+</head>
+<body class="min-h-screen">
+<header class="bg-slate-900 text-white px-4 py-3 shadow-lg">
+ <div class="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-3">
+  <div class="flex items-center gap-3">
+   <img src="images/logo.png" class="h-10 w-10 rounded-full object-cover border-2 border-yellow-400" onerror="this.style.display='none'">
+   <div><div class="font-extrabold text-lg">RESTORAN HAMEED'S BISTRO</div><div class="text-xs text-slate-300">KITCHEN DISPLAY</div></div>
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+   <label class="text-sm font-bold">Select Section</label>
+   <select id="kitchenFilter" onchange="fetchKitchenOrders()" class="text-slate-900 bg-white rounded-lg px-3 py-2 font-bold min-w-[180px]"><option value="">Select Section</option></select>
+   <button onclick="openHistory()" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-extrabold px-4 py-2 rounded-lg">HISTORY</button>
+  </div>
+ </div>
+</header>
+<main class="max-w-[1800px] mx-auto p-3 sm:p-5">
+ <div class="flex items-center justify-between mb-4"><h1 class="text-xl sm:text-2xl font-extrabold">Current Kitchen Orders</h1><span id="liveStatus" class="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">REALTIME</span></div>
+ <div id="ordersContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+</main>
+<div id="historyModal" class="hidden fixed inset-0 bg-black/60 z-50 p-3 sm:p-6">
+ <div class="bg-white rounded-2xl max-w-6xl mx-auto h-full max-h-[92vh] overflow-hidden flex flex-col">
+  <div class="p-4 border-b flex flex-wrap justify-between items-center gap-3">
+   <div><h2 class="text-xl font-extrabold">Kitchen History</h2><p class="text-xs text-gray-500">Completed/Ready kitchen orders</p></div>
+   <div class="flex gap-2 items-center"><input id="historyDate" type="date" class="border rounded-lg px-3 py-2" onchange="fetchHistory()"><button onclick="closeHistory()" class="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold">Close</button></div>
+  </div>
+  <div id="historyContainer" class="p-4 overflow-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+ </div>
+</div>
+<script>
+const SUPABASE_URL='https://tbvcaolnufayuvrqicpd.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+const _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+// Versioned KDS state. A new namespace prevents broken/old batches from older
+// versions of the page from reappearing.
+const KDS_VERSION='v5';
+const stateKey=(type,id)=>`kds_${KDS_VERSION}_${type}_${String(id)}`;
+const snapshotKey=id=>stateKey('snapshot',id);
+const batchesKey=id=>stateKey('batches',id);
+const readyKey=id=>stateKey('ready',id);
+let assignedCache=new Map();
+
+function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function malaysiaDate(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+function itemKey(i){return `${i.menu_item_id}|${Number(i.price||0).toFixed(2)}|${JSON.stringify(i.modifiers||null)}`;}
+function readJson(k,fallback){try{const x=localStorage.getItem(k);return x?JSON.parse(x):fallback}catch{return fallback;}}
+function writeJson(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('KDS local storage:',e);}}
+function getSnapshot(id){return readJson(snapshotKey(id),{});}
+function saveSnapshot(id,v){writeJson(snapshotKey(id),v);}
+function getBatches(id){return readJson(batchesKey(id),[]);}
+function saveBatches(id,v){writeJson(batchesKey(id),v);}
+function getReady(id){return readJson(readyKey(id),[]);}
+function saveReady(id,v){writeJson(readyKey(id),v);}
+
+function actorLabel(order){
+ const v=order.ordered_by||order.created_by_name||order.created_by||order.customer_name||order.customer||order.customerName;
+ if(v)return String(v);
+ const source=String(order.source||order.order_source||'').toLowerCase();
+ if(source.includes('customer'))return order.customer_name?`Customer (${order.customer_name})`:'Customer';
+ return 'Cashier';
+}
+function itemActor(item,order){return item.added_by||item.ordered_by||item.created_by_name||item.created_by||actorLabel(order);}
+
+async function fetchKitchenSections(){
+ const sel=document.getElementById('kitchenFilter');
+ const {data,error}=await _supabase.from('kitchen_sections').select('*').order('id');
+ if(error){console.error('Kitchen sections:',error);return;}
+ sel.innerHTML='<option value="">Select Section</option>';
+ (data||[]).forEach(x=>sel.insertAdjacentHTML('beforeend',`<option value="${esc(x.id)}">${esc(x.section_name||x.name||'Section')}</option>`));
+}
+async function assignedCategories(sectionId){
+ if(!sectionId)return new Set();
+ const key=String(sectionId);
+ if(assignedCache.has(key))return assignedCache.get(key);
+ const r=await _supabase.from('kitchen_section_categories').select('category').eq('kitchen_section_id',sectionId);
+ if(r.error){
+  console.error('Kitchen category mapping error:',r.error.message);
+  const empty=new Set(); assignedCache.set(key,empty); return empty;
+ }
+ const set=new Set((r.data||[]).map(x=>String(x.category||'').trim().toLowerCase()).filter(Boolean));
+ assignedCache.set(key,set);
+ return set;
+}
+
+function makeCurrentMap(items){
+ const map={};
+ for(const i of items){
+  const k=itemKey(i);
+  map[k]=(map[k]||0)+Number(i.quantity||0);
+ }
+ return map;
+}
+function deltaItems(items,oldMap){
+ const out={};
+ for(const i of items){
+  const k=itemKey(i), old=Number(oldMap[k]||0), qty=Number(i.quantity||0), delta=qty-old;
+  if(delta>0){
+   if(!out[k])out[k]={...i,quantity:delta};
+   else out[k].quantity+=delta;
+  }
+ }
+ return Object.values(out);
+}
+function batchId(orderId){return `b_${String(orderId)}_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;}
+
+async function fetchKitchenOrders(){
+ const selected=document.getElementById('kitchenFilter').value;
+ const c=document.getElementById('ordersContainer');
+ c.innerHTML='';
+ // Nothing is displayed until a real kitchen section is selected.
+ if(!selected){
+  c.innerHTML='';
+  return;
+ }
+ const mapped=await assignedCategories(selected);
+ // IMPORTANT: an empty mapping means NOTHING is assigned to this section.
+ // Never fall back to menu_items.kitchen_section_id because that can leak
+ // unrelated categories such as Chapati/Maggi/Curry into another display.
+ if(!mapped.size){
+  c.innerHTML='<div class="col-span-full text-center text-gray-500 py-12 font-semibold">No categories mapped to this kitchen section.</div>';
+  return;
+ }
+ // IMPORTANT: only live kitchen states. Paid/completed/cancelled/ready orders are excluded.
+ const {data:orders,error}=await _supabase
+  .from('orders')
+  .select(`*,order_items(*,menu_items(name_en,category,kitchen_section_id))`)
+  .in('status',['accepted','preparing'])
+  .order('created_at',{ascending:true});
+ if(error){c.innerHTML=`<div class="col-span-full text-center text-red-600 py-10">Failed to load kitchen orders: ${esc(error.message)}</div>`;return;}
+ let any=false;
+
+ for(const o of (orders||[])){
+  let items=(o.order_items||[]).filter(i=>i.menu_items);
+  if(selected){
+   items=items.filter(i=>mapped.has(String(i.menu_items.category||'').trim().toLowerCase()));
+  }
+  if(!items.length)continue;
+
+  const id=String(o.id);
+  let batches=getBatches(id);
+  let ready=getReady(id);
+  const snapshot=getSnapshot(id);
+  const current=makeCurrentMap(items);
+
+  // First time this KDS version sees a LIVE order, create exactly one batch
+  // containing its current items. This does not pull in completed/paid orders
+  // because those orders are excluded by the query above.
+  if(Object.keys(snapshot).length===0 && batches.length===0){
+   batches.push({
+    id:batchId(id),
+    order_id:id,
+    label:'NEW ORDER',
+    created_at:o.created_at||new Date().toISOString(),
+    table_id:o.table_id||o.table_number||'N/A',
+    items:items.map(i=>({...i,menu_items:{...(i.menu_items||{})}})),
+    actor:actorLabel(o)
+   });
+  }else{
+   const newItems=deltaItems(items,snapshot);
+   if(newItems.length){
+    const actors=[...new Set(newItems.map(i=>String(itemActor(i,o))).filter(Boolean))];
+    batches.push({
+     id:batchId(id),
+     order_id:id,
+     label:'NEW ITEMS',
+     created_at:new Date().toISOString(),
+     table_id:o.table_id||o.table_number||'N/A',
+     items:newItems.map(i=>({...i,menu_items:{...(i.menu_items||{})}})),
+     actor:actors.length===1?actors[0]:actorLabel(o)
+    });
+   }
+  }
+
+  // Snapshot is ALWAYS the current database quantity. This is what prevents
+  // already displayed items from coming back when the same order is edited.
+  saveSnapshot(id,current);
+
+  // Remove a ready marker only if its batch no longer exists; otherwise retain it.
+  const batchIds=new Set(batches.map(b=>String(b.id)));
+  ready=ready.filter(x=>batchIds.has(String(x)));
+  saveReady(id,ready);
+  saveBatches(id,batches);
+
+  const visible=batches.filter(b=>!ready.includes(String(b.id)));
+  visible.forEach((b,index)=>{
+   any=true;
+   c.insertAdjacentHTML('beforeend',receiptHtml(o,b,index,b.actor));
+  });
+ }
+ if(!any)c.innerHTML='<div class="col-span-full text-center text-gray-500 py-12 font-semibold">No current kitchen orders.</div>';
+}
+
+function receiptHtml(o,b,index,actor){
+ const orderTime=new Date(o.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+ const batchTime=new Date(b.created_at||o.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+ const isNew=b.label==='NEW ITEMS';
+ const rows=(b.items||[]).map(i=>`<div class="item-row"><span class="font-bold">${esc(i.menu_items?.name_en||'Item')}</span><span class="font-extrabold text-red-600">× ${Number(i.quantity||0)}</span></div>`).join('');
+ const safeOrder=JSON.stringify(String(o.id));
+ const safeBatch=JSON.stringify(String(b.id));
+ return `<article class="receipt ${isNew?'new-receipt':''}">
+ <div class="receipt-head">
+  <div class="flex justify-between gap-2"><span class="font-extrabold text-lg">#${esc(o.id)}</span><span class="text-xs font-bold">${esc(b.label)}</span></div>
+  <div class="text-sm mt-1">Table: <b>${esc(o.table_id||'N/A')}</b></div>
+  <div class="text-xs text-slate-300 mt-1">Order Time: ${orderTime}</div>
+  <div class="text-xs text-slate-300 mt-1">Ordered By: <b class="text-white">${esc(actor||actorLabel(o))}</b></div>
+  <div class="text-xs text-slate-300 mt-1">Receipt Time: ${batchTime}</div>
+ </div>
+ <div class="receipt-body">
+  <div class="mb-2 text-xs text-gray-500 font-bold">${isNew?'NEW ITEMS ADDED':'NEW ORDER ITEMS'}</div>
+  ${rows}
+  ${isNew?'<div class="mt-2 text-[10px] font-bold text-amber-700">Only the newly added items are shown on this receipt.</div>':''}
+  <button type="button" onclick='markReady(${safeOrder},${safeBatch})' class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-lg">MARK READY</button>
+ </div>
+ </article>`;
+}
+
+// IMPORTANT: Ready is PER RECEIPT/BATCH. It never updates the whole order.
+async function markReady(orderId,batchIdValue){
+ const id=String(orderId), bid=String(batchIdValue);
+ const ready=getReady(id);
+ if(!ready.includes(bid))ready.push(bid);
+ saveReady(id,ready);
+ // Re-render immediately. No order.status update is performed here, so other
+ // receipts from the same order remain visible.
+ await fetchKitchenOrders();
+}
+
+function openHistory(){
+ document.getElementById('historyDate').value=malaysiaDate();
+ document.getElementById('historyModal').classList.remove('hidden');
+ fetchHistory();
+}
+function closeHistory(){document.getElementById('historyModal').classList.add('hidden');}
+async function fetchHistory(){
+ const d=document.getElementById('historyDate').value||malaysiaDate();
+ const c=document.getElementById('historyContainer');
+ c.innerHTML='';
+
+ // History is receipt/batch based: only batches that THIS KDS marked READY
+ // are shown. It is deliberately not based on orders.status, because an
+ // order can contain several separate kitchen receipts.
+ const allReady=[];
+ const keys=[];
+ for(let i=0;i<localStorage.length;i++){
+  const k=localStorage.key(i)||'';
+  if(k.startsWith(`kds_${KDS_VERSION}_batches_`)) keys.push(k);
+ }
+ for(const k of keys){
+  const orderId=k.split(`kds_${KDS_VERSION}_batches_`)[1];
+  const batches=readJson(k,[]);
+  const ready=readJson(readyKey(orderId),[]).map(String);
+  for(const b of batches){
+   if(!ready.includes(String(b.id))) continue;
+   const batchDate=malaysiaDateFor(b.created_at);
+   if(batchDate!==d) continue;
+   allReady.push({orderId,b});
+  }
+ }
+ allReady.sort((a,b)=>new Date(b.b.created_at||0)-new Date(a.b.created_at||0));
+ if(!allReady.length){
+  c.innerHTML='<div class="col-span-full text-center text-gray-500 py-10">No READY receipt history for this date.</div>';
+  return;
+ }
+ for(const entry of allReady){
+  const b=entry.b;
+  // Use stored batch snapshot; no fresh order-status query is needed.
+  const orderTime=new Date(b.created_at||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const rows=(b.items||[]).map(i=>`<div class="item-row"><span class="font-bold">${esc(i.menu_items?.name_en||i.item_name||'Item')}</span><b>× ${Number(i.quantity||0)}</b></div>`).join('');
+  c.insertAdjacentHTML('beforeend',`<article class="receipt">
+   <div class="receipt-head">
+    <div class="flex justify-between gap-2"><span class="font-extrabold text-lg">#${esc(entry.orderId)}</span><span class="text-xs font-bold">${esc(b.label||'READY')}</span></div>
+    <div class="text-sm mt-1">Table: <b>${esc(b.table_id||b.table_number||'N/A')}</b></div>
+    <div class="text-xs text-slate-300 mt-1">Receipt Time: ${orderTime}</div>
+    <div class="text-xs text-slate-300 mt-1">Ordered By: <b class="text-white">${esc(b.actor||'')}</b></div>
+   </div>
+   <div class="receipt-body">${rows}<div class="mt-3 text-xs font-extrabold text-emerald-700">✓ READY</div></div>
+  </article>`);
+ }
+}
+function malaysiaDateFor(value){
+ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+}
+
+function subscribeRealtime(){
+ _supabase.channel('kds-orders-v4')
+  .on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>fetchKitchenOrders())
+  .on('postgres_changes',{event:'*',schema:'public',table:'order_items'},()=>fetchKitchenOrders())
+  .subscribe(status=>{document.getElementById('liveStatus').textContent=status==='SUBSCRIBED'?'REALTIME':'RECONNECTING';});
+}
+
+(async()=>{
+ await fetchKitchenSections();
+ await fetchKitchenOrders();
+ subscribeRealtime();
+})();
+</script>
+</body>
+</html>
