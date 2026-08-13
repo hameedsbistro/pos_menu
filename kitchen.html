@@ -1,0 +1,2501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Hameed's Bistro - Kitchen Display</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #111827;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    overflow: hidden;
+}
+
+button,
+select,
+input {
+    font-family: inherit;
+}
+
+
+/* =========================================================
+   MAIN APP
+========================================================= */
+
+.app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.header {
+    height: 72px;
+    min-height: 72px;
+
+    background: #0b1f3a;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 8px 14px;
+
+    gap: 12px;
+
+    box-shadow: 0 2px 8px rgba(0,0,0,.35);
+
+    z-index: 10;
+}
+
+
+.brand {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    min-width: 0;
+}
+
+
+.logo {
+    width: 52px;
+    height: 52px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    border: 2px solid #facc15;
+
+    background: white;
+}
+
+
+.shop-title {
+    margin: 0;
+
+    font-size: clamp(16px, 2vw, 25px);
+
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+.header-controls {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.section-select {
+    height: 44px;
+
+    min-width: 190px;
+
+    padding: 0 12px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: white;
+
+    color: #111827;
+
+    font-size: 15px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+
+.history-button {
+    height: 44px;
+
+    padding: 0 17px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #f59e0b;
+
+    color: #111827;
+
+    font-size: 15px;
+
+    font-weight: 900;
+
+    cursor: pointer;
+}
+
+
+.history-button:hover {
+    background: #fbbf24;
+}
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.main {
+    flex: 1;
+
+    min-height: 0;
+
+    overflow: auto;
+
+    padding: 12px;
+}
+
+
+.top-status {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 10px;
+
+    color: white;
+}
+
+
+.current-section-title {
+    font-size: clamp(17px, 2vw, 25px);
+
+    font-weight: 900;
+}
+
+
+.live-status {
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 12px;
+
+    font-weight: 900;
+}
+
+
+.live-dot {
+    width: 9px;
+    height: 9px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    box-shadow: 0 0 8px #22c55e;
+}
+
+
+/* =========================================================
+   ERROR / MESSAGE
+========================================================= */
+
+.message-area {
+    margin-bottom: 10px;
+}
+
+
+.error-message {
+    background: #991b1b;
+
+    color: white;
+
+    padding: 10px 12px;
+
+    border-radius: 8px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   ORDER GRID
+========================================================= */
+
+.orders-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(230px, 1fr));
+
+    gap: 10px;
+
+    align-items: start;
+}
+
+
+/* =========================================================
+   RECEIPT CARD
+========================================================= */
+
+.receipt {
+    background: white;
+
+    color: #111827;
+
+    border-radius: 8px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,.30);
+
+    border-top: 6px solid #f59e0b;
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+
+.receipt.new-item {
+    border-top-color: #dc2626;
+
+    box-shadow:
+        0 0 0 3px rgba(220,38,38,.25),
+        0 4px 14px rgba(0,0,0,.35);
+}
+
+
+.receipt-header {
+    padding: 10px 11px 8px;
+
+    border-bottom: 1px dashed #9ca3af;
+}
+
+
+.order-id {
+    font-size: clamp(19px, 2vw, 27px);
+
+    font-weight: 1000;
+
+    line-height: 1.1;
+}
+
+
+.new-label {
+    display: inline-block;
+
+    margin-top: 5px;
+
+    padding: 3px 7px;
+
+    border-radius: 4px;
+
+    background: #dc2626;
+
+    color: white;
+
+    font-size: 11px;
+
+    font-weight: 1000;
+}
+
+
+.meta {
+    margin-top: 4px;
+
+    color: #4b5563;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   ITEMS
+========================================================= */
+
+.items {
+    padding: 8px 11px;
+}
+
+
+.item-row {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    padding: 8px 0;
+
+    border-bottom: 1px dotted #d1d5db;
+
+    font-size: clamp(14px, 1.3vw, 18px);
+
+    font-weight: 800;
+}
+
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+
+.item-name {
+    flex: 1;
+
+    line-height: 1.25;
+}
+
+
+.item-quantity {
+    white-space: nowrap;
+
+    font-size: clamp(15px, 1.4vw, 20px);
+
+    font-weight: 1000;
+
+    color: #dc2626;
+}
+
+
+/* =========================================================
+   RECEIPT FOOTER
+========================================================= */
+
+.receipt-footer {
+    padding: 8px 11px 11px;
+}
+
+
+.ready-button {
+    width: 100%;
+
+    height: 43px;
+
+    border: none;
+
+    border-radius: 7px;
+
+    background: #16a34a;
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 1000;
+
+    cursor: pointer;
+}
+
+
+.ready-button:hover {
+    background: #15803d;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.empty-state {
+    width: 100%;
+
+    min-height: 250px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    color: #9ca3af;
+
+    font-size: 18px;
+
+    font-weight: 800;
+
+    grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   HISTORY MODAL
+========================================================= */
+
+.history-modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 100;
+
+    background: rgba(0,0,0,.75);
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 15px;
+}
+
+
+.history-modal.open {
+    display: flex;
+}
+
+
+.history-box {
+    width: min(1100px, 96vw);
+
+    height: min(85vh, 800px);
+
+    background: #f3f4f6;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+
+.history-header {
+    background: #0b1f3a;
+
+    color: white;
+
+    padding: 12px 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+
+.history-title {
+    margin: 0;
+
+    font-size: 20px;
+
+    font-weight: 900;
+}
+
+
+.close-history {
+    border: none;
+
+    background: #dc2626;
+
+    color: white;
+
+    padding: 8px 14px;
+
+    border-radius: 7px;
+
+    font-weight: 900;
+
+    cursor: pointer;
+}
+
+
+.history-controls {
+    background: white;
+
+    padding: 10px;
+
+    border-bottom: 1px solid #d1d5db;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.history-date {
+    height: 40px;
+
+    border: 1px solid #9ca3af;
+
+    border-radius: 7px;
+
+    padding: 0 10px;
+
+    font-weight: 700;
+}
+
+
+.load-history {
+    height: 40px;
+
+    border: none;
+
+    border-radius: 7px;
+
+    padding: 0 15px;
+
+    background: #2563eb;
+
+    color: white;
+
+    font-weight: 900;
+
+    cursor: pointer;
+}
+
+
+.history-list {
+    flex: 1;
+
+    overflow: auto;
+
+    padding: 10px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 10px;
+
+    align-content: start;
+}
+
+
+.history-card {
+    background: white;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+
+    padding: 10px;
+}
+
+
+.history-order-id {
+    font-size: 18px;
+
+    font-weight: 1000;
+}
+
+
+.history-meta {
+    color: #6b7280;
+
+    font-size: 12px;
+
+    margin-top: 3px;
+}
+
+
+.history-items {
+    margin-top: 8px;
+
+    font-size: 13px;
+
+    line-height: 1.55;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   DESKTOP LARGE
+========================================================= */
+
+@media (min-width: 1600px) {
+
+    .orders-grid {
+        grid-template-columns:
+            repeat(5, minmax(240px, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .orders-grid {
+        grid-template-columns:
+            repeat(3, minmax(210px, 1fr));
+    }
+
+    .history-list {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 760px) {
+
+    body {
+        overflow: auto;
+    }
+
+    .app {
+        height: auto;
+
+        min-height: 100vh;
+    }
+
+
+    .header {
+        height: auto;
+
+        min-height: 68px;
+
+        flex-wrap: wrap;
+
+        padding: 8px;
+    }
+
+
+    .brand {
+        width: 100%;
+    }
+
+
+    .logo {
+        width: 43px;
+        height: 43px;
+    }
+
+
+    .shop-title {
+        font-size: 15px;
+    }
+
+
+    .header-controls {
+        width: 100%;
+    }
+
+
+    .section-select {
+        flex: 1;
+
+        min-width: 0;
+    }
+
+
+    .history-button {
+        flex-shrink: 0;
+    }
+
+
+    .main {
+        overflow: visible;
+
+        padding: 9px;
+    }
+
+
+    .orders-grid {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+
+    .history-list {
+        grid-template-columns: 1fr;
+    }
+
+
+    .history-box {
+        height: 90vh;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<div class="app">
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="header">
+
+        <div class="brand">
+
+            <!-- Change this path if your logo file is elsewhere -->
+            <img
+                src="images/logo.png"
+                class="logo"
+                alt="Hameed's Bistro Logo"
+            >
+
+            <h1 class="shop-title">
+                RESTORAN HAMEED'S BISTRO — KITCHEN DISPLAY
+            </h1>
+
+        </div>
+
+
+        <div class="header-controls">
+
+            <select
+                id="kitchenFilter"
+                class="section-select"
+            >
+
+                <option value="">
+                    Select Section
+                </option>
+
+            </select>
+
+
+            <button
+                id="historyBtn"
+                class="history-button"
+            >
+                HISTORY
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="main">
+
+
+        <div class="top-status">
+
+            <div
+                id="sectionTitle"
+                class="current-section-title"
+            >
+                Select a Kitchen Section
+            </div>
+
+
+            <div class="live-status">
+
+                <span class="live-dot"></span>
+
+                LIVE
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="messageArea"
+            class="message-area"
+        ></div>
+
+
+        <div
+            id="ordersContainer"
+            class="orders-grid"
+        ></div>
+
+
+    </main>
+
+
+</div>
+
+
+
+<!-- =========================================================
+     HISTORY MODAL
+========================================================== -->
+
+<div
+    id="historyModal"
+    class="history-modal"
+>
+
+    <div class="history-box">
+
+
+        <div class="history-header">
+
+            <h2 class="history-title">
+                Order History
+            </h2>
+
+
+            <button
+                id="closeHistory"
+                class="close-history"
+            >
+                CLOSE
+            </button>
+
+        </div>
+
+
+        <div class="history-controls">
+
+            <input
+                type="date"
+                id="historyDate"
+                class="history-date"
+            >
+
+
+            <button
+                id="historyLoad"
+                class="load-history"
+            >
+                LOAD HISTORY
+            </button>
+
+        </div>
+
+
+        <div
+            id="historyList"
+            class="history-list"
+        ></div>
+
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL =
+    'https://tbvcaolnufayuvrqicpd.supabase.co';
+
+
+const SUPABASE_ANON_KEY =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+
+
+const _supabase =
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+
+
+/* =========================================================
+   GLOBAL VARIABLES
+========================================================= */
+
+let kitchenSections = [];
+
+let realtimeChannel = null;
+
+let orderItemFirstSeen = new Map();
+
+let firstLoadComplete = false;
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function escapeHtml(value) {
+
+    return String(value ?? '')
+        .replace(/[&<>"']/g, function(char) {
+
+            const map = {
+
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+
+            };
+
+            return map[char];
+
+        });
+
+}
+
+
+function formatTime(value) {
+
+    if (!value) return '';
+
+    return new Date(value).toLocaleTimeString(
+        [],
+        {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        }
+    );
+
+}
+
+
+function formatDateTime(value) {
+
+    if (!value) return '';
+
+    return new Date(value).toLocaleString(
+        [],
+        {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        }
+    );
+
+}
+
+
+function localDateKey(date) {
+
+    const d = new Date(date);
+
+    const year =
+        d.getFullYear();
+
+    const month =
+        String(d.getMonth() + 1)
+            .padStart(2, '0');
+
+    const day =
+        String(d.getDate())
+            .padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+function showMessage(message) {
+
+    document.getElementById(
+        'messageArea'
+    ).innerHTML = `
+        <div class="error-message">
+            ${escapeHtml(message)}
+        </div>
+    `;
+
+}
+
+
+function clearMessage() {
+
+    document.getElementById(
+        'messageArea'
+    ).innerHTML = '';
+
+}
+
+
+/* =========================================================
+   KITCHEN SECTION
+========================================================= */
+
+async function fetchKitchenSections() {
+
+    const {
+        data,
+        error
+    } = await _supabase
+
+        .from('kitchen_sections')
+
+        .select('*')
+
+        .order(
+            'section_name',
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        showMessage(
+            'Unable to load Kitchen Sections: ' +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    kitchenSections =
+        Array.isArray(data)
+            ? data
+            : [];
+
+
+    const select =
+        document.getElementById(
+            'kitchenFilter'
+        );
+
+
+    select.innerHTML = `
+        <option value="">
+            Select Section
+        </option>
+    `;
+
+
+    kitchenSections.forEach(
+        section => {
+
+            const option =
+                document.createElement(
+                    'option'
+                );
+
+
+            option.value =
+                section.id;
+
+
+            option.textContent =
+                section.section_name;
+
+
+            select.appendChild(
+                option
+            );
+
+        }
+    );
+
+}
+
+
+function getKitchenSectionName(
+    sectionId
+) {
+
+    const section =
+        kitchenSections.find(
+            item =>
+                String(item.id) ===
+                String(sectionId)
+        );
+
+
+    return section
+        ? section.section_name
+        : '';
+
+}
+
+
+/* =========================================================
+   CATEGORY MAPPING
+========================================================= */
+
+async function fetchAssignedCategories(
+    sectionId
+) {
+
+    if (!sectionId) {
+
+        return null;
+
+    }
+
+
+    const {
+        data,
+        error
+    } = await _supabase
+
+        .from(
+            'kitchen_section_categories'
+        )
+
+        .select(
+            'category'
+        )
+
+        .eq(
+            'kitchen_section_id',
+            sectionId
+        );
+
+
+    if (error) {
+
+        showMessage(
+            'Kitchen category mapping error: ' +
+            error.message
+        );
+
+        return null;
+
+    }
+
+
+    return new Set(
+
+        (data || [])
+
+            .map(
+                row =>
+                    String(
+                        row.category || ''
+                    ).trim()
+            )
+
+            .filter(Boolean)
+
+    );
+
+}
+
+
+/* =========================================================
+   CURRENT ORDERS
+========================================================= */
+
+async function fetchKitchenOrders() {
+
+    clearMessage();
+
+
+    const selectedKitchen =
+        document.getElementById(
+            'kitchenFilter'
+        ).value;
+
+
+    const container =
+        document.getElementById(
+            'ordersContainer'
+        );
+
+
+    const sectionTitle =
+        document.getElementById(
+            'sectionTitle'
+        );
+
+
+    if (!selectedKitchen) {
+
+        sectionTitle.textContent =
+            'Select a Kitchen Section';
+
+
+        container.innerHTML = `
+            <div class="empty-state">
+                Please select a Kitchen Section.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    sectionTitle.textContent =
+        getKitchenSectionName(
+            selectedKitchen
+        );
+
+
+    /* -------------------------------------------------------
+       Get category mapping
+    ------------------------------------------------------- */
+
+    const assignedCategories =
+        await fetchAssignedCategories(
+            selectedKitchen
+        );
+
+
+    if (assignedCategories === null) {
+
+        return;
+
+    }
+
+
+    if (assignedCategories.size === 0) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                No categories assigned to this Kitchen Section.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    /* -------------------------------------------------------
+       IMPORTANT STATUS RULE
+
+       Customer pending order:
+       Cashier sees notification.
+
+       Cashier ACCEPT:
+       status becomes accepted.
+
+       Kitchen Display:
+       accepted / preparing / hold
+       are allowed.
+
+       COMPLETED:
+       never shown in current display.
+
+       Cancelled / Declined:
+       never shown.
+
+       Because HOLD is a saved/current order in
+       your system, HOLD is NOT excluded here.
+    ------------------------------------------------------- */
+
+
+    const {
+        data: orders,
+        error
+    } = await _supabase
+
+        .from('orders')
+
+        .select(`
+            id,
+            table_id,
+            section,
+            status,
+            created_at,
+            updated_at,
+            customer_id,
+            customer_name,
+            order_type,
+            order_items (
+                id,
+                order_id,
+                quantity,
+                price,
+                created_at,
+                modifiers,
+                menu_items (
+                    id,
+                    name_en,
+                    category,
+                    kitchen_section_id
+                )
+            )
+        `)
+
+        .not(
+            'status',
+            'in',
+            '("Completed","completed","Cancelled","cancelled","Declined","declined")'
+        )
+
+        .order(
+            'created_at',
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        showMessage(
+            'Kitchen orders error: ' +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    container.innerHTML = '';
+
+
+    if (
+        !orders ||
+        orders.length === 0
+    ) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                No current orders.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    let cardCount = 0;
+
+
+    for (
+        const order of orders
+    ) {
+
+
+        const allItems =
+            Array.isArray(
+                order.order_items
+            )
+                ? order.order_items
+                : [];
+
+
+        /*
+         ------------------------------------------------------
+         CATEGORY FILTER
+
+         Admin assigns category to Kitchen Section.
+
+         Example:
+
+         Drinks
+         ├── Drinks
+         ├── Teh
+         └── Kopi
+
+         Only those categories are shown.
+        ------------------------------------------------------
+        */
+
+
+        const filteredItems =
+            allItems.filter(
+                item => {
+
+                    if (!item.menu_items) {
+
+                        return false;
+
+                    }
+
+
+                    const category =
+                        String(
+                            item.menu_items.category ||
+                            ''
+                        ).trim();
+
+
+                    return assignedCategories.has(
+                        category
+                    );
+
+                }
+            );
+
+
+        if (
+            filteredItems.length === 0
+        ) {
+
+            continue;
+
+        }
+
+
+        cardCount++;
+
+
+        /*
+         ------------------------------------------------------
+         NEW ITEM DETECTION
+
+         Every order_item has its own ID.
+
+         First time the KDS sees an item:
+         remember its ID.
+
+         If later a new order_item ID appears:
+         mark that item as NEW.
+
+         This prevents old items from being
+         shown again as new.
+        ------------------------------------------------------
+        */
+
+
+        const itemRows =
+            filteredItems.map(
+                item => {
+
+                    const itemId =
+                        String(item.id);
+
+
+                    const isKnown =
+                        orderItemFirstSeen.has(
+                            itemId
+                        );
+
+
+                    if (!isKnown) {
+
+                        orderItemFirstSeen.set(
+                            itemId,
+                            Date.now()
+                        );
+
+                    }
+
+
+                    return {
+
+                        item,
+                        isNew:
+                            firstLoadComplete &&
+                            !isKnown
+
+                    };
+
+                }
+            );
+
+
+        const hasNewItems =
+            itemRows.some(
+                x => x.isNew
+            );
+
+
+        /*
+         ------------------------------------------------------
+         ORDER INFORMATION
+        ------------------------------------------------------
+        */
+
+
+        const orderNumber =
+            '#' +
+            String(order.id)
+                .padStart(2, '0');
+
+
+        const tableNumber =
+            order.table_id ||
+            'N/A';
+
+
+        let orderedBy =
+            'Customer';
+
+
+        if (
+            order.customer_name &&
+            String(
+                order.customer_name
+            ).trim()
+        ) {
+
+            orderedBy =
+                `Customer (${String(
+                    order.customer_name
+                ).trim()})`;
+
+        }
+
+
+        /*
+         ------------------------------------------------------
+         NORMAL ORDER RECEIPT
+        ------------------------------------------------------
+        */
+
+
+        const normalItems =
+            itemRows.filter(
+                x => !x.isNew
+            );
+
+
+        if (
+            normalItems.length > 0
+        ) {
+
+            const receipt =
+                createReceipt(
+                    order,
+                    normalItems,
+                    false
+                );
+
+
+            container.insertAdjacentHTML(
+                'beforeend',
+                receipt
+            );
+
+        }
+
+
+        /*
+         ------------------------------------------------------
+         NEW ITEM RECEIPT
+
+         If an existing order receives
+         additional order_items:
+
+         only those newly-added items
+         get their own receipt/grid.
+        ------------------------------------------------------
+        */
+
+
+        const newItems =
+            itemRows.filter(
+                x => x.isNew
+            );
+
+
+        if (
+            newItems.length > 0
+        ) {
+
+            const newReceipt =
+                createReceipt(
+                    order,
+                    newItems,
+                    true
+                );
+
+
+            container.insertAdjacentHTML(
+                'beforeend',
+                newReceipt
+            );
+
+        }
+
+    }
+
+
+    if (
+        cardCount === 0
+    ) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                No orders for this Kitchen Section.
+            </div>
+        `;
+
+    }
+
+
+    /*
+     First render complete.
+
+     From this point onward,
+     newly inserted order_items are
+     considered NEW.
+    */
+
+    firstLoadComplete = true;
+
+}
+
+
+/* =========================================================
+   CREATE RECEIPT
+========================================================= */
+
+function createReceipt(
+    order,
+    itemRows,
+    isNew
+) {
+
+
+    const orderNumber =
+        '#' +
+        String(order.id)
+            .padStart(2, '0');
+
+
+    const table =
+        order.table_id ||
+        'N/A';
+
+
+    const status =
+        String(
+            order.status || ''
+        ).toUpperCase();
+
+
+    const customerName =
+        order.customer_name
+            ? `Customer (${escapeHtml(
+                order.customer_name
+            )})`
+            : 'Customer';
+
+
+    const itemsHtml =
+        itemRows
+            .map(
+                ({item}) => {
+
+                    const itemName =
+                        item.menu_items
+                            ? item.menu_items.name_en
+                            : 'Item';
+
+
+                    const quantity =
+                        Number(
+                            item.quantity || 0
+                        );
+
+
+                    return `
+                        <div class="item-row">
+
+                            <span class="item-name">
+                                ${escapeHtml(
+                                    itemName
+                                )}
+                            </span>
+
+                            <span class="item-quantity">
+                                ×${quantity}
+                            </span>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join('');
+
+
+    return `
+
+        <article
+            class="receipt ${isNew ? 'new-item' : ''}"
+        >
+
+
+            <div class="receipt-header">
+
+                <div class="order-id">
+                    ORDER ${orderNumber}
+                </div>
+
+
+                ${
+                    isNew
+                    ? `
+                        <div class="new-label">
+                            NEW ITEMS
+                        </div>
+                    `
+                    : ''
+                }
+
+
+                <div class="meta">
+                    <strong>
+                        Table:
+                    </strong>
+
+                    ${escapeHtml(table)}
+                </div>
+
+
+                <div class="meta">
+                    <strong>
+                        Order Time:
+                    </strong>
+
+                    ${escapeHtml(
+                        formatTime(
+                            order.created_at
+                        )
+                    )}
+                </div>
+
+
+                <div class="meta">
+                    <strong>
+                        Ordered By:
+                    </strong>
+
+                    ${customerName}
+                </div>
+
+
+                <div class="meta">
+                    <strong>
+                        Status:
+                    </strong>
+
+                    ${escapeHtml(status)}
+                </div>
+
+            </div>
+
+
+            <div class="items">
+
+                ${itemsHtml}
+
+            </div>
+
+
+            <div class="receipt-footer">
+
+                <button
+                    class="ready-button"
+                    onclick="
+                        markOrderReady(
+                            ${Number(order.id)}
+                        )
+                    "
+                >
+                    MARK AS READY
+                </button>
+
+            </div>
+
+
+        </article>
+
+    `;
+
+}
+
+
+/* =========================================================
+   MARK ORDER READY
+========================================================= */
+
+async function markOrderReady(
+    orderId
+) {
+
+    const {
+        error
+    } = await _supabase
+
+        .from('orders')
+
+        .update({
+            status: 'ready'
+        })
+
+        .eq(
+            'id',
+            orderId
+        );
+
+
+    if (error) {
+
+        alert(
+            'Failed to update order: ' +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    /*
+     Realtime will normally update
+     the screen automatically.
+
+     We also refresh locally.
+    */
+
+    await fetchKitchenOrders();
+
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+async function loadHistory() {
+
+    const sectionId =
+        document.getElementById(
+            'kitchenFilter'
+        ).value;
+
+
+    const historyList =
+        document.getElementById(
+            'historyList'
+        );
+
+
+    if (!sectionId) {
+
+        historyList.innerHTML = `
+            <div class="history-card">
+                Please select a Kitchen Section first.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    const assignedCategories =
+        await fetchAssignedCategories(
+            sectionId
+        );
+
+
+    if (
+        assignedCategories === null
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        assignedCategories.size === 0
+    ) {
+
+        historyList.innerHTML = `
+            <div class="history-card">
+                No categories assigned to this Kitchen Section.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    const selectedDate =
+        document.getElementById(
+            'historyDate'
+        ).value ||
+        localDateKey(
+            new Date()
+        );
+
+
+    /*
+     ------------------------------------------------------
+     Date range
+    ------------------------------------------------------
+    */
+
+
+    const start =
+        `${selectedDate}T00:00:00`;
+
+
+    const nextDate =
+        new Date(
+            `${selectedDate}T00:00:00`
+        );
+
+
+    nextDate.setDate(
+        nextDate.getDate() + 1
+    );
+
+
+    const end =
+        localDateKey(
+            nextDate
+        ) +
+        'T00:00:00';
+
+
+    /*
+     ------------------------------------------------------
+     Completed / Ready History
+
+     Current display excludes completed.
+     History is where completed/ready orders can be viewed.
+    ------------------------------------------------------
+    */
+
+
+    const {
+        data: orders,
+        error
+    } = await _supabase
+
+        .from('orders')
+
+        .select(`
+            id,
+            table_id,
+            status,
+            created_at,
+            updated_at,
+            customer_name,
+            order_items (
+                id,
+                quantity,
+                created_at,
+                menu_items (
+                    name_en,
+                    category
+                )
+            )
+        `)
+
+        .in(
+            'status',
+            [
+                'ready',
+                'Ready',
+                'completed',
+                'Completed'
+            ]
+        )
+
+        .gte(
+            'created_at',
+            start
+        )
+
+        .lt(
+            'created_at',
+            end
+        )
+
+        .order(
+            'created_at',
+            {
+                ascending: false
+            }
+        );
+
+
+    if (error) {
+
+        historyList.innerHTML = `
+            <div class="history-card">
+                ${escapeHtml(
+                    error.message
+                )}
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    const cards = [];
+
+
+    (orders || []).forEach(
+        order => {
+
+            const items =
+                (
+                    order.order_items ||
+                    []
+                ).filter(
+                    item => {
+
+                        const category =
+                            String(
+                                item.menu_items?.category ||
+                                ''
+                            ).trim();
+
+
+                        return assignedCategories.has(
+                            category
+                        );
+
+                    }
+                );
+
+
+            if (
+                items.length === 0
+            ) {
+
+                return;
+
+            }
+
+
+            const itemsHtml =
+                items
+                    .map(
+                        item => `
+
+                            ${escapeHtml(
+                                item.menu_items?.name_en ||
+                                'Item'
+                            )}
+
+                            ×${Number(
+                                item.quantity || 0
+                            )}
+
+                        `
+                    )
+                    .join('<br>');
+
+
+            cards.push(`
+
+                <div class="history-card">
+
+                    <div class="history-order-id">
+                        ORDER #${Number(
+                            order.id
+                        ).toString().padStart(2,'0')}
+                    </div>
+
+
+                    <div class="history-meta">
+                        Table:
+                        ${escapeHtml(
+                            order.table_id ||
+                            'N/A'
+                        )}
+                    </div>
+
+
+                    <div class="history-meta">
+                        Time:
+                        ${escapeHtml(
+                            formatDateTime(
+                                order.created_at
+                            )
+                        )}
+                    </div>
+
+
+                    <div class="history-meta">
+                        Status:
+                        ${escapeHtml(
+                            String(
+                                order.status ||
+                                ''
+                            ).toUpperCase()
+                        )}
+                    </div>
+
+
+                    <div class="history-meta">
+                        Ordered By:
+                        ${
+                            order.customer_name
+                                ? `Customer (${escapeHtml(
+                                    order.customer_name
+                                )})`
+                                : 'Customer'
+                        }
+                    </div>
+
+
+                    <div class="history-items">
+                        ${itemsHtml}
+                    </div>
+
+                </div>
+
+            `);
+
+        }
+    );
+
+
+    historyList.innerHTML =
+        cards.length > 0
+
+            ? cards.join('')
+
+            : `
+                <div class="history-card">
+                    No order history for this date.
+                </div>
+            `;
+
+}
+
+
+/* =========================================================
+   HISTORY BUTTONS
+========================================================= */
+
+document
+    .getElementById(
+        'historyBtn'
+    )
+    .addEventListener(
+        'click',
+        function() {
+
+            /*
+             Default date = current date
+            */
+
+            document.getElementById(
+                'historyDate'
+            ).value =
+                localDateKey(
+                    new Date()
+                );
+
+
+            document.getElementById(
+                'historyModal'
+            ).classList.add(
+                'open'
+            );
+
+
+            loadHistory();
+
+        }
+    );
+
+
+document
+    .getElementById(
+        'closeHistory'
+    )
+    .addEventListener(
+        'click',
+        function() {
+
+            document.getElementById(
+                'historyModal'
+            ).classList.remove(
+                'open'
+            );
+
+        }
+    );
+
+
+document
+    .getElementById(
+        'historyLoad'
+    )
+    .addEventListener(
+        'click',
+        loadHistory
+    );
+
+
+/* =========================================================
+   SECTION CHANGE
+========================================================= */
+
+document
+    .getElementById(
+        'kitchenFilter'
+    )
+    .addEventListener(
+        'change',
+        function() {
+
+            /*
+             When changing section,
+             reload the section-specific
+             current orders.
+            */
+
+            fetchKitchenOrders();
+
+        }
+    );
+
+
+/* =========================================================
+   REALTIME
+========================================================= */
+
+function startRealtime() {
+
+
+    /*
+     ------------------------------------------------------
+     ORDERS
+
+     Important events:
+
+     pending → accepted
+     accepted → preparing
+     preparing → ready
+     ready → completed
+     etc.
+    ------------------------------------------------------
+    */
+
+
+    realtimeChannel =
+        _supabase
+
+            .channel(
+                'kitchen-display-orders-live'
+            )
+
+
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'orders'
+                },
+                function(payload) {
+
+                    console.log(
+                        'Order realtime update:',
+                        payload
+                    );
+
+
+                    fetchKitchenOrders();
+
+                }
+            )
+
+
+            /*
+             -------------------------------------------------
+             ORDER ITEMS
+
+             This is critical.
+
+             If Cashier adds a new item to an
+             existing order, there may be no
+             meaningful order-status change.
+
+             Therefore we listen directly to
+             order_items INSERT/UPDATE/DELETE.
+            -------------------------------------------------
+            */
+
+
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'order_items'
+                },
+                function(payload) {
+
+                    console.log(
+                        'New order item:',
+                        payload
+                    );
+
+
+                    fetchKitchenOrders();
+
+                }
+            )
+
+
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'order_items'
+                },
+                function(payload) {
+
+                    console.log(
+                        'Order item updated:',
+                        payload
+                    );
+
+
+                    fetchKitchenOrders();
+
+                }
+            )
+
+
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'order_items'
+                },
+                function(payload) {
+
+                    console.log(
+                        'Order item deleted:',
+                        payload
+                    );
+
+
+                    fetchKitchenOrders();
+
+                }
+            )
+
+
+            .subscribe(
+                function(status) {
+
+                    console.log(
+                        'Kitchen Realtime:',
+                        status
+                    );
+
+                }
+            );
+
+}
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+async function initKDS() {
+
+
+    await fetchKitchenSections();
+
+
+    await fetchKitchenOrders();
+
+
+    startRealtime();
+
+}
+
+
+initKDS();
+
+
+/* =========================================================
+   CLEANUP
+========================================================= */
+
+window.addEventListener(
+    'beforeunload',
+    function() {
+
+        if (
+            realtimeChannel
+        ) {
+
+            _supabase.removeChannel(
+                realtimeChannel
+            );
+
+        }
+
+    }
+);
+
+</script>
+
+
+</body>
+</html>
