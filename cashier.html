@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hameeds Bistro - Cashier Login & Panel</title>
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+function formatDeviceLocalTime(value){ if(!value) return ""; const d=new Date(value); if(Number.isNaN(d.getTime())) return String(value); return d.toLocaleString(undefined,{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}); }
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="icon" href="https://your-image-url.com/icon.png" type="image/x-icon">
@@ -358,6 +361,64 @@
 #quickOrderLookupInput:focus{outline:2px solid #10b981;outline-offset:1px;}
 @media (max-width:640px){#quickOrderLookupInput{font-size:16px!important;min-height:46px;}#quickOrderLookupInput+button{min-height:44px;width:100%;}}
 </style>
+
+<style id="final-cashier-mobile-order-id-fix">
+@media (max-width:768px){
+  #orderIdQuickAccess{display:block!important;width:100%!important}
+  #orderIdQuickAccess input{display:block!important;width:100%!important;min-height:46px!important;font-size:16px!important}
+  #orderIdQuickAccess button{display:block!important;width:100%!important;min-height:44px!important}
+}
+</style>
+
+
+<style id="cashier-final-fixes-css">
+#orderIdQuickAccess{display:block!important}
+#quickOrderLookupInput{box-sizing:border-box;width:100%;min-height:48px;font-size:16px!important}
+@media(max-width:768px){
+  #orderIdQuickAccess{display:block!important;width:100%!important;grid-column:1/-1!important}
+  #orderIdQuickAccess input{display:block!important;width:100%!important;min-height:48px!important;font-size:16px!important}
+  #orderIdQuickAccess button{display:block!important;width:100%!important;min-height:46px!important}
+}
+</style>
+
+
+<style id="shift-eod-thermal-font-enhancement">
+@media print {
+  .shift-close-print, .eod-print, #shiftCloseReceipt, #eodReceipt {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+  }
+  .shift-close-print *, .eod-print *, #shiftCloseReceipt *, #eodReceipt * {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+  }
+  .shift-close-print h1, .shift-close-print h2, .shift-close-print h3,
+  .eod-print h1, .eod-print h2, .eod-print h3,
+  #shiftCloseReceipt h1, #shiftCloseReceipt h2, #shiftCloseReceipt h3,
+  #eodReceipt h1, #eodReceipt h2, #eodReceipt h3 {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+  }
+  .shift-close-print hr, .eod-print hr, #shiftCloseReceipt hr, #eodReceipt hr {
+    border-top: 2px solid #000 !important;
+    height: 0 !important;
+    margin: 8px 0 !important;
+  }
+  .shift-close-print table, .eod-print table, #shiftCloseReceipt table, #eodReceipt table {
+    border-collapse: collapse !important;
+  }
+  .shift-close-print td, .shift-close-print th,
+  .eod-print td, .eod-print th,
+  #shiftCloseReceipt td, #shiftCloseReceipt th,
+  #eodReceipt td, #eodReceipt th {
+    border-bottom: 1.5px solid #000 !important;
+    padding: 5px 2px !important;
+    font-weight: 700 !important;
+  }
+}
+</style>
 </head>
 <body class="bg-gray-100 font-sans overflow-hidden">
 
@@ -451,11 +512,16 @@
             <button onclick="openLastReceiptModal()" class="bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">LAST RECEIPT</button>
             <button onclick="openCloseAuthModal('SHIFT')" class="bg-amber-600 hover:bg-amber-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">SHIFT CLOSE</button>
             <button onclick="openCloseAuthModal('EOD')" class="bg-purple-700 hover:bg-purple-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow transition text-center">EOD CLOSE</button>
-            <div class="mt-1 pt-3 border-t border-gray-700">
-                <label for="quickOrderLookupInput" class="block text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Order ID / Table No.</label>
-                <input id="quickOrderLookupInput" type="text" inputmode="text" autocomplete="off" placeholder="Enter Order ID" onkeydown="if(event.key==='Enter'){event.preventDefault();quickOrderLookup();}" class="w-full bg-white text-gray-900 border border-gray-500 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500">
-                <div id="quickOrderLookupMessage" class="text-[10px] mt-1 min-h-[14px]"></div>
-            </div>
+            <div id="orderIdQuickAccess" class="mt-2 pt-3 border-t border-gray-700">
+      <div class="bg-gray-800 border-2 border-emerald-500 rounded-xl p-3">
+        <label for="quickOrderLookupInput" class="block text-xs font-extrabold text-white uppercase tracking-wide mb-2">ENTER ORDER ID</label>
+        <input id="quickOrderLookupInput" type="text" inputmode="numeric" autocomplete="off" placeholder="Enter Order ID"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();quickOrderLookup();}"
+          class="w-full bg-white text-gray-900 border-2 border-emerald-400 rounded-lg px-3 py-2 text-base font-extrabold outline-none">
+        <button type="button" onclick="quickOrderLookup()" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg text-sm font-extrabold">OPEN PAYMENT</button>
+        <div id="quickOrderLookupMessage" class="text-xs mt-2 min-h-[18px] text-center font-bold"></div>
+      </div>
+    </div>
         </aside>
     </div>
 
@@ -582,7 +648,7 @@
                 </div>
                 <div class="p-2 bg-gray-300 flex gap-2">
                     <button onclick="closePosModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded text-xs">CANCEL</button>
-                    <button onclick="openPosPaymentInterface()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded text-sm shadow flex items-center justify-center gap-2">
+                    <button onclick="posActionHoldAndPay()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded text-sm shadow flex items-center justify-center gap-2">
                         <span>💵💳</span> PAYMENT
                     </button>
                 </div>
@@ -970,14 +1036,17 @@
                 .eq('password', password)
                 .maybeSingle();
 
-            const allowedRoles = ['Admin', 'Manager', 'Cashier', 'Staff'];
+            const allowedRoles = ['admin', 'manager', 'cashier', 'staff'];
+            const normalizedRole = String(data?.role || '').trim().toLowerCase();
 
-            if (error || !data || !allowedRoles.includes(data.role)) {
+            if (error || !data || !allowedRoles.includes(normalizedRole)) {
                 errorDiv.innerText = "Invalid login credentials or unauthorized role.";
                 errorDiv.classList.remove('hidden');
                 return;
             }
 
+            data.role = data.role || normalizedRole;
+            data.email = data.email || email;
             localStorage.setItem('cashier_session', JSON.stringify(data));
             // Login is a user gesture: use it to unlock mobile audio for future realtime alerts.
             ensureAlertAudioReady();
@@ -985,6 +1054,12 @@
         }
 
         function applyUserSession(data) {
+            if (!data || !data.email) {
+                localStorage.removeItem('cashier_session');
+                document.getElementById('mainPanel').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+                return false;
+            }
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('mainPanel').classList.remove('hidden');
             
@@ -1310,13 +1385,32 @@
         }
 
         async function removeItemFromOrder(itemId, orderId) {
-            const { error } = await _supabase.from('order_items').delete().eq('id', itemId);
-            if (!error) {
-                await renderModalItems(orderId, true);
-            } else {
-                alert('Failed to remove item from database.');
-            }
-        }
+    const staff = (typeof session === 'function') ? session() : null;
+    if (!staff || !staff.email) { alert('Login session not found.'); return; }
+    const { data:item, error:itemErr } = await _supabase.from('order_items').select('*').eq('id',itemId).maybeSingle();
+    if (itemErr || !item) { alert('Item not found.'); return; }
+    let itemName='Item';
+    try { const {data:m}=await _supabase.from('menu_items').select('name_en').eq('id',item.menu_item_id).maybeSingle(); itemName=m?.name_en||itemName; } catch(e){}
+    const password=prompt('Enter your login password to delete this item:');
+    if(password===null)return;
+    if(!String(password).trim()){alert('Password is required.');return;}
+    let verified=null;
+    for(const field of ['password','login_password']){
+        try { const {data:u}=await _supabase.from('profiles').select('*').eq('email',staff.email).eq(field,String(password).trim()).maybeSingle(); if(u){verified=u;break;} } catch(e){}
+    }
+    if(!verified){alert('Incorrect password. Item was NOT deleted.');return;}
+    const reason=prompt('Reason for deleting "'+itemName+'":');
+    if(reason===null)return;
+    if(!String(reason).trim()){alert('Delete reason is required.');return;}
+    const audit={order_id:Number(orderId),order_item_id:Number(itemId),menu_item_id:Number(item.menu_item_id),item_name:itemName,quantity:Number(item.quantity||0),price:Number(item.price||0),reason:String(reason).trim(),deleted_by_name:verified.full_name||verified.name||verified.email,deleted_by_email:verified.email,deleted_by_role:verified.role||staff.role||'',deleted_at:new Date().toISOString(),created_at:new Date().toISOString()};
+    let saved=false;
+    for(const t of ['deleted_order_items','order_item_deletions','item_deletions','order_item_delete_logs']){try{const r=await _supabase.from(t).insert([audit]);if(!r.error){saved=true;break;}}catch(e){}}
+    if(!saved){alert('Delete record could not be saved. Item was NOT deleted.');return;}
+    const {error}=await _supabase.from('order_items').delete().eq('id',itemId);
+    if(error){alert('Delete failed: '+error.message);return;}
+    if(typeof renderModalItems==='function') await renderModalItems(orderId,true);
+    if(typeof recalulateAndUpdateOrderTotal==='function') try{await recalulateAndUpdateOrderTotal(orderId);}catch(e){}
+}
 
         async function recalulateAndUpdateOrderTotal(orderId) {
             const { data: items } = await _supabase
@@ -2144,13 +2238,94 @@
             const item = posCart[index];
             if (item) setPosItemMode(index, item.order_mode === 'Take Away' ? 'Dine In' : 'Take Away');
         }
-        function deletePosCartItem(index) {
-            if (!posCart[index]) return;
-            const name = posCart[index].name_en || 'this item';
-            if (!confirm(`Delete ${name} from this order?`)) return;
+        async function deletePosCartItem(index) {
+            const item = posCart[index];
+            if (!item) return;
+
+            const name = item.name_en || 'this item';
+            let currentSession = {};
+            try { currentSession = JSON.parse(localStorage.getItem('cashier_session') || '{}'); } catch (_) {}
+            const email = String(currentSession.email || '').trim();
+            if (!email) {
+                alert('Login session not found. Please login again.');
+                return;
+            }
+
+            const password = prompt(`Enter your login password to delete "${name}":`);
+            if (password === null) return;
+            if (!String(password).trim()) {
+                alert('Password is required. Item was NOT deleted.');
+                return;
+            }
+
+            let verified = null;
+            const cleanPassword = String(password).trim();
+            for (const field of ['password', 'login_password']) {
+                try {
+                    const { data } = await _supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('email', email)
+                        .eq(field, cleanPassword)
+                        .maybeSingle();
+                    if (data) { verified = data; break; }
+                } catch (_) {}
+            }
+
+            if (!verified) {
+                alert('Incorrect password. Item was NOT deleted.');
+                return;
+            }
+
+            const reason = prompt(`Reason for deleting "${name}":`);
+            if (reason === null) return;
+            const cleanReason = String(reason).trim();
+            if (!cleanReason) {
+                alert('Delete reason is required. Item was NOT deleted.');
+                return;
+            }
+
+            const now = new Date().toISOString();
+            const audit = {
+                order_id: posTargetOrderId ? Number(posTargetOrderId) : null,
+                item_name: name,
+                menu_item_id: item.menu_item_id ? Number(item.menu_item_id) : null,
+                quantity: Number(item.quantity || 0),
+                price: Number(item.price || 0),
+                reason: cleanReason,
+                deleted_by_name: verified.full_name || verified.name || verified.email || email,
+                deleted_by_email: verified.email || email,
+                deleted_by_role: verified.role || currentSession.role || '',
+                deleted_at: now,
+                created_at: now
+            };
+
+            // Save audit first. If the audit cannot be recorded, do not delete.
+            let auditSaved = false;
+            for (const table of ['deleted_order_items', 'order_item_deletions', 'item_deletions', 'order_item_delete_logs']) {
+                try {
+                    const { error } = await _supabase.from(table).insert([audit]);
+                    if (!error) { auditSaved = true; break; }
+                } catch (_) {}
+            }
+            try {
+                const localAudit = JSON.parse(localStorage.getItem('deleted_item_audit') || '[]');
+                localAudit.push(audit);
+                localStorage.setItem('deleted_item_audit', JSON.stringify(localAudit));
+            } catch (_) {}
+
+            // For an already-saved order, delete the database row as well.
+            if (posTargetOrderId && item.id) {
+                const { error } = await _supabase.from('order_items').delete().eq('id', item.id);
+                if (error) {
+                    alert('Delete failed: ' + error.message);
+                    return;
+                }
+            }
+
             posCart.splice(index, 1);
             renderPosCart();
-            if (posTargetOrderId) saveCurrentPosCartToDatabase(posTargetOrderId);
+            if (posTargetOrderId) await saveCurrentPosCartToDatabase(posTargetOrderId);
         }
 
         function renderPosCart() {
@@ -2803,7 +2978,6 @@
             await loadPendingOrders();
             await fetchIncomingOrders();
 
-            alert(`Order #${orderIdToHold} held successfully. Current items and prices have been saved.`);
             closePosModal();
         }
 
@@ -2929,9 +3103,9 @@
             const title=type==='EOD'?'EOD CLOSE REPORT':`SHIFT ${shiftNo} CLOSE REPORT`;
             const cats=Object.entries(snapshot.category_sales||{}).map(([n,v])=>`<tr><td>${escapeClosePrint(n)}</td><td class="num">RM ${Number(v||0).toFixed(2)}</td></tr>`).join('');
             const waits=Object.entries(snapshot.waiter_sales||{}).map(([n,v])=>`<tr><td>${escapeClosePrint(n)}</td><td class="num">${Number(v||0)}</td></tr>`).join('');
-            const dels=(snapshot.deleted_items||[]).map(x=>`<tr><td>${escapeClosePrint(x.item_name)}</td><td>${Number(x.quantity||1)}</td><td>${escapeClosePrint(x.reason)}</td><td>${escapeClosePrint(x.deleted_by_name)}</td><td>${escapeClosePrint(x.deleted_at)}</td></tr>`).join('');
-            const cans=(snapshot.cancelled_orders||[]).map(x=>`<tr><td>#${escapeClosePrint(x.order_id)}</td><td>${escapeClosePrint(x.reason)}</td><td>${escapeClosePrint(x.cancelled_by_name)}</td><td>${escapeClosePrint(x.cancelled_at)}</td></tr>`).join('');
-            const html=`<div class="report"><header><div class="brand">HAMEEDS BISTRO</div><div class="title">${title}</div><div class="meta">Date: ${escapeClosePrint(date)}<br>Closed By: ${escapeClosePrint(user.full_name||user.email||'Staff')}<br>Closed At: ${new Date().toLocaleString()}</div></header><section class="summary"><div><span>Total Sales</span><b>RM ${Number(snapshot.total_sales||0).toFixed(2)}</b></div><div><span>SST</span><b>RM ${Number(snapshot.sst||0).toFixed(2)}</b></div><div><span>Rounding</span><b>RM ${Number(snapshot.rounding||0).toFixed(2)}</b></div><div><span>Net Cash</span><b>RM ${Number(snapshot.net_cash||0).toFixed(2)}</b></div><div><span>Invoices</span><b>${Number(snapshot.invoice_count||0)}</b></div><div><span>Orders</span><b>${Number(snapshot.order_count||0)}</b></div></section><h2>Sales by Category</h2><table><thead><tr><th>Category</th><th>Total</th></tr></thead><tbody>${cats||'<tr><td colspan="2">No category sales</td></tr>'}</tbody></table><h2>Orders by Waiter</h2><table><thead><tr><th>Waiter</th><th>Orders</th></tr></thead><tbody>${waits||'<tr><td colspan="2">No waiter data recorded</td></tr>'}</tbody></table><h2>Deleted Items</h2><table><thead><tr><th>Item</th><th>Qty</th><th>Reason</th><th>Deleted By</th><th>Time</th></tr></thead><tbody>${dels||'<tr><td colspan="5">No deleted-item audit records</td></tr>'}</tbody></table><h2>Cancelled Orders</h2><table><thead><tr><th>Order</th><th>Reason</th><th>Cancelled By</th><th>Time</th></tr></thead><tbody>${cans||'<tr><td colspan="4">No cancelled orders</td></tr>'}</tbody></table><footer>HAMEEDS BISTRO — ${title}</footer></div>`;
+            const dels=(snapshot.deleted_items||[]).map(x=>`<tr><td>${escapeClosePrint(x.item_name)}</td><td>${Number(x.quantity||1)}</td><td>${escapeClosePrint(x.reason)}</td><td>${escapeClosePrint(x.deleted_by_name)}</td><td>${escapeClosePrint(formatDeviceLocalTime(x.deleted_at))}</td></tr>`).join('');
+            const cans=(snapshot.cancelled_orders||[]).map(x=>`<tr><td>#${escapeClosePrint(x.order_id)}</td><td>${escapeClosePrint(x.reason)}</td><td>${escapeClosePrint(x.cancelled_by_name)}</td><td>${escapeClosePrint(formatDeviceLocalTime(x.cancelled_at))}</td></tr>`).join('');
+            const html=`<div class="report"><header><div class="brand">HAMEEDS BISTRO</div><div class="title">${title}</div><div class="meta">Date: ${escapeClosePrint(date)}<br>Closed By: ${escapeClosePrint(user.full_name||user.email||'Staff')}<br>Closed At: ${formatDeviceLocalTime(new Date())}</div></header><section class="summary"><div><span>Total Sales</span><b>RM ${Number(snapshot.total_sales||0).toFixed(2)}</b></div><div><span>SST</span><b>RM ${Number(snapshot.sst||0).toFixed(2)}</b></div><div><span>Rounding</span><b>RM ${Number(snapshot.rounding||0).toFixed(2)}</b></div><div><span>Net Cash</span><b>RM ${Number(snapshot.net_cash||0).toFixed(2)}</b></div><div><span>Invoices</span><b>${Number(snapshot.invoice_count||0)}</b></div><div><span>Orders</span><b>${Number(snapshot.order_count||0)}</b></div></section><h2>Sales by Category</h2><table><thead><tr><th>Category</th><th>Total</th></tr></thead><tbody>${cats||'<tr><td colspan="2">No category sales</td></tr>'}</tbody></table><h2>Orders by Waiter</h2><table><thead><tr><th>Waiter</th><th>Orders</th></tr></thead><tbody>${waits||'<tr><td colspan="2">No waiter data recorded</td></tr>'}</tbody></table><h2>Deleted Items</h2><table><thead><tr><th>Item</th><th>Qty</th><th>Reason</th><th>Deleted By</th><th>Time</th></tr></thead><tbody>${dels||'<tr><td colspan="5">No deleted-item audit records</td></tr>'}</tbody></table><h2>Cancelled Orders</h2><table><thead><tr><th>Order</th><th>Reason</th><th>Cancelled By</th><th>Time</th></tr></thead><tbody>${cans||'<tr><td colspan="4">No cancelled orders</td></tr>'}</tbody></table><footer>HAMEEDS BISTRO — ${title}</footer></div>`;
             const css=`@page{size:auto;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}body{font-size:12px}.report{width:100%;padding:8mm}header{text-align:center;border-bottom:2px solid #000;padding-bottom:5mm;margin-bottom:5mm}.brand{font-size:24px;font-weight:900}.title{font-size:18px;font-weight:900;margin-top:3px}.meta{font-size:11px;line-height:1.5;margin-top:4px}.summary{border:1px solid #000;padding:4mm;margin-bottom:5mm}.summary>div{display:flex;justify-content:space-between;border-bottom:1px dotted #777;padding:3px 0}.summary>div:last-child{border-bottom:0}h2{font-size:14px;margin:5mm 0 2mm;border-bottom:1px solid #000;padding-bottom:2px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:5px;text-align:left}th{font-weight:900}.num{text-align:right;white-space:nowrap}footer{text-align:center;margin-top:8mm;border-top:1px solid #000;padding-top:3mm;font-size:10px;font-weight:700}`;
             w.document.open();w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${html}</body></html>`);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){console.error(e)}},350);
         }
@@ -3172,5 +3346,564 @@ function closeCombineSplitModal(){const m=document.getElementById('combineSplitM
   }
 })();
 </script>
+
+<script id="cashier-final-behavior-fixes">
+(function(){
+  'use strict';
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+  function session(){ try{return JSON.parse(localStorage.getItem('cashier_session')||'{}')}catch(e){return{}} }
+  function setMsg(text, ok){
+    const m=document.getElementById('quickOrderLookupMessage'); if(!m)return;
+    m.textContent=text; m.className='text-xs mt-2 min-h-[18px] text-center font-bold '+(ok?'text-emerald-300':'text-red-300');
+  }
+
+  // ---------- ORDER ID QUICK OPEN ----------
+  window.quickOrderLookup = async function(){
+    const input=document.getElementById('quickOrderLookupInput');
+    const raw=String(input?.value||'').trim();
+    if(!raw){setMsg('Enter an Order ID.',false);return;}
+    if(!/^\d+$/.test(raw)){setMsg('Enter a correct Order ID.',false);return;}
+    const id=Number(raw);
+    setMsg('Searching Order #'+id+' ...',true);
+    const {data,error}=await _supabase.from('orders').select('*').eq('id',id).maybeSingle();
+    if(error||!data){setMsg('Enter a correct Order ID.',false);return;}
+    try{
+      await window.openPosSystemModalWithOrder(id,Number(data.total_amount||0));
+      window.openPosPaymentInterface();
+      setMsg('Order #'+id+' opened.',true);
+      input?.blur();
+    }catch(e){console.error(e);setMsg('Unable to open this Order ID.',false);}
+  };
+
+  // ---------- OPEN CURRENT / NOTIFICATION ORDER ----------
+  window.openOrderDetailsById = async function(orderId, sourceType='current'){
+    try{
+      if(sourceType==='incoming'){
+        stopNewOrderAlert();
+        try{
+          const {data:pendingNow}=await _supabase.from('orders').select('id').eq('status','pending');
+          (pendingNow||[]).forEach(o=>newOrderAlertMutedOrderIds.add(String(o.id)));
+        }catch(e){}
+      }
+      const {data:order,error}=await _supabase.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
+      if(error||!order){console.error('Open order failed',error);return;}
+      await window.openOrderDetails(order,sourceType);
+    }catch(e){
+      console.error('Open Order exception:',e);
+      const modal=document.getElementById('orderDetailModal');
+      if(modal){
+        document.getElementById('modalOrderTitle').textContent='Order ID: #'+orderId;
+        document.getElementById('modalOrderMeta').textContent='Unable to load order details.';
+        modal.classList.remove('hidden');
+      }
+    }
+  };
+
+  // ---------- EXISTING ORDERS ON NEW ORDER ----------
+  window.loadExistingOrdersForSelectedTable = async function(){
+    const select=document.getElementById('newOrderTableSelect');
+    const box=document.getElementById('existingTableOrdersContainer');
+    const list=document.getElementById('existingTableOrdersList');
+    const btn=document.querySelector('#newOrderSetupModal button[onclick="continueNewOrderToPos()"]');
+    if(!select||!box||!list)return;
+    const raw=String(select.value||'').trim();
+    if(!raw){box.classList.add('hidden');list.innerHTML='';if(btn)btn.textContent='CONTINUE TO ORDER';return;}
+    const tableKey=raw.split('/')[0].trim().toUpperCase();
+    box.classList.remove('hidden'); list.innerHTML='<div class="text-xs text-gray-500">Checking existing orders...</div>';
+    const {data,error}=await _supabase.from('orders').select('id,table_id,total_amount,status,created_at').in('status',['accepted','pending','Accepted','Pending','HOLD','Held','hold']).order('created_at',{ascending:false});
+    if(error){list.innerHTML='<div class="text-xs text-red-600">Unable to load existing orders.</div>';if(btn)btn.textContent='CONTINUE TO ORDER';return;}
+    const matches=(data||[]).filter(o=>String(o.table_id||'').split('/')[0].trim().toUpperCase()===tableKey);
+    if(!matches.length){list.innerHTML='<div class="text-xs text-gray-500">No existing current order for this table.</div>';if(btn)btn.textContent='CONTINUE TO ORDER';return;}
+    if(btn){btn.textContent='NEW CUSTOMER';btn.classList.remove('bg-emerald-600','hover:bg-emerald-700');btn.classList.add('bg-blue-600','hover:bg-blue-700');}
+    list.innerHTML=matches.map(o=>`<div class="bg-white border border-amber-200 rounded-lg p-3 flex items-center justify-between gap-2">
+      <div><div class="text-sm font-extrabold text-gray-900">Order #${o.id}</div><div class="text-[10px] text-gray-500">${o.table_id||raw} · ${String(o.status||'').toUpperCase()} · RM${Number(o.total_amount||0).toFixed(2)}</div></div>
+      <button type="button" onclick="openExistingTableOrder(${Number(o.id)})" class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-extrabold">OPEN</button>
+    </div>`).join('');
+  };
+
+  window.openExistingTableOrder = async function(orderId){
+    closeNewOrderSetupModal();
+    await window.openPosSystemModalWithOrder(Number(orderId),0);
+  };
+
+  window.continueNewOrderToPos = async function(){
+    let selectedTable='';
+    if(newOrderType==='Dine In'){
+      selectedTable=String(document.getElementById('newOrderTableSelect')?.value||'').trim();
+      if(!selectedTable)return;
+      await window.loadExistingOrdersForSelectedTable();
+      // Existing orders are displayed for the user to choose. NEW CUSTOMER still creates a new order.
+    }else{
+      selectedTable=await refreshNextTakeAwayNumber();
+    }
+    newOrderTableId=selectedTable;
+    closeNewOrderSetupModal();
+    posTargetOrderId=null; posCart=[]; posEnteredAmountString=''; posDiscountPercent=0; posDiscountAmount=0;
+    posOrderMode=newOrderType==='Take Away'?'Take Away':'Dine In';
+    document.getElementById('posDisplayTable').innerText=selectedTable;
+    document.getElementById('posDisplayCard').innerText=Math.floor(1000+Math.random()*9000);
+    document.getElementById('posDisplayPax').innerText='5';
+    document.getElementById('posOrderNoteInput').value='';
+    const typeBadge=document.querySelector('#posRightPaneContainer .bg-emerald-600, #posRightPaneContainer .bg-amber-600');
+    if(typeBadge){
+      typeBadge.innerHTML=newOrderType==='Dine In'?'<span>🍽️</span> DINE IN':'<span>🥡</span> TAKE AWAY';
+      typeBadge.className=newOrderType==='Dine In'?'bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2':'bg-amber-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2';
+    }
+    await fetchPosMenuData(); renderPosCart(); renderPosRightPaneMenu(); document.getElementById('posSystemModal').classList.remove('hidden');
+  };
+
+  // ---------- DELETE ITEM: PASSWORD + REASON + AUDIT ----------
+  window.removeItemFromOrder = async function(itemId,orderId){
+    const s=session();
+    if(!s.email){alert('Login session not found. Please login again.');return;}
+    const {data:item}=await _supabase.from('order_items').select('*').eq('id',itemId).maybeSingle();
+    if(!item)return;
+    const {data:menu}=await _supabase.from('menu_items').select('id,name_en').eq('id',item.menu_item_id).maybeSingle();
+    const name=menu?.name_en||'Unknown Item';
+    const password=prompt('Enter your login password to delete this item:');
+    if(password===null)return;
+    const {data:user,error:authErr}=await _supabase.from('profiles').select('*').eq('email',s.email).eq('password',password).maybeSingle();
+    if(authErr||!user){alert('Incorrect password. Item was NOT deleted.');return;}
+    const reason=prompt('Reason for deleting '+name+':');
+    if(reason===null||!reason.trim()){alert('Delete reason is required. Item was NOT deleted.');return;}
+    const now=new Date().toISOString();
+    const audit={order_id:Number(orderId),item_name:name,menu_item_id:Number(item.menu_item_id),quantity:Number(item.quantity||0),reason:reason.trim(),deleted_by_name:user.full_name||user.email,deleted_by_email:user.email,deleted_by_role:user.role||'',deleted_at:now,created_at:now};
+    try{const a=JSON.parse(localStorage.getItem('deleted_item_audit')||'[]');a.push(audit);localStorage.setItem('deleted_item_audit',JSON.stringify(a));}catch(e){}
+    for(const table of ['deleted_order_items','order_item_deletions','item_deletions','order_item_delete_logs']){
+      try{const r=await _supabase.from(table).insert([audit]);if(!r.error)break;}catch(e){}
+    }
+    const {error}=await _supabase.from('order_items').delete().eq('id',itemId);
+    if(error){alert('Failed to delete item.');return;}
+    await renderModalItems(orderId,true);
+  };
+
+  // ---------- CANCEL ORDER: preserve order time, cancel time, reason, cancelled by ----------
+  window.submitDeclineOrder = async function(){
+    const reason=String(document.getElementById('declineReasonInput')?.value||'').trim();
+    if(!reason){alert('Please type a reason for cancelling.');return;}
+    const orderId=Number(orderToDeclineId); const s=session(); const now=new Date().toISOString();
+    const {data:order}=await _supabase.from('orders').select('*').eq('id',orderId).maybeSingle();
+    if(!order){alert('Order not found.');return;}
+    const by=s.full_name||s.email||'Unknown';
+    const update={status:'Cancelled',decline_reason:reason};
+    let r=await _supabase.from('orders').update(update).eq('id',orderId);
+    if(r.error){alert('Failed to cancel order: '+r.error.message);return;}
+    // Try optional audit columns without making cancellation depend on them.
+    try{await _supabase.from('orders').update({cancelled_by_name:by,cancelled_by_email:s.email||null,cancelled_at:now,cancellation_time:now}).eq('id',orderId);}catch(e){}
+    const audit={order_id:orderId,order_time:order.created_at||'',reason,cancelled_by_name:by,cancelled_by_email:s.email||'',cancelled_at:now,created_at:now};
+    try{const a=JSON.parse(localStorage.getItem('cancelled_order_audit')||'[]');a.push(audit);localStorage.setItem('cancelled_order_audit',JSON.stringify(a));}catch(e){}
+    for(const table of ['order_cancellations','cancelled_orders','order_cancel_logs']){try{const x=await _supabase.from(table).insert([audit]);if(!x.error)break;}catch(e){}}
+    closeDeclineModal(); await fetchIncomingOrders(); await loadPendingOrders();
+  };
+
+  // ---------- RECALL AUDIT ----------
+  window.recallOrder = async function(orderId){
+    const id=Number(orderId); const s=session();
+    const {data:invoice,error:ie}=await _supabase.from('invoices').select('*').eq('order_id',id).order('created_at',{ascending:false}).limit(1).maybeSingle();
+    if(ie){console.error(ie);return;}
+    if(invoice){
+      const audit={order_id:id,invoice_id:invoice.id,amount:Number(invoice.total_amount||0),recalled_by_name:s.full_name||s.email||'Unknown',recalled_by_email:s.email||'',recalled_at:new Date().toISOString(),invoice_created_at:invoice.created_at||''};
+      try{const a=JSON.parse(localStorage.getItem('recall_audit')||'[]');a.push(audit);localStorage.setItem('recall_audit',JSON.stringify(a));}catch(e){}
+      await _supabase.from('invoices').delete().eq('id',invoice.id);
+    }
+    await _supabase.from('orders').update({status:'accepted',payment_status:'Pending'}).eq('id',id);
+    closeOrderModal(); await loadPendingOrders();
+    const invList=document.getElementById('invoiceListModal'); if(invList&&!invList.classList.contains('hidden'))await openInvoiceListModal();
+  };
+
+  // ---------- SPLIT BILL: temporary order, correct source indexes, rollback on cancel ----------
+  window.__pendingSplitBill=null;
+  const originalClosePosModal=window.closePosModal;
+  window.closePosModal=async function(){
+    const p=window.__pendingSplitBill;
+    if(p&&!p.finalized&&!window.__splitFinalizing){
+      try{
+        if(p.newOrderId){await _supabase.from('order_items').delete().eq('order_id',p.newOrderId);await _supabase.from('orders').delete().eq('id',p.newOrderId);}
+      }catch(e){console.error(e)}
+      window.__pendingSplitBill=null;
+      posTargetOrderId=p.parentOrderId;
+    }
+    if(typeof originalClosePosModal==='function')return originalClosePosModal();
+  };
+
+  window.renderSplitBill=function(){
+    const body=document.getElementById('combineSplitBody'); if(!body)return;
+    const src=window.splitBillSource||[];
+    const remaining=src.map((i,sourceIndex)=>({i,sourceIndex})).filter(x=>Number(x.i.quantity)>0);
+    const selected=src.map((i,sourceIndex)=>({i,sourceIndex})).filter(x=>Number(x.i.selected)>0);
+    const remainingHtml=remaining.map(({i,sourceIndex})=>`<div class="border rounded-xl p-3 mb-2 flex items-center justify-between gap-2"><div><div class="font-bold">${i.name}</div><div class="text-xs text-gray-500">Remaining: ${Number(i.quantity)}</div></div><button type="button" onclick="moveOneSplitItem(${sourceIndex},this)" class="bg-violet-600 active:scale-95 text-white px-4 py-2 rounded-lg font-bold">ADD ONE</button></div>`).join('');
+    const selectedHtml=selected.map(({i,sourceIndex})=>`<div class="border border-emerald-200 bg-emerald-50 rounded-xl p-3 mb-2 flex items-center justify-between gap-2"><span class="font-bold">${i.name} ×${Number(i.selected)}</span><span class="flex items-center gap-2"><span>RM${(Number(i.price)*Number(i.selected)).toFixed(2)}</span><button type="button" onclick="removeOneSplitItem(${sourceIndex},this)" class="bg-red-600 active:scale-95 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">REMOVE</button></span></div>`).join('');
+    body.innerHTML=`<div class="grid md:grid-cols-2 gap-4"><div><div class="font-extrabold mb-2">Original Order — Remaining Items</div>${remainingHtml||'<div class="text-xs text-gray-500 border rounded-xl p-3">No remaining items.</div>'}</div><div><div class="font-extrabold mb-2">Split Bill</div>${selectedHtml||'<div class="text-xs text-gray-500 border rounded-xl p-3">No split items yet.</div>'}<button type="button" onclick="createSplitBillOrder()" class="w-full mt-3 bg-emerald-600 text-white font-extrabold py-3 rounded-xl">PAY / HOLD SPLIT BILL</button></div></div>`;
+  };
+  window.moveOneSplitItem=function(sourceIndex,btn){
+    const i=(window.splitBillSource||[])[sourceIndex]; if(!i||Number(i.quantity)<=0)return;
+    if(btn)btn.disabled=true; i.quantity=Number(i.quantity)-1; i.selected=Number(i.selected)+1; window.renderSplitBill();
+  };
+  window.removeOneSplitItem=function(sourceIndex,btn){
+    const i=(window.splitBillSource||[])[sourceIndex]; if(!i||Number(i.selected)<=0)return;
+    if(btn)btn.disabled=true; i.selected=Number(i.selected)-1; i.quantity=Number(i.quantity)+1; window.renderSplitBill();
+  };
+
+  async function finalizeSplit(){
+    const p=window.__pendingSplitBill;if(!p||p.finalized)return true;
+    const selected=p.selected||[];
+    for(const s of selected){
+      const {data:item,error}=await _supabase.from('order_items').select('id,quantity').eq('id',s.id).maybeSingle();
+      if(error)throw error;
+      if(!item)continue;
+      const remain=Number(item.quantity||0)-Number(s.selected||0);
+      if(remain>0)await _supabase.from('order_items').update({quantity:remain}).eq('id',item.id);
+      else await _supabase.from('order_items').delete().eq('id',item.id);
+    }
+    const {data:rem}=await _supabase.from('order_items').select('price,quantity').eq('order_id',p.parentOrderId);
+    const subtotal=(rem||[]).reduce((a,i)=>a+Number(i.price||0)*Number(i.quantity||0),0);
+    const total=roundToNearest5Sen(roundMoney(subtotal+roundMoney(subtotal*0.06)));
+    await _supabase.from('orders').update({total_amount:total,status:'accepted',payment_status:'Pending'}).eq('id',p.parentOrderId);
+    p.finalized=true;window.__pendingSplitBill=null;posTargetOrderId=p.parentOrderId;await loadPendingOrders();return true;
+  }
+
+  window.createSplitBillOrder=async function(){
+    const selected=(window.splitBillSource||[]).filter(i=>Number(i.selected)>0);
+    if(!selected.length){return;}
+    const parentId=Number(posTargetOrderId);
+    const {data:parent,error:pe}=await _supabase.from('orders').select('table_id').eq('id',parentId).single();
+    if(pe||!parent)return;
+    const subtotal=roundMoney(selected.reduce((a,i)=>a+Number(i.price||0)*Number(i.selected||0),0));
+    const total=roundToNearest5Sen(subtotal+roundMoney(subtotal*0.06));
+    const {data:newOrder,error}=await _supabase.from('orders').insert([{table_id:parent.table_id,status:'split_pending',payment_status:'Pending',total_amount:total,decline_reason:'Split from Order #'+parentId}]).select().single();
+    if(error||!newOrder)return;
+    for(const i of selected){
+      const payload={order_id:newOrder.id,menu_item_id:i.menu_item_id,price:i.price,quantity:i.selected}; if(i.modifiers!==null)payload.modifiers=i.modifiers;
+      let r=await _supabase.from('order_items').insert([payload]);
+      if(r.error){delete payload.modifiers;r=await _supabase.from('order_items').insert([payload]);}
+      if(r.error){await _supabase.from('order_items').delete().eq('order_id',newOrder.id);await _supabase.from('orders').delete().eq('id',newOrder.id);return;}
+    }
+    window.__pendingSplitBill={parentOrderId:parentId,newOrderId:Number(newOrder.id),selected:selected.map(i=>({id:i.id,selected:Number(i.selected)})),finalized:false};
+    closeCombineSplitModal();
+    await window.openPosSystemModalWithOrder(Number(newOrder.id),total);
+    window.openPosPaymentInterface();
+  };
+
+  // Payment/Hold: finalize the original order only after the temporary split is paid/held.
+  const originalPayment=window.posProcessPayment;
+  window.posProcessPayment=async function(method){
+    const p=window.__pendingSplitBill;
+    if(p&&Number(posTargetOrderId)===Number(p.newOrderId)){
+      window.__splitFinalizing=true;
+      try{
+        await originalPayment(method);
+        await finalizeSplit();
+      }catch(e){console.error('Split payment finalize failed',e)}
+      finally{window.__splitFinalizing=false}
+      return;
+    }
+    return originalPayment(method);
+  };
+  const originalHold=window.posActionHold;
+  window.posActionHold=async function(){
+    const p=window.__pendingSplitBill;
+    if(p&&Number(posTargetOrderId)===Number(p.newOrderId)){
+      window.__splitFinalizing=true;
+      try{await originalHold();await finalizeSplit();}
+      catch(e){console.error('Split hold finalize failed',e)}
+      finally{window.__splitFinalizing=false}
+      return;
+    }
+    return originalHold();
+  };
+
+  // ---------- COMBINE: always close popup and refresh target order ----------
+  window.executeCombineOrders=async function(){
+    const ids=[...document.querySelectorAll('.combine-order-check:checked')].map(x=>Number(x.value)).filter(Boolean);
+    if(!ids.length)return;
+    const target=Number(posTargetOrderId);
+    for(const id of ids){
+      const {data:items,error}=await _supabase.from('order_items').select('*').eq('order_id',id);
+      if(error)throw error;
+      for(const item of (items||[])){
+        const payload={order_id:target,menu_item_id:item.menu_item_id,price:item.price,quantity:item.quantity};
+        if(item.modifiers!==undefined)payload.modifiers=item.modifiers;
+        let r=await _supabase.from('order_items').insert([payload]);
+        if(r.error){delete payload.modifiers;r=await _supabase.from('order_items').insert([payload]);}
+        if(r.error)throw r.error;
+      }
+      await _supabase.from('orders').update({status:'Combined',payment_status:'Merged'}).eq('id',id);
+    }
+    const {data:merged}=await _supabase.from('order_items').select('price,quantity').eq('order_id',target);
+    const subtotal=(merged||[]).reduce((a,i)=>a+Number(i.price||0)*Number(i.quantity||0),0);
+    const total=roundToNearest5Sen(roundMoney(subtotal+roundMoney(subtotal*0.06)));
+    await _supabase.from('orders').update({total_amount:total,status:'accepted',payment_status:'Pending'}).eq('id',target);
+    closeCombineSplitModal();
+    await loadPendingOrders();
+    await window.openPosSystemModalWithOrder(target,total);
+    window.openPosPaymentInterface();
+  };
+
+  // ---------- REMOVE SUCCESS ALERTS FOR NORMAL ORDER SEND/HOLD/PAY ----------
+  // The existing functions remain otherwise unchanged; these wrappers silence only success popups.
+  const oldSend=window.sendOrderToKitchen;
+  window.sendOrderToKitchen=async function(){
+    if(!currentActiveOrderId)return;
+    const {error}=await _supabase.from('orders').update({status:'accepted'}).eq('id',currentActiveOrderId);
+    if(error){console.error(error);return;}
+    closeOrderModal();await loadPendingOrders();await fetchIncomingOrders();
+  };
+
+  // ---------- EOD / SHIFT REPORT: category-only sales, recall/net sales, waiter count, full cancellation audit ----------
+  window.buildCloseSnapshot=async function(dateStr){
+    const {start,end}=localDayStartEnd(dateStr);
+    const {data:invoices,error:ie}=await _supabase.from('invoices').select('*').gte('created_at',start.toISOString()).lte('created_at',end.toISOString()).order('created_at',{ascending:true});
+    if(ie)throw ie;
+    const rows=invoices||[]; const orderIds=rows.map(x=>x.order_id).filter(Boolean);
+    let items=[],orders=[];
+    if(orderIds.length){
+      const ir=await _supabase.from('order_items').select('*').in('order_id',orderIds);if(ir.error)throw ir.error;items=ir.data||[];
+      const or=await _supabase.from('orders').select('*').in('id',orderIds);if(!or.error)orders=or.data||[];
+    }
+    const grossSales=rows.reduce((s,r)=>s+Number(r.total_amount||0),0);
+    let grossSubtotal=0;items.forEach(i=>grossSubtotal+=Number(i.price||0)*Number(i.quantity||0));
+    const sst=roundMoney(grossSubtotal*0.06);const preRound=grossSubtotal+sst;const rounding=roundMoney(grossSales-preRound);
+    const catMap={};
+    const menuIds=[...new Set(items.map(i=>i.menu_item_id).filter(Boolean))];
+    let menus=[];if(menuIds.length){const mr=await _supabase.from('menu_items').select('*').in('id',menuIds);if(!mr.error)menus=mr.data||[];}
+    const menuById={};menus.forEach(m=>menuById[String(m.id)]=m);
+    const categoryIds=[...new Set(menus.map(m=>m.category_id).filter(x=>x!=null))];
+    let categoryById={};
+    for(const table of ['categories','menu_categories']){
+      if(!categoryIds.length)break;
+      try{const r=await _supabase.from(table).select('*').in('id',categoryIds);if(!r.error&&(r.data||[]).length){(r.data||[]).forEach(c=>{categoryById[String(c.id)]=c.name_en||c.name||c.title||c.category||c.name_bn||('Category '+c.id)});break;}}catch(e){}
+    }
+    items.forEach(i=>{
+      const m=menuById[String(i.menu_item_id)]||{};let cat=m.category||m.category_name||m.category_en;
+      if(!cat&&m.category_id!=null)cat=categoryById[String(m.category_id)];
+      if(!cat&&m.translations){try{const t=typeof m.translations==='string'?JSON.parse(m.translations):m.translations;cat=t?.category||t?.category_en;}catch(e){}}
+      cat=cat||'Uncategorized';const val=Number(i.price||0)*Number(i.quantity||0);catMap[String(cat)]=(catMap[String(cat)]||0)+val;
+    });
+    const waiterMap={};
+    [...orders].forEach(o=>{const n=o.waiter_name||o.ordered_by_name||o.created_by_name||o.staff_name||o.waiter||o.ordered_by||o.created_by;if(n)waiterMap[String(n)]=(waiterMap[String(n)]||0)+1;});
+    const allDayOrders=await safeCloseTable('orders',q=>q.gte('created_at',start.toISOString()).lte('created_at',end.toISOString()));
+    const cancelled=[];
+    allDayOrders.filter(o=>String(o.status||'').toLowerCase()==='cancelled').forEach(o=>cancelled.push({order_id:o.id,order_time:o.created_at||'',reason:o.decline_reason||o.cancel_reason||o.cancellation_reason||'No reason recorded',cancelled_by_name:o.cancelled_by_name||o.cancelled_by||o.updated_by_name||o.updated_by||o.created_by_name||o.created_by||'Unknown',cancelled_at:o.cancelled_at||o.cancellation_time||o.updated_at||''}));
+    for(const table of ['order_cancellations','cancelled_orders','order_cancel_logs']){
+      const a=await safeCloseTable(table,q=>q.gte('created_at',start.toISOString()).lte('created_at',end.toISOString()));
+      a.forEach(o=>cancelled.push({order_id:o.order_id||o.orderId||o.id,order_time:o.order_time||o.order_created_at||o.created_at||'',reason:o.reason||o.cancel_reason||o.decline_reason||'No reason recorded',cancelled_by_name:o.cancelled_by_name||o.cancelled_by||o.created_by_name||o.created_by||'Unknown',cancelled_at:o.cancelled_at||o.cancellation_time||o.updated_at||o.created_at||''}));
+    }
+    try{const a=JSON.parse(localStorage.getItem('cancelled_order_audit')||'[]');a.filter(x=>{const t=new Date(x.cancelled_at||0);return t>=start&&t<=end}).forEach(x=>cancelled.push(x));}catch(e){}
+    const deleted=[];
+    for(const table of ['deleted_order_items','order_item_deletions','item_deletions','order_item_delete_logs']){
+      const a=await safeCloseTable(table,q=>q.gte('created_at',start.toISOString()).lte('created_at',end.toISOString()));
+      a.forEach(x=>deleted.push({item_name:x.item_name||x.name||x.menu_item_name||'Unknown item',quantity:x.quantity||x.qty||1,reason:x.reason||x.delete_reason||'No reason recorded',deleted_by_name:x.deleted_by_name||x.deleted_by||x.created_by_name||x.created_by||'Unknown',deleted_at:x.deleted_at||x.created_at||x.updated_at||''}));
+    }
+    try{const a=JSON.parse(localStorage.getItem('deleted_item_audit')||'[]');a.filter(x=>{const t=new Date(x.deleted_at||0);return t>=start&&t<=end}).forEach(x=>deleted.push(x));}catch(e){}
+    let recalls=[];try{const a=JSON.parse(localStorage.getItem('recall_audit')||'[]');recalls=a.filter(x=>{const t=new Date(x.recalled_at||0);return t>=start&&t<=end});}catch(e){}
+    const recallTotal=recalls.reduce((s,x)=>s+Number(x.amount||0),0);
+    const netSales=grossSales-recallTotal;
+    const netCash=rows.filter(r=>String(r.payment_method||'').toLowerCase()==='cash').reduce((s,r)=>s+Number(r.total_amount||0),0)-recallTotal;
+    return {date:dateStr,total_sales:roundMoney(grossSales),recall_total:roundMoney(recallTotal),net_sales:roundMoney(netSales),sst,rounding,net_cash:roundMoney(netCash),category_sales:catMap,waiter_sales:waiterMap,deleted_items:deleted,cancelled_orders:cancelled,recalls,invoice_count:rows.length,order_count:orders.length};
+  };
+
+  window.openCloseReportPrintWindow=function(type,date,shiftNo,snapshot,user){
+    const w=window.open('','_blank');if(!w)return;
+    const title=type==='EOD'?'EOD CLOSE REPORT':`SHIFT ${shiftNo} CLOSE REPORT`;
+    const money=n=>'RM '+Number(n||0).toFixed(2);
+    const cats=Object.entries(snapshot.category_sales||{}).map(([n,v])=>`<tr><td>${escapeClosePrint(n)}</td><td class="num">${money(v)}</td></tr>`).join('');
+    const waits=Object.entries(snapshot.waiter_sales||{}).map(([n,v])=>`<tr><td>${escapeClosePrint(n)}</td><td class="num">${Number(v||0)}</td></tr>`).join('');
+    const recalls=(snapshot.recalls||[]).map(x=>`<tr><td>#${escapeClosePrint(x.order_id)}</td><td>${money(x.amount)}</td><td>${escapeClosePrint(x.recalled_by_name||'Unknown')}</td><td>${escapeClosePrint(formatDeviceLocalTime(x.recalled_at||''))}</td></tr>`).join('');
+    const dels=(snapshot.deleted_items||[]).map(x=>`<tr><td>${escapeClosePrint(x.item_name)}</td><td>${Number(x.quantity||1)}</td><td>${escapeClosePrint(x.reason)}</td><td>${escapeClosePrint(x.deleted_by_name)}</td><td>${escapeClosePrint(formatDeviceLocalTime(x.deleted_at))}</td></tr>`).join('');
+    const cans=(snapshot.cancelled_orders||[]).map(x=>`<tr><td>#${escapeClosePrint(x.order_id)}</td><td>${escapeClosePrint(x.order_time)}</td><td>${escapeClosePrint(x.reason)}</td><td>${escapeClosePrint(x.cancelled_by_name)}</td><td>${escapeClosePrint(formatDeviceLocalTime(x.cancelled_at))}</td></tr>`).join('');
+    const body=`<div class="report"><header><div class="brand">HAMEEDS BISTRO</div><div class="title">${title}</div><div class="meta">Date: ${escapeClosePrint(date)}<br>Closed By: ${escapeClosePrint(user.full_name||user.email||'Staff')}<br>Closed At: ${formatDeviceLocalTime(new Date())}</div></header>
+      <section class="summary"><div><span>Total Sales</span><b>${money(snapshot.total_sales)}</b></div><div><span>Recall</span><b>- ${money(snapshot.recall_total)}</b></div><div><span>Net Sales</span><b>${money(snapshot.net_sales)}</b></div><div><span>SST</span><b>${money(snapshot.sst)}</b></div><div><span>Rounding</span><b>${money(snapshot.rounding)}</b></div><div><span>Net Cash</span><b>${money(snapshot.net_cash)}</b></div><div><span>Invoices</span><b>${snapshot.invoice_count}</b></div><div><span>Orders</span><b>${snapshot.order_count}</b></div></section>
+      <h2>Sales by Category</h2><table><thead><tr><th>Category</th><th>Total</th></tr></thead><tbody>${cats||'<tr><td colspan="2">No category sales</td></tr>'}</tbody></table>
+      <h2>Orders by Waiter</h2><table><thead><tr><th>Waiter</th><th>Orders</th></tr></thead><tbody>${waits||'<tr><td colspan="2">No waiter data recorded</td></tr>'}</tbody></table>
+      <h2>Recall</h2><table><thead><tr><th>Order</th><th>Amount</th><th>Recalled By</th><th>Recall Time</th></tr></thead><tbody>${recalls||'<tr><td colspan="4">No recalled invoices</td></tr>'}</tbody></table>
+      <h2>Deleted Items</h2><table><thead><tr><th>Item</th><th>Qty</th><th>Reason</th><th>Deleted By</th><th>Time</th></tr></thead><tbody>${dels||'<tr><td colspan="5">No deleted-item records</td></tr>'}</tbody></table>
+      <h2>Cancelled Orders</h2><table><thead><tr><th>Order</th><th>Order Time</th><th>Reason</th><th>Cancelled By</th><th>Cancellation Time</th></tr></thead><tbody>${cans||'<tr><td colspan="5">No cancelled orders</td></tr>'}</tbody></table>
+      <footer>HAMEEDS BISTRO — ${title}</footer></div>`;
+    const css=`@page{size:auto;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}body{font-size:12px}.report{width:100%;min-height:100vh;padding:8mm}header{text-align:center;border-bottom:2px solid #000;padding-bottom:5mm;margin-bottom:5mm}.brand{font-size:24px;font-weight:900}.title{font-size:18px;font-weight:900;margin-top:3px}.meta{font-size:11px;line-height:1.5;margin-top:4px}.summary{border:1px solid #000;padding:4mm;margin-bottom:5mm}.summary>div{display:flex;justify-content:space-between;border-bottom:1px dotted #777;padding:3px 0}.summary>div:last-child{border-bottom:0}h2{font-size:14px;margin:5mm 0 2mm;border-bottom:1px solid #000;padding-bottom:2px}table{width:100%;border-collapse:collapse;page-break-inside:auto}tr{page-break-inside:avoid}th,td{border:1px solid #777;padding:5px;text-align:left}th{font-weight:900}.num{text-align:right;white-space:nowrap}footer{text-align:center;margin-top:8mm;border-top:1px solid #000;padding-top:3mm;font-size:10px;font-weight:700}@media print{.report{min-height:auto}}`;
+    w.document.open();w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${body}</body></html>`);w.document.close();setTimeout(()=>{try{w.focus();w.print()}catch(e){console.error(e)}},400);
+  };
+
+  // Remove only intrusive success alerts. Error/authentication alerts remain.
+  const oldRefresh=window.refreshCashierSystem; if(oldRefresh)window.refreshCashierSystem=function(){loadPendingOrders();fetchIncomingOrders();};
+})();
+</script>
+
+
+<style id="final-v4-fixes">
+/* Final responsive fixes — keep the working V1/V2 layout intact */
+#orderIdQuickAccess{display:block!important;width:100%!important}
+#quickOrderLookupInput{display:block!important;width:100%!important;min-height:48px!important;font-size:16px!important}
+@media(max-width:768px){
+  #orderIdQuickAccess{display:block!important;width:100%!important;grid-column:1/-1!important}
+  #quickOrderLookupInput{display:block!important;width:100%!important;min-height:48px!important;font-size:16px!important}
+  #orderIdQuickAccess button{display:block!important;width:100%!important;min-height:46px!important}
+}
+@media print{
+  html,body{margin:0!important;padding:0!important;width:100%!important}
+}
+</style>
+<script id="final-v4-behavior-fixes">
+(function(){
+'use strict';
+
+/* ORDER PAGE: PAYMENT = HOLD first, then open payment screen. */
+window.posActionHoldAndPay = async function(){
+  try{
+    // IMPORTANT: posCart is a top-level lexical variable in this HTML,
+    // not a window.posCart property. Always use the actual cart variable.
+    if(!Array.isArray(posCart) || posCart.length === 0){
+      // Existing orders can sometimes have their cart cleared by the payment/menu view.
+      // Reload the selected order from Supabase before giving up.
+      if(posTargetOrderId){
+        const {data: dbItems, error: itemLoadError} = await _supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', Number(posTargetOrderId))
+          .order('id', {ascending:true});
+
+        if(!itemLoadError && Array.isArray(dbItems) && dbItems.length){
+          await fetchPosMenuData();
+          posCart = dbItems.map((item, index) => {
+            const menuItem = (posMenuItems || []).find(m => String(m.id) === String(item.menu_item_id));
+            const price = Number(item.price || (menuItem ? (posOrderMode === 'Take Away' ? getTakeawayPrice(menuItem) : menuItem.dine_in_price) : 0));
+            return {
+              menu_item_id: Number(item.menu_item_id),
+              name_en: menuItem?.name_en || 'Unknown Item',
+              price: Number(price || 0),
+              quantity: Number(item.quantity || 0),
+              order_mode: posOrderMode || 'Dine In',
+              modifiers: Array.isArray(item.modifiers) ? item.modifiers : []
+            };
+          }).filter(i => i.quantity > 0);
+          renderPosCart();
+        }
+      }
+    }
+
+    if(!Array.isArray(posCart) || posCart.length === 0){
+      alert('No items in the current order to hold.');
+      return;
+    }
+
+    // HOLD FIRST. posActionHold writes the current cart to orders/order_items.
+    await posActionHold();
+
+    // posActionHold closes the POS modal after a successful hold. Re-open the
+    // selected order and then show payment, so the payment screen always uses
+    // the database-backed held order.
+    if(!posTargetOrderId){
+      console.error('HOLD completed without an order id.');
+      return;
+    }
+
+    try { await loadPendingOrders(); } catch(e) { console.warn('Pending order refresh:', e); }
+    try { await fetchIncomingOrders(); } catch(e) { console.warn('Incoming order refresh:', e); }
+
+    await openPosSystemModalWithOrder(Number(posTargetOrderId), 0);
+    openPosPaymentInterface();
+
+  }catch(e){
+    console.error('HOLD + PAYMENT failed:',e);
+    alert('Unable to hold the order before payment.');
+  }
+};
+
+/* Keep Android Order-ID box visible and usable. */
+function forceOrderIdBox(){
+  const box=document.getElementById('orderIdQuickAccess');
+  const input=document.getElementById('quickOrderLookupInput');
+  if(box){box.style.display='block';box.style.width='100%';}
+  if(input){input.style.display='block';input.style.width='100%';input.style.minHeight='48px';input.style.fontSize='16px';}
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',forceOrderIdBox); else forceOrderIdBox();
+
+/* Current-order OPEN: always load the order-detail modal, never jump straight to payment. */
+window.openOrderDetailsById = async function(orderId,sourceType='current'){
+  try{
+    if(sourceType==='incoming' && typeof stopNewOrderAlert==='function'){
+      stopNewOrderAlert();
+      try{
+        const r=await _supabase.from('orders').select('id').eq('status','pending');
+        (r.data||[]).forEach(o=>{if(window.newOrderAlertMutedOrderIds) newOrderAlertMutedOrderIds.add(String(o.id));});
+      }catch(e){}
+    }
+    const r=await _supabase.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
+    if(r.error||!r.data){console.error('Open order failed',r.error);return;}
+    if(typeof window.openOrderDetails==='function') await window.openOrderDetails(r.data,sourceType);
+  }catch(e){console.error('Open order exception',e);}
+};
+
+/* Existing-table order: open the selected existing order in the order screen. */
+window.openExistingTableOrder = async function(orderId){
+  try{
+    if(typeof closeNewOrderSetupModal==='function') closeNewOrderSetupModal();
+    await window.openPosSystemModalWithOrder(Number(orderId),0);
+    /* Existing order should open as an order screen, not payment. */
+    if(typeof renderPosRightPaneMenu==='function') renderPosRightPaneMenu();
+  }catch(e){console.error('Existing order open failed',e);}
+};
+
+/* Password-only deletion. Verify against the logged-in profile record used by this working app. */
+window.removeItemFromOrder = async function(itemId,orderId){
+  try{
+    let session={};
+    try{session=JSON.parse(localStorage.getItem('cashier_session')||'{}');}catch(e){}
+    const email=session.email;
+    if(!email){alert('Login session not found. Please login again.');return;}
+    const ir=await _supabase.from('order_items').select('*').eq('id',itemId).maybeSingle();
+    if(ir.error||!ir.data)return;
+    const item=ir.data;
+    const mr=await _supabase.from('menu_items').select('id,name_en').eq('id',item.menu_item_id).maybeSingle();
+    const itemName=mr.data?.name_en||'Unknown Item';
+    const password=prompt('Enter your login password to delete this item:');
+    if(password===null)return;
+    if(!password.trim()){alert('Password is required. Item was NOT deleted.');return;}
+    const pr=await _supabase.from('profiles').select('*').eq('email',email).eq('password',password).maybeSingle();
+    if(pr.error||!pr.data){alert('Incorrect password. Item was NOT deleted.');return;}
+    const reason=prompt('Reason for deleting '+itemName+':');
+    if(reason===null||!reason.trim()){alert('Delete reason is required. Item was NOT deleted.');return;}
+    const now=new Date().toISOString();
+    const audit={order_id:Number(orderId),item_name:itemName,menu_item_id:Number(item.menu_item_id),quantity:Number(item.quantity||0),reason:reason.trim(),deleted_by_name:pr.data.full_name||pr.data.email||email,deleted_by_email:pr.data.email||email,deleted_by_role:pr.data.role||'',deleted_at:now,created_at:now};
+    try{
+      const a=JSON.parse(localStorage.getItem('deleted_item_audit')||'[]');a.push(audit);localStorage.setItem('deleted_item_audit',JSON.stringify(a));
+    }catch(e){}
+    for(const table of ['deleted_order_items','order_item_deletions','item_deletions','order_item_delete_logs']){
+      try{const r=await _supabase.from(table).insert([audit]);if(!r.error)break;}catch(e){}
+    }
+    const dr=await _supabase.from('order_items').delete().eq('id',itemId);
+    if(dr.error){alert('Failed to delete item.');return;}
+    if(typeof renderModalItems==='function') await renderModalItems(orderId,true);
+  }catch(e){console.error('Delete item failed',e);alert('Delete failed.');}
+};
+
+/* Automatic Shift/EOD report printing with logo and paper-width fitting. */
+window.openCloseReportPrintWindow = function(type,date,shiftNo,snapshot,user){
+  const w=window.open('','_blank');
+  if(!w){console.error('Print popup blocked.');return;}
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money=n=>'RM '+Number(n||0).toFixed(2);
+  const title=type==='EOD'?'EOD CLOSE REPORT':`SHIFT ${shiftNo} CLOSE REPORT`;
+  const cats=Object.entries(snapshot.category_sales||{}).map(([n,v])=>`<tr><td>${esc(n)}</td><td class="num">${money(v)}</td></tr>`).join('');
+  const waits=Object.entries(snapshot.waiter_sales||{}).map(([n,v])=>`<tr><td>${esc(n)}</td><td class="num">${Number(v||0)}</td></tr>`).join('');
+  const recalls=(snapshot.recalls||[]).map(x=>`<tr><td>#${esc(x.order_id)}</td><td>${money(x.amount)}</td><td>${esc(x.recalled_by_name||'Unknown')}</td><td>${esc(formatDeviceLocalTime(x.recalled_at||''))}</td></tr>`).join('');
+  const dels=(snapshot.deleted_items||[]).map(x=>`<tr><td>${esc(x.item_name)}</td><td>${Number(x.quantity||1)}</td><td>${esc(x.reason)}</td><td>${esc(x.deleted_by_name)}</td><td>${esc(formatDeviceLocalTime(x.deleted_at))}</td></tr>`).join('');
+  const cans=(snapshot.cancelled_orders||[]).map(x=>`<tr><td>#${esc(x.order_id)}</td><td>${esc(x.order_time)}</td><td>${esc(x.reason)}</td><td>${esc(x.cancelled_by_name)}</td><td>${esc(formatDeviceLocalTime(x.cancelled_at))}</td></tr>`).join('');
+  const body=`<div class="report">
+    <header><img src="images/logo.png" class="logo" onerror="this.style.display='none'"><div class="brand">HAMEEDS BISTRO</div><div class="title">${title}</div><div class="meta">Date: ${esc(date)}<br>Closed By: ${esc(user?.full_name||user?.email||'Staff')}<br>Closed At: ${esc(formatDeviceLocalTime(new Date()))}</div></header>
+    <section class="summary"><div><span>Total Sales</span><b>${money(snapshot.total_sales)}</b></div><div><span>Recall</span><b>- ${money(snapshot.recall_total)}</b></div><div><span>Net Sales</span><b>${money(snapshot.net_sales)}</b></div><div><span>SST</span><b>${money(snapshot.sst)}</b></div><div><span>Rounding</span><b>${money(snapshot.rounding)}</b></div><div><span>Net Cash</span><b>${money(snapshot.net_cash)}</b></div><div><span>Invoices</span><b>${snapshot.invoice_count||0}</b></div><div><span>Orders</span><b>${snapshot.order_count||0}</b></div></section>
+    <h2>Sales by Category</h2><table><thead><tr><th>Category</th><th>Total</th></tr></thead><tbody>${cats||'<tr><td colspan="2">No category sales</td></tr>'}</tbody></table>
+    <h2>Orders by Waiter</h2><table><thead><tr><th>Waiter</th><th>Orders</th></tr></thead><tbody>${waits||'<tr><td colspan="2">No waiter data recorded</td></tr>'}</tbody></table>
+    <h2>Recall</h2><table><thead><tr><th>Order</th><th>Amount</th><th>Recalled By</th><th>Recall Time</th></tr></thead><tbody>${recalls||'<tr><td colspan="4">No recalled invoices</td></tr>'}</tbody></table>
+    <h2>Deleted Items</h2><table><thead><tr><th>Item</th><th>Qty</th><th>Reason</th><th>Deleted By</th><th>Time</th></tr></thead><tbody>${dels||'<tr><td colspan="5">No deleted-item records</td></tr>'}</tbody></table>
+    <h2>Cancelled Orders</h2><table><thead><tr><th>Order</th><th>Order Time</th><th>Reason</th><th>Cancelled By</th><th>Cancellation Time</th></tr></thead><tbody>${cans||'<tr><td colspan="5">No cancelled orders</td></tr>'}</tbody></table>
+    <footer>HAMEEDS BISTRO — ${title}</footer></div>`;
+  const css=`@page{size:auto;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}body{font-size:12px}.report{width:100%;min-height:100vh;padding:8mm}.logo{width:28mm;height:28mm;object-fit:contain;display:block;margin:0 auto 3mm}.brand{text-align:center;font-size:24px;font-weight:900}.title{text-align:center;font-size:18px;font-weight:900;margin-top:3px}.meta{text-align:center;font-size:11px;line-height:1.5;margin-top:4px}.summary{border:1px solid #000;padding:4mm;margin-bottom:5mm}.summary>div{display:flex;justify-content:space-between;border-bottom:1px dotted #777;padding:3px 0}.summary>div:last-child{border-bottom:0}h2{font-size:14px;margin:5mm 0 2mm;border-bottom:1px solid #000;padding-bottom:2px}table{width:100%;border-collapse:collapse;page-break-inside:auto}tr{page-break-inside:avoid}th,td{border:1px solid #777;padding:5px;text-align:left}th{font-weight:900}.num{text-align:right;white-space:nowrap}footer{text-align:center;margin-top:8mm;border-top:1px solid #000;padding-top:3mm;font-size:10px;font-weight:700}@media print{.report{min-height:auto;width:100%}}`;
+  w.document.open();w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${body}</body></html>`);w.document.close();
+  setTimeout(()=>{try{w.focus();w.print()}catch(e){console.error(e)}},500);
+};
+
+})();
+</script>
+
 </body>
 </html>
