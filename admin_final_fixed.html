@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hameeds Bistro — Admin Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif}.scrollbar::-webkit-scrollbar{width:7px;height:7px}.scrollbar::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
+  .nav-active{background:#059669!important;color:#fff!important}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 4px 16px rgba(15,23,42,.05)}
+  .toast{position:fixed;right:18px;bottom:18px;z-index:10000;max-width:360px}.hiddenx{display:none!important}
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- LOGIN -->
+<section id="loginSection" class="min-h-screen flex items-center justify-center bg-slate-950 p-4">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-7">
+    <div class="text-center mb-6">
+      <img src="images/logo.png" class="w-20 h-20 rounded-full object-cover border-2 border-emerald-600 mx-auto mb-3" onerror="this.style.display='none'">
+      <h1 class="text-2xl font-black">Hameeds Bistro</h1><p class="text-sm text-slate-500 mt-1">Admin Panel Login</p>
+    </div>
+    <form id="loginForm" class="space-y-4">
+      <div><label class="text-xs font-bold">Username / Email</label><input id="loginEmail" type="email" required class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500" placeholder="admin@bistro.com"></div>
+      <div><label class="text-xs font-bold">Password</label><input id="loginPassword" type="password" required class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"></div>
+      <div id="loginError" class="hidden text-sm text-red-600 bg-red-50 rounded-xl p-3"></div>
+      <button class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-3">Login to Admin Panel</button>
+    </form>
+    <p class="text-[11px] text-slate-400 text-center mt-5">Only Admin and Manager roles are allowed.</p>
+  </div>
+</section>
+
+<!-- APP -->
+<div id="app" class="hiddenx min-h-screen flex">
+  <aside id="sidebar" class="w-64 bg-slate-950 text-white p-4 flex flex-col shrink-0">
+    <div class="flex items-center gap-3 p-2 mb-5"><img src="images/logo.png" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-500" onerror="this.style.display='none'"><div><div class="font-black">Hameeds Bistro</div><div class="text-[10px] text-slate-400">ADMIN PANEL</div></div></div>
+    <nav class="space-y-2 text-sm">
+      <button data-section="summary" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 nav-active">📊 Summary</button>
+      <button data-section="menu" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🍽️ Menu Management</button>
+      <button data-section="reports" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">📑 Reports</button>
+      <button data-section="attendance" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🕒 Attendance</button>
+      <button data-section="staff" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">👥 Staff Management</button>
+      <button data-section="kitchen-display" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🧑‍🍳 Kitchen Display Management</button>
+      <button data-section="settings" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">⚙️ Settings</button>
+    </nav>
+    <div class="mt-auto pt-5 border-t border-slate-800"><div class="text-xs text-slate-400">Logged in as</div><div id="sideUser" class="font-bold mt-1">-</div><div id="sideRole" class="text-xs text-emerald-400 uppercase font-bold mt-1">-</div></div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <header class="bg-white border-b px-5 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30">
+      <div class="flex items-center gap-3"><button id="mobileMenu" class="md:hidden bg-slate-100 p-2 rounded-lg">☰</button><div><h1 class="font-black text-lg">Hameeds Bistro — Admin</h1><div class="text-xs text-slate-500">Welcome, <span id="headerUser" class="font-bold text-emerald-700">-</span> · Role: <span id="headerRole" class="font-bold text-blue-600">-</span></div></div></div>
+      <div class="flex gap-2"><button onclick="doCheckIn()" class="bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold">Check-In</button><button onclick="doCheckOut()" class="bg-red-500 text-white px-3 py-2 rounded-xl text-xs font-bold">Check-Out</button><button onclick="openRefund()" class="bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-bold">Refund</button><button onclick="adminLogout()" class="bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-bold">Logout</button></div>
+    </header>
+
+    <div class="p-4 md:p-6">
+      <!-- SUMMARY -->
+      <section id="section-summary" class="section space-y-5">
+        <div class="flex justify-between items-center"><div><h2 class="text-2xl font-black">Summary</h2><p class="text-xs text-slate-500">Sales overview from the invoices and order data.</p></div><button onclick="loadSummary()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button></div>
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="card p-4"><div class="text-xs text-slate-500">Total Sales</div><div id="sumSales" class="text-2xl font-black mt-1">RM 0.00</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">Invoices</div><div id="sumInvoices" class="text-2xl font-black mt-1">0</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">SST (6%)</div><div id="sumSst" class="text-2xl font-black mt-1">RM 0.00</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">Cash Sales</div><div id="sumCash" class="text-2xl font-black mt-1">RM 0.00</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">Rounding</div><div id="sumRound" class="text-2xl font-black mt-1">RM 0.00</div></div>
+        </div>
+        <div class="grid lg:grid-cols-2 gap-5"><div class="card p-4"><h3 class="font-black mb-3">Category Sales</h3><div class="h-72"><canvas id="categoryChart"></canvas></div></div><div class="card p-4"><h3 class="font-black mb-3">Top 20 Selling Items</h3><div id="top20" class="space-y-2 max-h-72 overflow-y-auto scrollbar"></div></div></div>
+      </section>
+
+      <!-- MENU -->
+      <section id="section-menu" class="section hiddenx space-y-5">
+        <div><h2 class="text-2xl font-black">Menu Management</h2><p class="text-xs text-slate-500">Manage menu_items without freezing the browser.</p></div>
+        <div class="card p-4"><div class="flex flex-wrap gap-2 items-center"><input id="menuCsv" type="file" accept=".csv,text/csv" class="text-xs border rounded-xl p-2"><button onclick="bulkUploadCsv()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Bulk Update CSV</button><button onclick="downloadMenuCsv()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Download CSV</button><button onclick="loadMenu()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh Menu</button><span id="bulkStatus" class="text-xs text-slate-500"></span></div><div class="text-[11px] text-slate-400 mt-2">CSV columns supported: name, category, dine_in_price, takeaway_price. Existing items are updated by name; new items are inserted.</div></div>
+        <div class="card p-4"><div class="flex flex-wrap gap-3 items-end"><div class="min-w-[240px] flex-1"><label class="text-xs font-bold">Select Category</label><select id="categorySelect" onchange="renderMenuCategory()" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"><option value="">Select category...</option></select></div><button onclick="saveCategoryName()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Update Category Name</button></div></div>
+        <div id="menuItems" class="space-y-3"></div>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="section-reports" class="section hiddenx space-y-5">
+        <div><h2 class="text-2xl font-black">Reports</h2><p class="text-xs text-slate-500">Saved Shift Close and EOD Close reports.</p></div>
+        <div class="card p-4"><div class="grid md:grid-cols-2 gap-4"><div><label class="text-xs font-bold">Date</label><input id="reportDate" type="date" class="mt-1 w-full border rounded-xl px-3 py-2" onchange="loadReportDate()"></div><div><label class="text-xs font-bold">Report Type</label><div class="flex gap-2 mt-1"><button id="shiftReportBtn" onclick="showReportType('SHIFT')" class="flex-1 bg-emerald-600 text-white rounded-xl py-2 text-sm font-bold">Shift Close</button><button id="eodReportBtn" onclick="showReportType('EOD')" class="flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold">EOD Close</button></div></div></div><div id="shiftPicker" class="mt-4"><label class="text-xs font-bold">Select Shift</label><select id="shiftSelect" onchange="loadSelectedClose()" class="mt-1 w-full border rounded-xl px-3 py-2"><option value="">Select shift...</option></select></div></div>
+        <div id="reportResult"></div>
+      </section>
+
+      <!-- ATTENDANCE -->
+      <section id="section-attendance" class="section hiddenx space-y-5">
+        <div><h2 class="text-2xl font-black">Attendance</h2><p class="text-xs text-slate-500">Daily and monthly attendance records.</p></div>
+        <div class="card p-4"><div class="grid md:grid-cols-2 gap-4"><div><label class="text-xs font-bold">Select Your Staff</label><select id="attendanceStaff" onchange="loadStaffAttendance()" class="mt-1 w-full border rounded-xl px-3 py-2"><option value="">Select staff...</option></select></div><div><label class="text-xs font-bold">Select Month</label><input id="attendanceMonth" type="month" onchange="loadStaffAttendance()" class="mt-1 w-full border rounded-xl px-3 py-2"></div></div></div>
+        <div id="staffCard" class="card p-4 hiddenx"></div><div id="attendanceTable" class="card p-4"></div>
+      </section>
+
+      <!-- STAFF -->
+      <section id="section-staff" class="section hiddenx space-y-5">
+        <div><h2 class="text-2xl font-black">Staff Management</h2><p class="text-xs text-slate-500">Staff list and add new staff.</p></div>
+        <div class="card p-4"><div class="flex justify-between items-center mb-3"><h3 class="font-black">Staff List</h3><button onclick="loadStaff()" class="bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-bold">Refresh</button></div><div id="staffList" class="max-h-96 overflow-y-auto scrollbar space-y-2"></div></div>
+        <div class="card p-4"><h3 class="font-black mb-3">Add New Staff</h3><form id="staffForm" class="grid md:grid-cols-2 gap-3"><input id="newName" required placeholder="Staff Name" class="border rounded-xl px-3 py-2"><input id="newEmail" required type="email" placeholder="Email / Username" class="border rounded-xl px-3 py-2"><input id="newPassword" required type="password" placeholder="Password" class="border rounded-xl px-3 py-2"><select id="newRole" class="border rounded-xl px-3 py-2"><option>Cashier</option><option>Manager</option><option>Admin</option><option>Waiter</option><option>Cook</option></select><input id="newPassport" placeholder="Passport Number / Employment ID" class="border rounded-xl px-3 py-2"><button class="bg-emerald-600 text-white rounded-xl px-4 py-2 font-bold">Add Staff</button></form><div class="text-[11px] text-slate-400 mt-2">Joining Date is taken from the profile account created_at value.</div></div>
+      </section>
+
+      <!-- KITCHEN DISPLAY MANAGEMENT -->
+      <section id="section-kitchen-display" class="section hiddenx space-y-5">
+        <div>
+          <h2 class="text-2xl font-black">Kitchen Display Management</h2>
+          <p class="text-xs text-slate-500">Assign menu categories to each kitchen section. Checked categories will appear on that section's Kitchen Display.</p>
+        </div>
+        <div class="card p-4">
+          <label class="text-xs font-bold">Select Section</label>
+          <select id="kitchenSectionSelect" onchange="loadKitchenSectionCategories()" class="mt-1 w-full md:max-w-xl border rounded-xl px-3 py-3 text-sm">
+            <option value="">Select kitchen section...</option>
+          </select>
+        </div>
+        <div id="kitchenCategoryCard" class="card p-4 hiddenx">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div><h3 id="kitchenCategoryTitle" class="font-black">Categories</h3><p class="text-xs text-slate-500">Tick a category to assign it to this kitchen section. Untick it to remove it.</p></div>
+            <button onclick="refreshKitchenCategories()" class="bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-bold">Refresh</button>
+          </div>
+          <div id="kitchenCategoryList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+          <div id="kitchenCategoryStatus" class="text-xs text-slate-500 mt-4"></div>
+        </div>
+      </section>
+    
+<section id="section-settings" class="section hiddenx space-y-5">
+        <div><h2 class="text-2xl font-black">Settings</h2><p class="text-xs text-slate-500">Manage email notifications and profile settings.</p></div>
+        <div class="grid lg:grid-cols-2 gap-5">
+          <div class="card p-4">
+            <div class="flex items-center justify-between mb-4"><div><h3 class="font-black text-lg">📧 Email Settings</h3><p class="text-xs text-slate-500">Manage notification recipient emails.</p></div><label class="flex items-center gap-2 text-xs font-bold">Notifications <input id="emailMasterToggle" type="checkbox" class="w-5 h-5 accent-emerald-600"></label></div>
+            <div class="text-xs font-bold text-slate-500 mb-2">Existing Email Addresses</div>
+            <div id="emailRecipientsList" class="space-y-2 max-h-80 overflow-y-auto scrollbar"><div class="text-sm text-slate-400">No email addresses added yet.</div></div>
+            <button onclick="openAddEmailModal()" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 text-sm font-black">+ Add Email Address</button>
+          </div>
+          <div class="card p-4"><h3 class="font-black text-lg mb-1">👤 Profile Settings</h3><p class="text-xs text-slate-500 mb-4">Manage profiles and staff accounts.</p><button onclick="showSection('staff')" class="bg-slate-900 text-white px-4 py-3 rounded-xl text-sm font-bold">Open Profile Settings</button></div>
+        </div>
+      </section>
+</div>
+  </main>
+</div>
+
+
+      <!-- MODALS -->
+<div id="refundModal" class="hiddenx fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-2xl p-5 w-full max-w-lg"><div class="flex justify-between"><h3 class="font-black">Refund</h3><button onclick="closeRefund()">✕</button></div><p class="text-xs text-slate-500 mt-1 mb-3">Select a recent invoice to refund. The system will mark the invoice/order as refunded when those columns are available.</p><div id="refundList" class="max-h-80 overflow-y-auto scrollbar space-y-2"></div></div></div>
+
+<div id="addEmailModal" class="hiddenx fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"><div class="bg-white rounded-2xl p-5 w-full max-w-md shadow-2xl"><div class="flex justify-between items-center mb-2"><h3 class="font-black text-lg">Add Email Address</h3><button onclick="closeAddEmailModal()">✕</button></div><input id="newRecipientEmail" type="email" placeholder="Enter Email Address" class="w-full border rounded-xl px-4 py-3"><div class="flex gap-2 mt-4"><button onclick="closeAddEmailModal()" class="flex-1 bg-slate-200 rounded-xl py-3 font-bold">Cancel</button><button onclick="addEmailRecipient()" class="flex-1 bg-emerald-600 text-white rounded-xl py-3 font-bold">Add Email</button></div></div></div>
+<div id="toast" class="toast hiddenx"></div>
+
+<script>
+const SUPABASE_URL='https://tbvcaolnufayuvrqicpd.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const MENU_TABLE='menu_items', CLOSE_TABLE='shift_closures', ATT_TABLE='attendance', PROFILE_TABLE='profiles', INVOICE_TABLE='invoices', ORDER_ITEM_TABLE='order_items', ORDER_TABLE='orders', MENU_BUCKET='menu-images';
+const KITCHEN_TABLE='kitchen_sections', KITCHEN_CATEGORY_TABLE='kitchen_section_categories';
+let session=null, menuData=[], profiles=[], currentReportType='SHIFT', categoryChart=null, menuColumns=new Set(), profileColumns=new Set();
+const money=n=>'RM '+(Number(n)||0).toFixed(2); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function toast(msg,ok=true){const el=document.getElementById('toast');el.innerHTML='<div class="bg-'+(ok?'emerald':'red')+'-600 text-white rounded-xl px-4 py-3 shadow-xl text-sm font-bold">'+esc(msg)+'</div>';el.classList.remove('hiddenx');setTimeout(()=>el.classList.add('hiddenx'),3500)}
+function today(){const d=new Date();return d.toISOString().slice(0,10)}
+function monthNow(){return today().slice(0,7)}
+function localDayBounds(ds){const [y,m,d]=ds.split('-').map(Number);return {start:new Date(y,m-1,d,0,0,0,0),end:new Date(y,m-1,d,23,59,59,999)}}
+function getName(p){return p?.full_name||p?.name||p?.email?.split('@')[0]||'Staff'}
+function roleAllowed(role){return ['admin','manager'].includes(String(role||'').trim().toLowerCase())}
+
+async function login(e){e.preventDefault();const email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;const er=document.getElementById('loginError');er.classList.add('hiddenx');
+ const {data,error}=await db.from(PROFILE_TABLE).select('*').eq('email',email).eq('password',password).maybeSingle();
+ if(error||!data||!roleAllowed(data.role)){er.textContent='Invalid login or unauthorized role. Only Admin and Manager can access this panel.';er.classList.remove('hiddenx');return}
+ session=data;sessionStorage.setItem('hameeds_admin_session',JSON.stringify(data));showApp();}
+function showApp(){document.getElementById('loginSection').classList.add('hiddenx');document.getElementById('app').classList.remove('hiddenx');const name=getName(session);document.getElementById('headerUser').textContent=name;document.getElementById('headerRole').textContent=session.role;document.getElementById('sideUser').textContent=name;document.getElementById('sideRole').textContent=session.role;document.getElementById('reportDate').value=today();document.getElementById('attendanceMonth').value=monthNow();loadSummary();loadStaff();loadMenu();loadStaffDropdown();loadKitchenSections();initializeEmailSettings();}
+function adminLogout(){session=null;sessionStorage.removeItem('hameeds_admin_session');location.reload()}
+
+/* =========================================================
+   EMAIL SETTINGS - SUPABASE DATABASE CONNECTED
+   Table: public.email_recipients
+   Master switch: public.system_settings.email_notifications_enabled
+   ========================================================= */
+let emailRecipients=[];
+let emailMasterEnabled=true;
+
+function openAddEmailModal(){document.getElementById('newRecipientEmail').value='';document.getElementById('addEmailModal').classList.remove('hiddenx');setTimeout(()=>document.getElementById('newRecipientEmail').focus(),50)}
+function closeAddEmailModal(){document.getElementById('addEmailModal').classList.add('hiddenx')}
+
+async function loadEmailRecipientsFromDatabase(){
+  const {data,error}=await db.from('email_recipients').select('id,email,is_enabled').order('id',{ascending:true});
+  if(error){console.error('email_recipients load error:',error);toast('Email settings load failed: '+error.message,false);return}
+  emailRecipients=(data||[]).map(r=>({id:r.id,email:String(r.email||'').trim().toLowerCase(),enabled:r.is_enabled!==false}));
+  renderEmailSettings();
+}
+
+async function loadEmailMasterSetting(){
+  const {data,error}=await db.from('system_settings').select('id,email_notifications_enabled').order('id',{ascending:true}).limit(1).maybeSingle();
+  if(error){console.warn('Master email setting load skipped:',error.message);emailMasterEnabled=true;const m=document.getElementById('emailMasterToggle');if(m)m.checked=true;return}
+  emailMasterEnabled=data?.email_notifications_enabled!==false;
+  const m=document.getElementById('emailMasterToggle');if(m)m.checked=emailMasterEnabled;
+}
+
+async function saveEmailMasterSetting(value){
+  emailMasterEnabled=!!value;
+  const {data:existing,error:findError}=await db.from('system_settings').select('id').order('id',{ascending:true}).limit(1).maybeSingle();
+  if(findError){console.warn('Master setting could not be read:',findError.message);return}
+  let error=null;
+  if(existing){const q=await db.from('system_settings').update({email_notifications_enabled:emailMasterEnabled}).eq('id',existing.id);error=q.error}
+  else{const q=await db.from('system_settings').insert({email_notifications_enabled:emailMasterEnabled});error=q.error}
+  if(error){console.error('Master email setting save error:',error);toast('Email notification setting could not be saved: '+error.message,false);await loadEmailMasterSetting();return}
+  renderEmailSettings();
+}
+
+function renderEmailSettings(){
+  const m=document.getElementById('emailMasterToggle'),l=document.getElementById('emailRecipientsList');
+  if(!l)return;
+  if(m){m.checked=emailMasterEnabled;m.onchange=()=>saveEmailMasterSetting(m.checked)}
+  if(!emailRecipients.length){l.innerHTML='<div class="border rounded-xl p-4 text-sm text-slate-400 text-center">No email addresses added yet.</div>';return}
+  l.innerHTML=emailRecipients.map((r,i)=>`<div class="border rounded-xl p-3 flex items-center justify-between gap-3 bg-slate-50"><div class="font-bold text-sm break-all">${esc(r.email)}</div><div class="flex items-center gap-2"><label class="text-[10px] font-bold"><input type="checkbox" class="w-5 h-5 accent-emerald-600" ${r.enabled?'checked':''} onchange="toggleEmailRecipient(${i},this.checked)"></label><button onclick="deleteEmailRecipient(${i})" class="bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-bold">Delete</button></div></div>`).join('')
+}
+
+async function addEmailRecipient(){
+  const input=document.getElementById('newRecipientEmail'),email=input.value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('Enter a valid email address.');return}
+  if(emailRecipients.some(r=>r.email===email)){alert('Email already exists.');return}
+  const {data,error}=await db.from('email_recipients').insert({email,is_enabled:true}).select('id,email,is_enabled').single();
+  if(error){console.error('Add email database error:',error);alert('Email could not be added:\n'+error.message);return}
+  emailRecipients.push({id:data.id,email:String(data.email||email).trim().toLowerCase(),enabled:data.is_enabled!==false});
+  input.value='';closeAddEmailModal();renderEmailSettings();toast('Email address added successfully.')
+}
+
+async function toggleEmailRecipient(index,value){
+  const r=emailRecipients[index];if(!r)return;const old=r.enabled;r.enabled=!!value;renderEmailSettings();
+  const {error}=await db.from('email_recipients').update({is_enabled:r.enabled}).eq('id',r.id);
+  if(error){console.error('Email toggle database error:',error);r.enabled=old;renderEmailSettings();alert('Email setting could not be updated:\n'+error.message);return}
+  toast(r.enabled?'Email notification enabled.':'Email notification disabled.')
+}
+
+async function deleteEmailRecipient(index){
+  const r=emailRecipients[index];if(!r)return;if(!confirm('Remove this email address?\n\n'+r.email))return;
+  const {error}=await db.from('email_recipients').delete().eq('id',r.id);
+  if(error){console.error('Delete email database error:',error);alert('Email could not be deleted:\n'+error.message);return}
+  emailRecipients.splice(index,1);renderEmailSettings();toast('Email address deleted successfully.')
+}
+
+function getEnabledEmailRecipients(){return emailMasterEnabled?emailRecipients.filter(r=>r.enabled).map(r=>r.email):[]}
+
+async function initializeEmailSettings(){await loadEmailRecipientsFromDatabase();await loadEmailMasterSetting();renderEmailSettings()}
+
+
+function showSection(name){document.querySelectorAll('.section').forEach(x=>x.classList.add('hiddenx'));document.getElementById('section-'+name).classList.remove('hiddenx');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('nav-active'));const n=document.querySelector('.nav[data-section="'+name+'"]');if(n)n.classList.add('nav-active');if(name==='summary')loadSummary();if(name==='menu')loadMenu();if(name==='reports')loadReportDate();if(name==='attendance'){loadStaffDropdown();loadStaffAttendance()}if(name==='staff')loadStaff();if(name==='kitchen-display')loadKitchenSections();if(name==='settings')initializeEmailSettings()}
+document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>showSection(b.dataset.section)));document.getElementById('loginForm').addEventListener('submit',login);document.getElementById('staffForm').addEventListener('submit',addStaff);
+
+async function loadKitchenSections(){
+  const sel=document.getElementById('kitchenSectionSelect');
+  if(!sel)return;
+  const {data,error}=await db.from(KITCHEN_TABLE).select('id,section_name').order('section_name',{ascending:true});
+  if(error){sel.innerHTML='<option value="">Unable to load sections</option>';toast('Kitchen sections: '+error.message,false);return;}
+  sel.innerHTML='<option value="">Select kitchen section...</option>'+(data||[]).map(s=>`<option value="${esc(String(s.id))}">${esc(s.section_name||'Unnamed Section')}</option>`).join('');
+  document.getElementById('kitchenCategoryCard').classList.add('hiddenx');
+}
+async function loadKitchenSectionCategories(){
+  const sectionId=document.getElementById('kitchenSectionSelect').value,card=document.getElementById('kitchenCategoryCard');
+  if(!sectionId){card.classList.add('hiddenx');return;} card.classList.remove('hiddenx');
+  const sel=document.getElementById('kitchenSectionSelect');
+  document.getElementById('kitchenCategoryTitle').textContent=(sel.options[sel.selectedIndex]?.textContent||'Kitchen Section')+' — Categories';
+  const [menuRes,mapRes]=await Promise.all([db.from(MENU_TABLE).select('category').not('category','is',null).limit(5000),db.from(KITCHEN_CATEGORY_TABLE).select('category').eq('kitchen_section_id',sectionId)]);
+  if(menuRes.error){toast('Menu categories: '+menuRes.error.message,false);return;}
+  if(mapRes.error){toast('Kitchen category mapping: '+mapRes.error.message,false);return;}
+  const categories=[...new Set((menuRes.data||[]).map(x=>String(x.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const assigned=new Set((mapRes.data||[]).map(x=>String(x.category||'').trim()));
+  document.getElementById('kitchenCategoryList').innerHTML=categories.length?categories.map((cat,i)=>{const checked=assigned.has(cat);return `<label class="flex items-center gap-3 border rounded-xl px-4 py-3 cursor-pointer hover:bg-slate-50"><input type="checkbox" id="kcat_${i}" class="kitchen-category-check w-5 h-5 accent-emerald-600" data-category="${esc(cat)}" ${checked?'checked':''} onchange="toggleKitchenCategory('${esc(String(sectionId))}',this)"><span class="font-bold text-sm">${esc(cat)}</span></label>`}).join(''):'<div class="text-sm text-slate-400">No menu categories found.</div>';
+  document.getElementById('kitchenCategoryStatus').textContent=`${assigned.size} categor${assigned.size===1?'y':'ies'} assigned to this section.`;
+}
+async function toggleKitchenCategory(sectionId,checkbox){
+  const category=checkbox.dataset.category,status=document.getElementById('kitchenCategoryStatus'); checkbox.disabled=true; status.textContent='Saving...';
+  try{
+    if(checkbox.checked){const {error}=await db.from(KITCHEN_CATEGORY_TABLE).upsert([{kitchen_section_id:Number(sectionId),category}],{onConflict:'kitchen_section_id,category'});if(error)throw error;}
+    else{const {error}=await db.from(KITCHEN_CATEGORY_TABLE).delete().eq('kitchen_section_id',Number(sectionId)).eq('category',category);if(error)throw error;}
+    const count=[...document.querySelectorAll('.kitchen-category-check:checked')].length;status.textContent=`${count} categor${count===1?'y':'ies'} assigned to this section.`;toast(checkbox.checked?`${category} added to kitchen section.`:`${category} removed from kitchen section.`);
+  }catch(e){checkbox.checked=!checkbox.checked;status.textContent='Save failed.';toast(e.message,false);}finally{checkbox.disabled=false;}
+}
+function refreshKitchenCategories(){loadKitchenSectionCategories();}
+async function doCheckIn(){if(!session)return;const workDate=today();const {data:open,error}=await db.from(ATT_TABLE).select('id').eq('staff_email',session.email).eq('work_date',workDate).not('check_in','is',null).is('check_out',null).limit(1);if(error){toast(error.message,false);return}if(open?.length){toast('You are already checked in today.',false);return}const {error:er}=await db.from(ATT_TABLE).insert([{staff_id:session.id!=null?String(session.id):null,staff_name:getName(session),staff_email:session.email,role:session.role,work_date:workDate,check_in:new Date().toISOString(),check_out:null,status:'Present'}]);if(er)toast(er.message,false);else toast('Check-In saved.')}
+async function doCheckOut(){if(!session)return;const {data:r,error}=await db.from(ATT_TABLE).select('id').eq('staff_email',session.email).eq('work_date',today()).not('check_in','is',null).is('check_out',null).order('check_in',{ascending:false}).limit(1);if(error){toast(error.message,false);return}if(!r?.length){toast('No open Check-In found.',false);return}const {error:er}=await db.from(ATT_TABLE).update({check_out:new Date().toISOString(),status:'Completed'}).eq('id',r[0].id);if(er)toast(er.message,false);else toast('Check-Out saved.')}
+
+async function loadSummary(){
+ const [ir,mr]=await Promise.all([db.from(INVOICE_TABLE).select('*').order('created_at',{ascending:false}).limit(5000),db.from(MENU_TABLE).select('*').limit(5000)]);if(ir.error){toast('Summary: '+ir.error.message,false);return}const invoices=ir.data||[],menus=mr.data||[];const menuById={};menus.forEach(m=>menuById[String(m.id)]=m);const ids=invoices.map(x=>x.order_id).filter(Boolean);let items=[];if(ids.length){const {data}=await db.from(ORDER_ITEM_TABLE).select('*').in('order_id',ids);items=data||[]}
+ const sales=invoices.reduce((s,r)=>s+Number(r.total_amount||0),0),cash=invoices.filter(r=>String(r.payment_method||'').toLowerCase()==='cash').reduce((s,r)=>s+Number(r.total_amount||0),0);let subtotal=0;items.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));const sst=subtotal*.06;const rounding=sales-(subtotal+sst);document.getElementById('sumSales').textContent=money(sales);document.getElementById('sumInvoices').textContent=invoices.length;document.getElementById('sumSst').textContent=money(sst);document.getElementById('sumCash').textContent=money(cash);document.getElementById('sumRound').textContent=money(rounding);
+ const cats={},tops={};items.forEach(i=>{const m=menuById[String(i.menu_item_id)]||{};const cat=m.category||'Uncategorized',name=m.name||m.name_en||String(i.menu_item_id||'Unknown'),val=Number(i.price||0)*Number(i.quantity||0);cats[cat]=(cats[cat]||0)+val;tops[name]=(tops[name]||0)+Number(i.quantity||0)});renderCategoryChart(cats);const top=Object.entries(tops).sort((a,b)=>b[1]-a[1]).slice(0,20);document.getElementById('top20').innerHTML=top.length?top.map((x,i)=>`<div class="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-2"><div><span class="font-black mr-2">${i+1}.</span>${esc(x[0])}</div><b>${x[1]}</b></div>`).join(''):'<div class="text-sm text-slate-400">No sales item data found.</div>';
+}
+function renderCategoryChart(cats){const ctx=document.getElementById('categoryChart');if(categoryChart)categoryChart.destroy();categoryChart=new Chart(ctx,{type:'bar',data:{labels:Object.keys(cats),datasets:[{label:'Sales (RM)',data:Object.values(cats)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}})}
+
+function parseCSV(text){const rows=[];let row=[],cell='',quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quote&&text[i+1]==='"'){cell+='"';i++}else quote=!quote}else if(c===','&&!quote){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);cell='';if(row.some(v=>v.trim()!==''))rows.push(row);row=[]}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}if(!rows.length)return[];const headers=rows.shift().map(h=>h.trim().toLowerCase());return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]??'').trim()]))).filter(r=>Object.values(r).some(Boolean))}
+function normalizeCSVRow(r){const get=(...keys)=>{for(const k of keys)if(r[k]!==undefined)return r[k];return ''};return{name_en:get('name_en','name','item_name'),category:get('category'),dine_in_price:get('dine_in_price','price','dine in price','dinein_price'),takeaway_price:get('takeaway_price','take away price','takeaway')};}
+async function loadMenu(){const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){document.getElementById('menuItems').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}menuData=(data||[]).slice().sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''))||String(a.name_en||a.name||a.item_name||'').localeCompare(String(b.name_en||b.name||b.item_name||'')));menuColumns=new Set(menuData[0]?Object.keys(menuData[0]):[]);const cats=[...new Set(menuData.map(x=>x.category).filter(Boolean))].sort();const sel=document.getElementById('categorySelect');sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');document.getElementById('menuItems').innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>'; }
+function renderMenuCategory(){const cat=document.getElementById('categorySelect').value;const box=document.getElementById('menuItems');if(!cat){box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';return}const rows=menuData.filter(x=>x.category===cat);box.innerHTML=rows.map(m=>`<div class="card p-4"><div class="grid lg:grid-cols-[90px_1fr_140px_140px_130px] gap-3 items-center"><div><img id="img-${esc(String(m.id))}" src="${esc(getImage(m))}" class="w-20 h-20 rounded-xl object-cover border" onerror="this.style.display='none'"></div><div><label class="text-[10px] font-bold text-slate-400">ITEM NAME</label><input id="name-${esc(String(m.id))}" value="${esc(m.name_en||m.name||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"><label class="text-[10px] font-bold text-slate-400 mt-2 block">CATEGORY</label><input id="cat-${esc(String(m.id))}" value="${esc(m.category||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">DINE-IN</label><input id="dine-${esc(String(m.id))}" value="${esc(m.dine_in_price??m.price??m.dinein_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">TAKEAWAY</label><input id="take-${esc(String(m.id))}" value="${esc(m.takeaway_price??m.take_away_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">IMAGE</label><input id="file-${esc(String(m.id))}" type="file" accept="image/*" class="w-full text-[10px] mt-1"><button onclick="saveMenuItem('${esc(String(m.id))}')" class="mt-2 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-bold">Save Item</button></div></div></div>`).join('')||'<div class="card p-4 text-slate-500">No items in this category.</div>'}
+function getImage(m){return m.image_url||'images/logo.png'}
+async function uploadImage(file,id){if(!file)return null;if(file.size>500*1024)throw new Error('Image must be 500 KB or smaller.');const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path=`menu/${id}-${Date.now()}.${ext}`;const up=await db.storage.from(MENU_BUCKET).upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});if(up.error)throw new Error('Image upload failed: '+up.error.message);const pub=db.storage.from(MENU_BUCKET).getPublicUrl(path);return pub.data.publicUrl}
+async function saveMenuItem(id){const old=menuData.find(x=>String(x.id)===String(id));if(!old)return;const payload={name_en:document.getElementById('name-'+id).value.trim(),category:document.getElementById('cat-'+id).value.trim(),dine_in_price:Number(document.getElementById('dine-'+id).value||0),takeaway_price:Number(document.getElementById('take-'+id).value||0)};const file=document.getElementById('file-'+id).files[0];try{if(file){const url=await uploadImage(file,id);payload.image_url=url}const {error}=await db.from(MENU_TABLE).update(payload).eq('id',id);if(error)throw error;toast('Menu item saved.');await loadMenu();document.getElementById('categorySelect').value=payload.category||old.category;renderMenuCategory()}catch(e){toast(e.message,false)}}
+async function saveCategoryName(){const old=document.getElementById('categorySelect').value;if(!old)return;const n=prompt('New category name:',old);if(!n||n.trim()===old)return;const rows=menuData.filter(x=>x.category===old);const ids=rows.map(x=>x.id);if(!ids.length)return;const {error}=await db.from(MENU_TABLE).update({category:n.trim()}).in('id',ids);if(error)toast(error.message,false);else{toast('Category updated.');await loadMenu();document.getElementById('categorySelect').value=n.trim();renderMenuCategory()}}
+async function bulkUploadCsv(){const file=document.getElementById('menuCsv').files[0];if(!file){toast('Choose menu.csv first.',false);return}const status=document.getElementById('bulkStatus');status.textContent='Reading CSV...';const rows=parseCSV(await file.text()).map(normalizeCSVRow).filter(r=>r.name_en);if(!rows.length){status.textContent='No valid rows found.';return}const {data:existing,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){status.textContent=error.message;return}const byName={};(existing||[]).forEach(x=>byName[String(x.name_en||'').trim().toLowerCase()]=x);let done=0,added=0,updated=0,failed=0;for(const r of rows){const old=byName[r.name_en.toLowerCase()];const p={name_en:r.name_en,category:r.category,dine_in_price:Number(r.dine_in_price||0),takeaway_price:Number(r.takeaway_price||0)};try{if(old?.id){const q=await db.from(MENU_TABLE).update(p).eq('id',old.id);if(q.error)throw q.error;updated++}else{const q=await db.from(MENU_TABLE).insert([p]);if(q.error)throw q.error;added++}}catch(e){console.error(e);failed++}done++;status.textContent=`${done}/${rows.length} processed · ${added} added · ${updated} updated · ${failed} failed`}status.textContent=`Done: ${added} added · ${updated} updated · ${failed} failed`;await loadMenu()}
+function downloadMenuCsv(){const headers=['ID','Category','Name','Dine-In Price','Takeaway Price','Image URL','Kitchen Section ID','Popular','Available'];const escCsv=v=>{const x=String(v??'');return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x};const rows=menuData.map(m=>[m.id,m.category,m.name_en,m.dine_in_price,m.takeaway_price,m.image_url,m.kitchen_section_id,m.is_popular,m.is_available]);const csv='\ufeff'+[headers,...rows].map(r=>r.map(escCsv).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`menu-${today()}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+
+async function loadReportDate(){const date=document.getElementById('reportDate').value||today();if(currentReportType==='SHIFT')await loadShiftList(date);else await loadEod(date)}
+function showReportType(type){currentReportType=type;document.getElementById('shiftReportBtn').className=type==='SHIFT'?'flex-1 bg-emerald-600 text-white rounded-xl py-2 text-sm font-bold':'flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold';document.getElementById('eodReportBtn').className=type==='EOD'?'flex-1 bg-purple-700 text-white rounded-xl py-2 text-sm font-bold':'flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold';document.getElementById('shiftPicker').classList.toggle('hiddenx',type==='EOD');loadReportDate()}
+function closeDateOf(r){const v=r?.close_date??r?.business_date??r?.closing_date??r?.date??r?.closed_date; if(v) return String(v).slice(0,10); if(r?.closed_at) return new Date(r.closed_at).toISOString().slice(0,10); return ''}
+function closeTypeOf(r){return String(r?.close_type??r?.type??'').trim().toUpperCase()}
+function shiftNoOf(r){return r?.shift_no??r?.shift_number??r?.shiftNo??''}
+async function fetchCloseRows(){const {data,error}=await db.from(CLOSE_TABLE).select('*').limit(10000);return {data:data||[],error}}
+async function loadShiftList(date){const {data,error}=await fetchCloseRows();const sel=document.getElementById('shiftSelect');if(error){sel.innerHTML='<option value="">Table unavailable</option>';document.getElementById('reportResult').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}const rows=data.filter(r=>closeDateOf(r)===date&&closeTypeOf(r)==='SHIFT').sort((a,b)=>Number(shiftNoOf(a)||0)-Number(shiftNoOf(b)||0));sel.innerHTML='<option value="">Select shift...</option>'+rows.map(r=>`<option value="${esc(String(r.id))}">Shift ${esc(String(shiftNoOf(r)))} · ${r.closed_at?new Date(r.closed_at).toLocaleString():''}</option>`).join('');document.getElementById('reportResult').innerHTML=(rows.length?'':'<div class="card p-4 text-slate-500">No Shift Close saved for this date.</div>')}
+async function loadSelectedClose(){const id=document.getElementById('shiftSelect').value;if(!id)return;const {data,error}=await db.from(CLOSE_TABLE).select('*').eq('id',id).maybeSingle();if(error){toast(error.message,false);return}renderClose(data)}
+async function loadEod(date){const {data,error}=await fetchCloseRows();if(error){document.getElementById('reportResult').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}const rows=data.filter(r=>closeDateOf(r)===date&&closeTypeOf(r)==='EOD').sort((a,b)=>new Date(b.closed_at||0)-new Date(a.closed_at||0));document.getElementById('reportResult').innerHTML=rows.length?renderClose(rows[0],true):'<div class="card p-4 text-slate-500">No EOD Close saved for this date.</div>'}
+function renderClose(r,eod=false){const cats=r.category_sales||{},items=r.item_sales||{};const catHtml=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(x=>`<div class="flex justify-between border-b py-2 text-sm"><span>${esc(x[0])}</span><b>${money(x[1])}</b></div>`).join('')||'<div class="text-slate-400 text-sm">No category data</div>';const itemHtml=Object.entries(items).sort((a,b)=>b[1]-a[1]).slice(0,50).map(x=>`<div class="flex justify-between border-b py-2 text-sm"><span>${esc(x[0])}</span><b>${x[1]}</b></div>`).join('')||'<div class="text-slate-400 text-sm">No item data</div>';return `<div class="card p-5 space-y-5"><div class="flex justify-between"><div><h3 class="text-xl font-black">${eod?'EOD Close':'Shift '+esc(String(shiftNoOf(r)))}</h3><p class="text-xs text-slate-500">Date: ${esc(closeDateOf(r))} · Closed by: ${esc(r.cashier_name||r.closed_by||'')}</p></div></div><div class="grid grid-cols-2 md:grid-cols-5 gap-3"><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Total Sales</div><b>${money(r.total_sales)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">SST</div><b>${money(r.total_sst)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Rounding</div><b>${money(r.total_rounding)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Net Cash</div><b>${money(r.net_cash)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Invoices</div><b>${esc(String(r.total_orders||0))}</b></div></div><div class="grid lg:grid-cols-2 gap-5"><div><h4 class="font-black mb-2">Category-wise Sales</h4>${catHtml}</div><div><h4 class="font-black mb-2">Item-wise Sales</h4>${itemHtml}</div></div></div>`}
+
+async function loadStaffDropdown(){const {data,error}=await db.from(PROFILE_TABLE).select('*').order('full_name',{ascending:true}).limit(5000);if(error){toast(error.message,false);return}profiles=data||[];profileColumns=new Set(profiles[0]?Object.keys(profiles[0]):[]);const sel=document.getElementById('attendanceStaff');sel.innerHTML='<option value="">Select staff...</option>'+profiles.map(p=>`<option value="${esc(String(p.id))}">${esc(getName(p))}</option>`).join('')}
+function joiningDate(p){return p?.created_at?new Date(p.created_at).toLocaleDateString(): '-'}
+async function loadStaffAttendance(){const id=document.getElementById('attendanceStaff').value,month=document.getElementById('attendanceMonth').value||monthNow();if(!id){document.getElementById('staffCard').classList.add('hiddenx');document.getElementById('attendanceTable').innerHTML='';return}const p=profiles.find(x=>String(x.id)===String(id));if(!p)return;document.getElementById('staffCard').classList.remove('hiddenx');const pass=p.passport_number||p.passport||p.employment_id||p.employee_id||'-';document.getElementById('staffCard').innerHTML=`<div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div><div class="text-xs text-slate-500">Staff Name</div><b>${esc(getName(p))}</b></div><div><div class="text-xs text-slate-500">Passport / Employment ID</div><b>${esc(pass)}</b></div><div><div class="text-xs text-slate-500">Joining Date</div><b>${esc(joiningDate(p))}</b></div><div><div class="text-xs text-slate-500">Role</div><b>${esc(p.role||'-')}</b></div></div>`;const start=month+'-01';const [y,m]=month.split('-').map(Number);const end=new Date(y,m,0).toISOString().slice(0,10);const {data,error}=await db.from(ATT_TABLE).select('*').eq('staff_email',p.email).gte('work_date',start).lte('work_date',end).order('work_date',{ascending:true}).order('check_in',{ascending:true});if(error){document.getElementById('attendanceTable').innerHTML='<div class="text-red-600">'+esc(error.message)+'</div>';return}const rows=data||[];let total=0,ot=0;const html=rows.map(r=>{const mins=durationMin(r.check_in,r.check_out);total+=mins;const otHours=mins>=780?Math.floor((mins-720)/60):0;ot+=otHours;return `<tr><td>${esc(r.work_date||'')}</td><td>${r.check_in?new Date(r.check_in).toLocaleTimeString(): '-'}</td><td>${r.check_out?new Date(r.check_out).toLocaleTimeString(): '-'}</td><td>${formatMinutes(mins)}</td><td>${otHours} h</td></tr>`}).join('');document.getElementById('attendanceTable').innerHTML=`<div class="flex justify-between mb-3"><h3 class="font-black">Attendance of ${esc(month)}</h3><div class="text-xs">Worked: <b>${formatMinutes(total)}</b> · OT: <b>${ot} h</b></div></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left border-b"><th class="py-2">Date</th><th>Check-In</th><th>Check-Out</th><th>Worked</th><th>OT</th></tr></thead><tbody>${html||'<tr><td colspan="5" class="py-5 text-center text-slate-400">No attendance records.</td></tr>'}</tbody></table></div>`}
+function durationMin(a,b){if(!a||!b)return 0;return Math.max(0,Math.round((new Date(b)-new Date(a))/60000))}function formatMinutes(m){return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'}
+
+async function loadStaff(){const {data,error}=await db.from(PROFILE_TABLE).select('*').order('created_at',{ascending:true}).limit(5000);if(error){document.getElementById('staffList').innerHTML='<div class="text-red-600">'+esc(error.message)+'</div>';return}profiles=data||profiles;profileColumns=new Set(profiles[0]?Object.keys(profiles[0]):[]);document.getElementById('staffList').innerHTML=profiles.map((p,i)=>`<div class="border rounded-xl p-3 flex justify-between items-center gap-3"><div><div class="font-bold">${i+1}. ${esc(getName(p))}</div><div class="text-xs text-slate-500">${esc(p.email||'-')} · ${esc(p.role||'-')}</div></div><div class="text-right text-xs"><div>${esc(p.passport_number||p.passport||p.employment_id||p.employee_id||'-')}</div><div class="text-slate-400">Joined: ${esc(joiningDate(p))}</div></div></div>`).join('')||'<div class="text-slate-400">No staff found.</div>'}
+async function addStaff(e){e.preventDefault();const base={full_name:document.getElementById('newName').value.trim(),email:document.getElementById('newEmail').value.trim(),password:document.getElementById('newPassword').value,role:document.getElementById('newRole').value};const passport=document.getElementById('newPassport').value.trim();const payload={...base};if(profileColumns.has('passport_number'))payload.passport_number=passport;else if(profileColumns.has('passport'))payload.passport=passport;else if(profileColumns.has('employment_id'))payload.employment_id=passport;else if(profileColumns.has('employee_id'))payload.employee_id=passport;const {error}=await db.from(PROFILE_TABLE).insert([payload]);if(error){toast(error.message,false);return}toast('Staff added successfully. Joining date will be the account created_at.');e.target.reset();loadStaff();loadStaffDropdown()}
+
+async function openRefund(){document.getElementById('refundModal').classList.remove('hiddenx');const {data,error}=await db.from(INVOICE_TABLE).select('*').order('created_at',{ascending:false}).limit(30);if(error){document.getElementById('refundList').innerHTML='<div class="text-red-600">'+esc(error.message)+'</div>';return}document.getElementById('refundList').innerHTML=(data||[]).map(r=>`<div class="border rounded-xl p-3 flex justify-between items-center gap-3"><div><b>${esc(r.order_id||r.id)}</b><div class="text-xs text-slate-500">${new Date(r.created_at).toLocaleString()} · ${money(r.total_amount)}</div></div><button onclick="refundInvoice('${esc(String(r.id))}','${esc(String(r.order_id||''))}')" class="bg-red-600 text-white px-3 py-2 rounded-lg text-xs font-bold">Refund</button></div>`).join('')||'<div class="text-slate-400">No invoices.</div>'}
+function closeRefund(){document.getElementById('refundModal').classList.add('hiddenx')}
+async function refundInvoice(invoiceId,orderId){if(!confirm('Confirm refund? This will try to mark the invoice and order as Refunded.'))return;let done=false;let q=await db.from(INVOICE_TABLE).update({status:'Refunded',payment_status:'Refunded'}).eq('id',invoiceId);if(!q.error)done=true;else{q=await db.from(INVOICE_TABLE).update({status:'Refunded'}).eq('id',invoiceId);if(!q.error)done=true}if(orderId){let oq=await db.from(ORDER_TABLE).update({status:'Refunded',payment_status:'Refunded'}).eq('id',orderId);if(oq.error)await db.from(ORDER_TABLE).update({status:'Refunded'}).eq('id',orderId)}if(done){toast('Refund marked successfully.');openRefund();}else toast('Refund failed: '+(q.error?.message||'unknown error'),false)}
+
+document.getElementById('mobileMenu').onclick=()=>{document.getElementById('sidebar').classList.toggle('hidden')};
+window.addEventListener('DOMContentLoaded',()=>{const s=sessionStorage.getItem('hameeds_admin_session');if(s){try{const d=JSON.parse(s);if(roleAllowed(d.role)){session=d;showApp();return}}catch(e){}}});
+</script>
+</body>
+</html>
