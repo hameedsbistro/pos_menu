@@ -39,6 +39,7 @@
     <nav class="space-y-2 text-sm">
       <button data-section="summary" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 nav-active">📊 Summary</button>
       <button data-section="menu" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🍽️ Menu Management</button>
+      <button data-section="category-management" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🗂️ Category Management</button>
       <button data-section="reports" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">📑 Reports</button>
       <button data-section="attendance" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🕒 Attendance</button>
       <button data-section="staff" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">👥 Staff Management</button>
@@ -74,6 +75,16 @@
         <div class="card p-4"><div class="flex flex-wrap gap-2 items-center"><input id="menuCsv" type="file" accept=".csv,text/csv" class="text-xs border rounded-xl p-2"><button onclick="bulkUploadCsv()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Bulk Update CSV</button><button onclick="downloadMenuCsv()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Download CSV</button><button onclick="loadMenu()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh Menu</button><span id="bulkStatus" class="text-xs text-slate-500"></span></div><div class="text-[11px] text-slate-400 mt-2">CSV columns supported: name, category, dine_in_price, takeaway_price. Existing items are updated by name; new items are inserted.</div></div>
         <div class="card p-4"><div class="flex flex-wrap gap-3 items-end"><div class="min-w-[240px] flex-1"><label class="text-xs font-bold">Select Category</label><select id="categorySelect" onchange="renderMenuCategory()" class="mt-1 w-full border rounded-xl px-3 py-2 text-sm"><option value="">Select category...</option></select></div><button onclick="saveCategoryName()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Update Category Name</button></div></div>
         <div id="menuItems" class="space-y-3"></div>
+      </section>
+
+      <!-- CATEGORY MANAGEMENT -->
+      <section id="section-category-management" class="section hiddenx space-y-5">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div><h2 class="text-2xl font-black">Category Management</h2><p class="text-xs text-slate-500">Turn complete categories or individual menu items ON/OFF for the customer page.</p></div>
+          <button onclick="loadCategoryManagement()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button>
+        </div>
+        <div class="card p-4 bg-amber-50 border-amber-200 text-xs text-amber-800">Category OFF = all items in that category are hidden from the customer page. Category ON = all items in that category are enabled again. Individual item switches can be used separately while the category is ON.</div>
+        <div id="categoryManagementList" class="space-y-4"><div class="card p-4 text-sm text-slate-500">Loading categories...</div></div>
       </section>
 
       <!-- REPORTS -->
@@ -237,7 +248,7 @@ function getEnabledEmailRecipients(){return emailMasterEnabled?emailRecipients.f
 async function initializeEmailSettings(){await loadEmailRecipientsFromDatabase();await loadEmailMasterSetting();renderEmailSettings()}
 
 
-function showSection(name){document.querySelectorAll('.section').forEach(x=>x.classList.add('hiddenx'));document.getElementById('section-'+name).classList.remove('hiddenx');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('nav-active'));const n=document.querySelector('.nav[data-section="'+name+'"]');if(n)n.classList.add('nav-active');if(name==='summary')loadSummary();if(name==='menu')loadMenu();if(name==='reports')loadReportDate();if(name==='attendance'){loadStaffDropdown();loadStaffAttendance()}if(name==='staff')loadStaff();if(name==='kitchen-display')loadKitchenSections();if(name==='settings')initializeEmailSettings()}
+function showSection(name){document.querySelectorAll('.section').forEach(x=>x.classList.add('hiddenx'));document.getElementById('section-'+name).classList.remove('hiddenx');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('nav-active'));const n=document.querySelector('.nav[data-section="'+name+'"]');if(n)n.classList.add('nav-active');if(name==='summary')loadSummary();if(name==='menu')loadMenu();if(name==='category-management')loadCategoryManagement();if(name==='reports')loadReportDate();if(name==='attendance'){loadStaffDropdown();loadStaffAttendance()}if(name==='staff')loadStaff();if(name==='kitchen-display')loadKitchenSections();if(name==='settings')initializeEmailSettings()}
 document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>showSection(b.dataset.section)));document.getElementById('loginForm').addEventListener('submit',login);document.getElementById('staffForm').addEventListener('submit',addStaff);
 
 async function loadKitchenSections(){
@@ -285,11 +296,104 @@ function normalizeCSVRow(r){const get=(...keys)=>{for(const k of keys)if(r[k]!==
 async function loadMenu(){const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){document.getElementById('menuItems').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}menuData=(data||[]).slice().sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''))||String(a.name_en||a.name||a.item_name||'').localeCompare(String(b.name_en||b.name||b.item_name||'')));menuColumns=new Set(menuData[0]?Object.keys(menuData[0]):[]);const cats=[...new Set(menuData.map(x=>x.category).filter(Boolean))].sort();const sel=document.getElementById('categorySelect');sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');document.getElementById('menuItems').innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>'; }
 function renderMenuCategory(){const cat=document.getElementById('categorySelect').value;const box=document.getElementById('menuItems');if(!cat){box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';return}const rows=menuData.filter(x=>x.category===cat);box.innerHTML=rows.map(m=>`<div class="card p-4"><div class="grid lg:grid-cols-[90px_1fr_140px_140px_130px] gap-3 items-center"><div><img id="img-${esc(String(m.id))}" src="${esc(getImage(m))}" class="w-20 h-20 rounded-xl object-cover border" onerror="this.style.display='none'"></div><div><label class="text-[10px] font-bold text-slate-400">ITEM NAME</label><input id="name-${esc(String(m.id))}" value="${esc(m.name_en||m.name||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"><label class="text-[10px] font-bold text-slate-400 mt-2 block">CATEGORY</label><input id="cat-${esc(String(m.id))}" value="${esc(m.category||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">DINE-IN</label><input id="dine-${esc(String(m.id))}" value="${esc(m.dine_in_price??m.price??m.dinein_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">TAKEAWAY</label><input id="take-${esc(String(m.id))}" value="${esc(m.takeaway_price??m.take_away_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">IMAGE</label><input id="file-${esc(String(m.id))}" type="file" accept="image/*" class="w-full text-[10px] mt-1"><button onclick="saveMenuItem('${esc(String(m.id))}')" class="mt-2 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-bold">Save Item</button></div></div></div>`).join('')||'<div class="card p-4 text-slate-500">No items in this category.</div>'}
 function getImage(m){return m.image_url||'images/logo.png'}
-async function uploadImage(file,id){if(!file)return null;if(file.size>500*1024)throw new Error('Image must be 500 KB or smaller.');const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path=`menu/${id}-${Date.now()}.${ext}`;const up=await db.storage.from(MENU_BUCKET).upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});if(up.error)throw new Error('Image upload failed: '+up.error.message);const pub=db.storage.from(MENU_BUCKET).getPublicUrl(path);return pub.data.publicUrl}
-async function saveMenuItem(id){const old=menuData.find(x=>String(x.id)===String(id));if(!old)return;const payload={name_en:document.getElementById('name-'+id).value.trim(),category:document.getElementById('cat-'+id).value.trim(),dine_in_price:Number(document.getElementById('dine-'+id).value||0),takeaway_price:Number(document.getElementById('take-'+id).value||0)};const file=document.getElementById('file-'+id).files[0];try{if(file){const url=await uploadImage(file,id);payload.image_url=url}const {error}=await db.from(MENU_TABLE).update(payload).eq('id',id);if(error)throw error;toast('Menu item saved.');await loadMenu();document.getElementById('categorySelect').value=payload.category||old.category;renderMenuCategory()}catch(e){toast(e.message,false)}}
+function getMenuStoragePath(imageUrl){
+  if(!imageUrl||String(imageUrl).startsWith('images/'))return null;
+  try{
+    const u=new URL(imageUrl);
+    const marker=`/storage/v1/object/public/${MENU_BUCKET}/`;
+    const i=u.pathname.indexOf(marker);
+    if(i<0)return null;
+    return decodeURIComponent(u.pathname.slice(i+marker.length));
+  }catch(e){return null}
+}
+async function uploadImage(file,id){
+  if(!file)return null;
+  if(file.size>1024*1024)throw new Error('Image must be 1 MB or smaller.');
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const path=`menu/${id}-${Date.now()}.${ext}`;
+  const up=await db.storage.from(MENU_BUCKET).upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});
+  if(up.error)throw new Error('Image upload failed: '+up.error.message);
+  const pub=db.storage.from(MENU_BUCKET).getPublicUrl(path);
+  return {url:pub.data.publicUrl,path};
+}
+async function saveMenuItem(id){
+  const old=menuData.find(x=>String(x.id)===String(id));if(!old)return;
+  const payload={name_en:document.getElementById('name-'+id).value.trim(),category:document.getElementById('cat-'+id).value.trim(),dine_in_price:Number(document.getElementById('dine-'+id).value||0),takeaway_price:Number(document.getElementById('take-'+id).value||0)};
+  const file=document.getElementById('file-'+id).files[0];
+  let newUpload=null;
+  try{
+    if(file){newUpload=await uploadImage(file,id);payload.image_url=newUpload.url}
+    const {error}=await db.from(MENU_TABLE).update(payload).eq('id',id);
+    if(error)throw error;
+
+    if(newUpload&&old.image_url&&old.image_url!==newUpload.url){
+      const oldPath=getMenuStoragePath(old.image_url);
+      if(oldPath&&oldPath!==newUpload.path){
+        const del=await db.storage.from(MENU_BUCKET).remove([oldPath]);
+        if(del.error)console.warn('Old menu image could not be deleted:',del.error.message);
+      }
+    }
+
+    toast('Menu item saved.');
+    await loadMenu();
+    document.getElementById('categorySelect').value=payload.category||old.category;
+    renderMenuCategory();
+  }catch(e){
+    if(newUpload?.path){
+      try{await db.storage.from(MENU_BUCKET).remove([newUpload.path])}catch(cleanupError){console.warn('New image cleanup failed:',cleanupError)}
+    }
+    toast(e.message,false)
+  }
+}
 async function saveCategoryName(){const old=document.getElementById('categorySelect').value;if(!old)return;const n=prompt('New category name:',old);if(!n||n.trim()===old)return;const rows=menuData.filter(x=>x.category===old);const ids=rows.map(x=>x.id);if(!ids.length)return;const {error}=await db.from(MENU_TABLE).update({category:n.trim()}).in('id',ids);if(error)toast(error.message,false);else{toast('Category updated.');await loadMenu();document.getElementById('categorySelect').value=n.trim();renderMenuCategory()}}
 async function bulkUploadCsv(){const file=document.getElementById('menuCsv').files[0];if(!file){toast('Choose menu.csv first.',false);return}const status=document.getElementById('bulkStatus');status.textContent='Reading CSV...';const rows=parseCSV(await file.text()).map(normalizeCSVRow).filter(r=>r.name_en);if(!rows.length){status.textContent='No valid rows found.';return}const {data:existing,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){status.textContent=error.message;return}const byName={};(existing||[]).forEach(x=>byName[String(x.name_en||'').trim().toLowerCase()]=x);let done=0,added=0,updated=0,failed=0;for(const r of rows){const old=byName[r.name_en.toLowerCase()];const p={name_en:r.name_en,category:r.category,dine_in_price:Number(r.dine_in_price||0),takeaway_price:Number(r.takeaway_price||0)};try{if(old?.id){const q=await db.from(MENU_TABLE).update(p).eq('id',old.id);if(q.error)throw q.error;updated++}else{const q=await db.from(MENU_TABLE).insert([p]);if(q.error)throw q.error;added++}}catch(e){console.error(e);failed++}done++;status.textContent=`${done}/${rows.length} processed · ${added} added · ${updated} updated · ${failed} failed`}status.textContent=`Done: ${added} added · ${updated} updated · ${failed} failed`;await loadMenu()}
 function downloadMenuCsv(){const headers=['ID','Category','Name','Dine-In Price','Takeaway Price','Image URL','Kitchen Section ID','Popular','Available'];const escCsv=v=>{const x=String(v??'');return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x};const rows=menuData.map(m=>[m.id,m.category,m.name_en,m.dine_in_price,m.takeaway_price,m.image_url,m.kitchen_section_id,m.is_popular,m.is_available]);const csv='\ufeff'+[headers,...rows].map(r=>r.map(escCsv).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`menu-${today()}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+
+
+async function loadCategoryManagement(){
+  const box=document.getElementById('categoryManagementList');
+  if(!box)return;
+  box.innerHTML='<div class="card p-4 text-sm text-slate-500">Loading categories...</div>';
+  const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);
+  if(error){box.innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}
+  menuData=(data||[]).slice().sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''),undefined,{numeric:true,sensitivity:'base'})||String(a.name_en||a.name||'').localeCompare(String(b.name_en||b.name||''),undefined,{numeric:true,sensitivity:'base'}));
+  renderCategoryManagement();
+}
+function renderCategoryManagement(){
+  const box=document.getElementById('categoryManagementList');if(!box)return;
+  const grouped={};
+  menuData.forEach(m=>{const cat=String(m.category||'Uncategorized').trim()||'Uncategorized';(grouped[cat]||(grouped[cat]=[])).push(m)});
+  const categories=Object.keys(grouped).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+  if(!categories.length){box.innerHTML='<div class="card p-4 text-slate-500">No categories found.</div>';return}
+  box.innerHTML=categories.map((cat,ci)=>{
+    const items=grouped[cat].slice().sort((a,b)=>String(a.name_en||a.name||'').localeCompare(String(b.name_en||b.name||''),undefined,{numeric:true,sensitivity:'base'}));
+    const categoryOn=items.some(i=>i.is_available!==false);
+    const safeCat=encodeURIComponent(cat);
+    const itemRows=items.map(m=>{
+      const on=m.is_available!==false;
+      return `<div class="flex items-center justify-between gap-3 border-t px-4 py-3 bg-white"><div class="min-w-0"><div class="font-bold text-sm truncate">${esc(m.name_en||m.name||'Unnamed Item')}</div><div class="text-[10px] text-slate-400">ID: ${esc(String(m.id))}</div></div><label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" class="sr-only peer" ${on?'checked':''} onchange="toggleItemAvailability('${esc(String(m.id))}',this)"><div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div><span class="ml-2 text-xs font-bold ${on?'text-emerald-700':'text-red-600'}">${on?'ON':'OFF'}</span></label></div>`;
+    }).join('');
+    return `<div class="card overflow-hidden"><div class="flex items-center justify-between gap-3 p-4 bg-slate-50"><div><div class="font-black text-lg">${esc(cat)}</div><div class="text-xs text-slate-500">${items.length} item${items.length===1?'':'s'}</div></div><label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" class="sr-only peer" ${categoryOn?'checked':''} onchange="toggleCategoryAvailability(decodeURIComponent('${safeCat}'),this)"><div class="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-[28px]"></div><span class="ml-2 text-xs font-black ${categoryOn?'text-blue-700':'text-red-600'}">${categoryOn?'CATEGORY ON':'CATEGORY OFF'}</span></label></div><div>${itemRows}</div></div>`;
+  }).join('');
+}
+async function toggleCategoryAvailability(category,checkbox){
+  const desired=!!checkbox.checked;checkbox.disabled=true;
+  try{
+    const {error}=await db.from(MENU_TABLE).update({is_available:desired}).eq('category',category);
+    if(error)throw error;
+    menuData.forEach(m=>{if(String(m.category||'')===String(category))m.is_available=desired});
+    toast(`${category} ${desired?'enabled':'disabled'} for customer page.`);renderCategoryManagement();
+  }catch(e){checkbox.checked=!desired;toast(e.message,false)}finally{checkbox.disabled=false}
+}
+async function toggleItemAvailability(id,checkbox){
+  const desired=!!checkbox.checked;checkbox.disabled=true;
+  try{
+    const {error}=await db.from(MENU_TABLE).update({is_available:desired}).eq('id',id);
+    if(error)throw error;
+    const item=menuData.find(m=>String(m.id)===String(id));if(item)item.is_available=desired;
+    toast(`${item?.name_en||item?.name||'Item'} ${desired?'enabled':'disabled'} for customer page.`);renderCategoryManagement();
+  }catch(e){checkbox.checked=!desired;toast(e.message,false)}finally{checkbox.disabled=false}
+}
 
 async function loadReportDate(){const date=document.getElementById('reportDate').value||today();if(currentReportType==='SHIFT')await loadShiftList(date);else await loadEod(date)}
 function showReportType(type){currentReportType=type;document.getElementById('shiftReportBtn').className=type==='SHIFT'?'flex-1 bg-emerald-600 text-white rounded-xl py-2 text-sm font-bold':'flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold';document.getElementById('eodReportBtn').className=type==='EOD'?'flex-1 bg-purple-700 text-white rounded-xl py-2 text-sm font-bold':'flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold';document.getElementById('shiftPicker').classList.toggle('hiddenx',type==='EOD');loadReportDate()}
