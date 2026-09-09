@@ -347,6 +347,147 @@
 }
 </style>
 
+
+<style id="waiter-no-payment-final">
+#paymentModal,
+#paymentResultModal,
+button[onclick*="openPayment"],
+button[onclick*="proceedToPayment"],
+button[onclick*="posActionHoldAndPay"],
+button[onclick*="openCombineOrdersModal"],
+button[onclick*="openSplitBillModal"] { display:none !important; }
+</style>
+
+
+<style id="existing-orders-modal-scroll-fix">
+/* Keep New Order action buttons visible even when a table has many existing orders. */
+#newOrderSetupModal > div {
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 92vh !important;
+}
+#newOrderSetupModal > div > .p-5 {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}
+#existingTableOrdersContainer {
+    flex: 0 1 auto !important;
+    min-height: 0 !important;
+}
+#existingTableOrdersContainer > div {
+    max-height: 34vh !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+}
+#existingTableOrdersList {
+    padding-right: 2px;
+}
+#newOrderSetupModal .flex.gap-3.mt-6 {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    background: #fff !important;
+    padding-top: 10px !important;
+    padding-bottom: 4px !important;
+    margin-top: 12px !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 -8px 16px rgba(255,255,255,.96);
+}
+#waiterNewCustomerOrderBtn {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 10 !important;
+}
+@media (max-width: 768px) {
+    #newOrderSetupModal > div {
+        max-height: calc(100dvh - 16px) !important;
+    }
+    #existingTableOrdersContainer > div {
+        max-height: 32dvh !important;
+    }
+}
+</style>
+
+
+<style id="pos-mobile-search-and-category-final">
+  .pos-search-wrap{
+    display:flex!important;
+    align-items:center!important;
+    position:relative!important;
+    width:190px;
+    min-width:150px;
+  }
+  #posMenuSearchInput{
+    width:100%!important;
+    min-width:0!important;
+    height:34px!important;
+    padding-right:40px!important;
+    box-sizing:border-box!important;
+  }
+  .pos-search-go{
+    position:absolute!important;
+    right:3px!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    width:34px!important;
+    height:28px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+  }
+  #posMenuSearchSuggestions{
+    position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1000000;
+    max-height:250px;overflow-y:auto;background:#fff;color:#111827;border:1px solid #d1d5db;
+    border-radius:9px;box-shadow:0 14px 30px rgba(0,0,0,.28);
+  }
+  #posMenuSearchSuggestions button{
+    width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #e5e7eb;
+  }
+  #posSystemModal .pos-categories-bar{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    max-height:150px!important;
+    gap:7px!important;
+    padding:8px!important;
+  }
+  #posSystemModal .pos-category-btn{
+    width:100%!important;min-width:0!important;min-height:44px!important;
+    white-space:normal!important;font-size:10px!important;font-weight:900!important;padding:9px 7px!important;
+  }
+  @media(max-width:768px){
+    .pos-search-wrap{width:118px!important;min-width:118px!important;flex:0 0 118px!important}
+    #posMenuSearchInput{font-size:10px!important;height:34px!important;padding-left:8px!important;padding-right:36px!important}
+    .pos-search-go{width:30px!important;height:28px!important;right:3px!important}
+    #posSystemModal .pos-categories-bar{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-height:132px!important}
+    #posSystemModal .pos-category-btn{min-height:42px!important;font-size:9px!important}
+    #cashierVirtualKeyboard{display:none!important}
+  }
+</style>
+
+<style id="waiter-mobile-pos-controls-visible">
+@media(max-width:768px){
+  #posSystemModal .pos-menu-pane > div:first-child{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:5px!important;
+    min-height:auto!important;
+  }
+  #posSystemModal .pos-menu-pane > div:first-child button,
+  #posSystemModal .pos-menu-pane > div:first-child input{
+    visibility:visible!important;
+    opacity:1!important;
+  }
+  #posSystemModal .pos-categories-bar{
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+}
+</style>
 </head>
 <body class="bg-gray-100 font-sans overflow-hidden">
 
@@ -354,16 +495,12 @@
     <div id="loginSection" class="flex h-screen w-screen items-center justify-center bg-gray-900 absolute inset-0 z-50">
         <div class="bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl relative mx-4">
             <div class="text-center mb-6">
-                <img src="images/logo.png" alt="Logo" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-600 mx-auto mb-2" onerror="this.src='https://via.placeholder.com/60'">
+                <img src="images/logo.png" alt="Logo" class="w-16 h-16 rounded-full object-cover border-2 border-emerald-600 mx-auto mb-2" onerror="this.onerror=null;this.style.display='none'">
                 <h1 class="font-bold text-2xl text-gray-900">Hameeds Bistro</h1>
                 <p class="text-xs text-gray-500 mt-1">Waiter Panel Login</p>
             </div>
 
             <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
-                    <input type="email" id="loginEmail" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="cashier@bistro.com">
-                </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
                     <input type="password" id="loginPassword" required class="w-full border px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="••••••••">
@@ -383,7 +520,7 @@
             <!-- Header Panel -->
             <header class="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <img src="images/logo.png" alt="Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-600" onerror="this.src='https://via.placeholder.com/50'">
+                    <img src="images/logo.png" alt="Logo" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-600" onerror="this.onerror=null;this.style.display='none'">
                     <div class="flex flex-col">
                         <h1 class="font-bold text-lg text-gray-900 leading-tight">Hameeds Bistro</h1>
                         <div class="flex items-center space-x-2 mt-0.5">
@@ -453,7 +590,7 @@
                 </div>
                 <div id="dineInTableSelection" class="mt-5">
                     <label class="block text-sm font-bold text-gray-700 mb-2">Select Table No.</label>
-                    <select id="newOrderTableSelect" class="w-full border-2 border-gray-200 px-4 py-3 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <select id="newOrderTableSelect" onchange="loadExistingOrdersForSelectedTable()" class="w-full border-2 border-gray-200 px-4 py-3 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         <option value="">-- Select Table --</option>
                         <optgroup label="INDOOR">
                             <option value="A1 / INDOOR">A1</option><option value="A2 / INDOOR">A2</option><option value="A3 / INDOOR">A3</option><option value="A4 / INDOOR">A4</option><option value="A5 / INDOOR">A5</option>
@@ -480,6 +617,16 @@
                             <option value="C26 / 1ST FLOOR">C26</option><option value="C27 / 1ST FLOOR">C27</option><option value="C28 / 1ST FLOOR">C28</option><option value="C29 / 1ST FLOOR">C29</option><option value="C30 / 1ST FLOOR">C30</option>
                         </optgroup>
                     </select>
+                    <div id="existingTableOrdersContainer" class="mt-3 hidden">
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                            <div class="text-xs font-extrabold text-amber-800 uppercase tracking-wide mb-2">Existing Orders For This Table</div>
+                            <div id="existingTableOrdersList" class="space-y-2"></div>
+                            <button type="button" id="waiterNewCustomerOrderBtn" onclick="startNewCustomerOrderForSelectedTable()"
+                                class="hidden mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-xs font-extrabold">
+                                + NEW CUSTOMER / NEW ORDER
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div id="takeAwaySelection" class="mt-5 hidden">
                     <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
@@ -489,7 +636,7 @@
                 </div>
                 <div class="flex gap-3 mt-6">
                     <button onclick="closeNewOrderSetupModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-bold text-sm">CANCEL</button>
-                    <button onclick="continueNewOrderToPos()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-sm">CONTINUE TO ORDER</button>
+                    <button onclick="continueNewOrderToPos()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-sm">START NEW ORDER</button>
                 </div>
             </div>
         </div>
@@ -503,9 +650,17 @@
             <div class="pos-cart-pane w-[380px] bg-white text-black flex flex-col border-r border-gray-300 flex-shrink-0">
                 <!-- Top Info Header -->
                 <div class="bg-gray-800 text-white px-3 py-2 flex justify-between items-center text-xs font-bold">
-                    <div>TABLE : <span id="posDisplayTable" class="text-emerald-400">A60 / INDOOR</span></div>
-                    <div>CARD NO : <span id="posDisplayCard" class="text-yellow-400">1003</span></div>
-                    <div>PAX : <span id="posDisplayPax" class="text-blue-400">5</span></div>
+                    <div>TABLE :
+          <button type="button" id="posDisplayTable" onclick="openPosTableChangeModal()"
+            class="text-emerald-400 hover:text-emerald-300 font-black underline decoration-dotted underline-offset-2"
+            title="Change Table">A60 / INDOOR</button>
+        </div>
+                    <div>ORDER ID : <span id="posDisplayCard" class="text-yellow-400">NEW</span></div>
+                    <div class="flex items-center gap-1">PAX :
+            <input id="posDisplayPax" type="number" min="1" max="99" inputmode="numeric"
+                   value="4" oninput="savePosPax(this.value)"
+                   class="w-12 bg-white/10 border border-blue-400/50 rounded px-1 py-0.5 text-blue-300 text-center font-extrabold outline-none focus:ring-1 focus:ring-blue-300">
+        </div>
                 </div>
 
                 <!-- Items Header Column Titles -->
@@ -590,6 +745,28 @@
         </div>
     </div>
 
+    <!-- POS TABLE CHANGE MODAL -->
+    <div id="posTableChangeModal" class="fixed inset-0 bg-black/70 z-9999 hidden flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="bg-gray-900 text-white px-5 py-4 flex items-center justify-between">
+          <div>
+            <h3 class="font-black text-lg">Change Table</h3>
+            <p class="text-xs text-gray-400">Move this order to another table/location</p>
+          </div>
+          <button type="button" onclick="closePosTableChangeModal()" class="w-9 h-9 rounded-full bg-gray-700 hover:bg-gray-600 font-black">×</button>
+        </div>
+        <div class="p-5">
+          <label class="block text-xs font-black text-gray-600 mb-2">Select New Table</label>
+          <select id="posTableChangeSelect" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-bold"></select>
+          <div id="posTableChangeStatus" class="text-xs text-gray-500 mt-2"></div>
+          <div class="grid grid-cols-2 gap-3 mt-5">
+            <button type="button" onclick="closePosTableChangeModal()" class="bg-gray-200 hover:bg-gray-300 rounded-xl py-3 font-bold">Cancel</button>
+            <button type="button" onclick="confirmPosTableChange()" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 font-black">Change Table</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modals -->
     <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-9999 hidden">
         <div class="bg-white p-6 rounded-2xl max-w-2xl w-full shadow-2xl relative mx-4 max-h-[90vh] flex flex-col">
@@ -635,6 +812,39 @@
                 </div>
             </div>
             <button onclick="closePaymentModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium">Cancel</button>
+        </div>
+    </div>
+
+
+    <!-- VARIABLE / OPEN ITEM ENTRY MODAL -->
+    <div id="variablePriceItemModal" class="fixed inset-0 bg-black bg-opacity-65 flex items-center justify-center z-[10001] hidden p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="bg-gray-900 text-white px-5 py-4 flex justify-between items-center">
+                <div>
+                    <h3 id="variablePriceItemTitle" class="font-extrabold text-lg">Enter Price</h3>
+                    <p id="variablePriceItemHint" class="text-xs text-gray-300 mt-1">Enter the selling price for this item.</p>
+                </div>
+                <button type="button" onclick="closeVariablePriceItemModal()" class="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 font-bold">&times;</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div id="variableItemNameWrap" class="hidden">
+                    <label class="block text-xs font-extrabold text-gray-700 mb-1">ITEM NAME</label>
+                    <input id="variableItemNameInput" type="text" autocomplete="off"
+                        class="w-full border-2 border-gray-200 rounded-xl px-3 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="Enter item name">
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-gray-700 mb-1">ENTER PRICE (RM)</label>
+                    <input id="variableItemPriceInput" type="number" inputmode="decimal" min="0.01" step="0.01"
+                        class="w-full border-2 border-gray-200 rounded-xl px-3 py-3 text-lg font-extrabold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="0.00">
+                    <div id="variableItemError" class="hidden text-xs font-bold text-red-600 mt-2"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <button type="button" onclick="closeVariablePriceItemModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-xl font-bold">CANCEL</button>
+                    <button type="button" onclick="confirmVariablePriceItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-extrabold">ADD</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -932,11 +1142,8 @@
 
         async function handleLogin(event) {
             event.preventDefault();
-            // Login is a direct user gesture, so unlock the phone's audio output
-            // here. Realtime orders can then play immediately without tapping Bell.
             ensureAlertAudioReady();
             try { if ('speechSynthesis' in window) window.speechSynthesis.getVoices(); } catch (e) {}
-            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             const errorDiv = document.getElementById('loginError');
 
@@ -945,31 +1152,36 @@
             const { data, error } = await _supabase
                 .from('profiles')
                 .select('*')
-                .eq('email', email)
                 .eq('password', password)
-                .maybeSingle();
+                .limit(2);
 
             const allowedRoles = ['waiter', 'cashier', 'manager', 'admin', 'staff'];
-            const userRole = String(data?.role || '').trim().toLowerCase();
+            const matches = (Array.isArray(data) ? data : []).filter(row =>
+                allowedRoles.includes(String(row?.role || '').trim().toLowerCase())
+            );
 
-            if (error || !data || !allowedRoles.includes(userRole)) {
-                errorDiv.innerText = "Invalid login credentials or unauthorized role.";
+            if (error || matches.length !== 1) {
+                errorDiv.innerText = matches.length > 1
+                    ? "This password is used by more than one staff account. Please set a unique password in Admin."
+                    : "Invalid password or unauthorized role.";
                 errorDiv.classList.remove('hidden');
                 return;
             }
 
-            localStorage.setItem('waiter_session', JSON.stringify(data));
-            // Login is a user gesture: use it to unlock mobile audio for future realtime alerts.
+            const user = matches[0];
+            const normalizedRole = String(user.role || '').trim().toLowerCase();
+            user.role = user.role || normalizedRole;
+            localStorage.setItem('waiter_session', JSON.stringify(user));
             ensureAlertAudioReady();
-            applyUserSession(data);
+            applyUserSession(user);
         }
 
         function applyUserSession(data) {
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('mainPanel').classList.remove('hidden');
             
-            document.getElementById('cashierName').innerText = data.full_name || data.email.split('@')[0];
-            document.getElementById('cashierRole').innerText = 'Waiter';
+            document.getElementById('cashierName').innerText = data.exact_staff_name || getExactStaffDisplayName(data);
+            document.getElementById('cashierRole').innerText = String(data.role || 'Staff');
 
             loadPendingOrders();
             fetchIncomingOrders(false);
@@ -1009,7 +1221,6 @@
                 .from('orders')
                 .select('*')
                 .eq('status', 'accepted')
-                .eq('payment_status', 'Pending')
                 .order('created_at', { ascending: false });
 
             if(error) {
@@ -1033,28 +1244,18 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-base text-emerald-600 mr-2">RM${Number(order.total_amount || 0).toFixed(2)}</span>
-                        <button onclick='openOrderDetailsById(${order.id}, "current")' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
+                        <button onclick='openPosSystemModalWithOrder(${order.id}, ${Number(order.total_amount || 0)})' class="bg-gray-800 hover:bg-gray-900 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium">Open</button>
 
                     </div>
                 </div>
             `).join('');
         }
 
+
         async function openOrderDetailsById(orderId, sourceType = 'current') {
-            // IMPORTANT: tapping ANY notification's Open button acknowledges the
-            // notification screen immediately. Stop ALL sound/voice at once, even
-            // if several pending orders exist. The notification cards remain visible.
+            // Sound stops only when the actual notification OPEN button is pressed.
             if (sourceType === 'incoming') {
                 stopNewOrderAlert();
-                try {
-                    const { data: pendingNow } = await _supabase
-                        .from('orders')
-                        .select('id')
-                        .eq('status', 'pending');
-                    (pendingNow || []).forEach(o => newOrderAlertMutedOrderIds.add(String(o.id)));
-                } catch (e) {
-                    // At minimum acknowledge the tapped order locally.
-                }
                 newOrderAlertMutedOrderIds.add(String(orderId));
             }
             const { data: order } = await _supabase.from('orders').select('*').eq('id', orderId).single();
@@ -1077,6 +1278,7 @@
                 declineBtn.classList.remove('hidden');
                 actionContainer.innerHTML = `
                     <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
+                    <button onclick="openActiveOrderInWaiterPos()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Add More Item</button>
                     <button onclick="sendOrderToKitchen()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Accept & Send to Kitchen</button>
                 `;
                 await renderModalItems(order.id, true);
@@ -1090,7 +1292,7 @@
                 const invoiceDate = invData ? new Date(invData.created_at).toLocaleString() : new Date(order.created_at).toLocaleString();
                 
                 const sessionData = JSON.parse(localStorage.getItem('waiter_session') || '{}');
-                const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
+                const cashierLabel = sessionData.exact_staff_name || getExactStaffDisplayName(sessionData);
 
                 document.getElementById('modalOrderMeta').innerHTML = `
                     Table: ${order.table_id || 'N/A'}<br>
@@ -1111,6 +1313,7 @@
                 declineBtn.classList.remove('hidden');
                 actionContainer.innerHTML = `
                     <button onclick="closeOrderModal()" class="bg-gray-200 text-gray-700 px-5 py-2 rounded-xl text-sm font-medium">Close</button>
+                    <button onclick="openActiveOrderInWaiterPos()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Add More Item</button>
                     <button onclick="saveCurrentOrderFromWaiter()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium">Save / Send Update</button>
                 `;
                 await renderModalItems(order.id, true);
@@ -1118,6 +1321,13 @@
             }
 
             document.getElementById('orderDetailModal').classList.remove('hidden');
+        }
+
+        async function openActiveOrderInWaiterPos() {
+            if (!currentActiveOrderId) return;
+            const id = Number(currentActiveOrderId);
+            closeOrderModal();
+            await openPosSystemModalWithOrder(id, 0);
         }
 
         async function renderModalItems(orderId, editable = true) {
@@ -1290,7 +1500,7 @@
                     itemDiv.innerHTML = `
                         <div class="flex-1 pr-2">
                             <span class="font-medium text-gray-800 block">${itemName}</span>
-                            <span class="text-gray-500">RM${Number(item.price || menuItem?.price || 0).toFixed(2)} each</span>
+                            <span class="text-gray-500">RM${Number(item.price || menuItem?.dine_in_price || 0).toFixed(2)} each</span>
                         </div>
                         <div class="flex items-center space-x-2">
                             <div class="flex items-center border rounded-lg overflow-hidden bg-white">
@@ -1298,7 +1508,7 @@
                                 <span class="px-2.5 py-1 text-center font-semibold">${item.quantity}</span>
                                 <button type="button" class="increase-btn px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold">+</button>
                             </div>
-                            <span class="font-bold text-emerald-600 w-16 text-right">RM${(Number(item.price || menuItem?.price || 0) * Number(item.quantity || 0)).toFixed(2)}</span>
+                            <span class="font-bold text-emerald-600 w-16 text-right">RM${(Number(item.price || menuItem?.dine_in_price || 0) * Number(item.quantity || 0)).toFixed(2)}</span>
                             <button type="button" class="remove-btn text-red-600 hover:text-red-800 font-bold px-2.5 py-1 bg-red-50 rounded">✕</button>
                         </div>
                     `;
@@ -1316,9 +1526,9 @@
                     itemDiv.innerHTML = `
                         <div class="flex-1 pr-2">
                             <span class="font-medium text-gray-800 block">${itemName} (x${item.quantity})</span>
-                            <span class="text-gray-500">RM${Number(item.price || menuItem?.price || 0).toFixed(2)} each</span>
+                            <span class="text-gray-500">RM${Number(item.price || menuItem?.dine_in_price || 0).toFixed(2)} each</span>
                         </div>
-                        <div class="font-bold text-emerald-600 text-right">RM${(Number(item.price || menuItem?.price || 0) * Number(item.quantity || 0)).toFixed(2)}</div>
+                        <div class="font-bold text-emerald-600 text-right">RM${(Number(item.price || menuItem?.dine_in_price || 0) * Number(item.quantity || 0)).toFixed(2)}</div>
                     `;
                 }
 
@@ -1489,8 +1699,12 @@
         }
 
         function openPaymentModalFromListId(orderId, totalAmount) {
+            currentActiveOrderId = orderId;
+
             posTargetOrderId = orderId;
-            openPosSystemModalWithOrder(orderId, totalAmount);
+            
+            setPosOrderIdDisplay(orderId);
+openPosSystemModalWithOrder(orderId, totalAmount);
         }
 
         function proceedToPaymentFromModal() {
@@ -1586,26 +1800,23 @@
                 .eq('id', currentActiveOrderId);
 
             if (!error) {
-                // Force an immediate refresh after the database update.
-                // Realtime will also refresh it, but this makes the UI deterministic.
-                await loadPendingOrders();
-                alert('Order accepted and sent successfully to Kitchen and Current Orders!');
+                // The accepted order is now a shared Current Order in the database.
+                // Refresh Waiter immediately; Cashier/KDS will receive the same DB change via realtime.
                 closeOrderModal();
-                await loadPendingOrders();
-                await fetchIncomingOrders();
+                await Promise.all([
+                    loadPendingOrders(),
+                    fetchIncomingOrders(false)
+                ]);
+                alert('Order accepted and added to Current Orders.');
             } else {
                 alert('Failed to send order.');
             }
         }
 
         function openNotificationModal() {
-            // Opening the notification panel means the cashier is looking at the
-            // notification. Silence the alert immediately, without removing any
-            // notification cards. Any currently pending cards are acknowledged
-            // for sound purposes; a later NEW order can alert again.
-            stopNewOrderAlert();
+            // Opening the bell / notification list does NOT acknowledge the sound.
             document.getElementById('notificationModal').classList.remove('hidden');
-            fetchIncomingOrders();
+            fetchIncomingOrders(false);
         }
         
         function closeNotificationModal() { 
@@ -1822,7 +2033,7 @@
             itemsHtml += '</div>';
 
             const sessionData = JSON.parse(localStorage.getItem('waiter_session') || '{}');
-            const cashierLabel = sessionData.full_name || sessionData.email || 'Cashier';
+            const cashierLabel = sessionData.exact_staff_name || getExactStaffDisplayName(sessionData);
             const discountLabel = discountPercent > 0
                 ? `Discount (${discountPercent.toFixed(2)}%)`
                 : 'Discount';
@@ -1904,6 +2115,8 @@
 
         async function openNewOrderPosModal() {
             posTargetOrderId = null;
+            currentActiveOrderId = null;
+            setPosOrderIdDisplay(null);
             posCart = [];
             posEnteredAmountString = "";
             posDiscountPercent = 0;
@@ -1962,7 +2175,84 @@
             return takeawayId;
         }
 
-        async function continueNewOrderToPos() {
+
+        let waiterExistingOrdersForSelectedTable = [];
+        let waiterForceNewOrderForSelectedTable = false;
+
+        function resetWaiterExistingOrderChoice() {
+            waiterExistingOrdersForSelectedTable = [];
+            waiterForceNewOrderForSelectedTable = false;
+            const box = document.getElementById('existingTableOrdersContainer');
+            const list = document.getElementById('existingTableOrdersList');
+            const newBtn = document.getElementById('waiterNewCustomerOrderBtn');
+            if (box) box.classList.add('hidden');
+            if (list) list.innerHTML = '';
+            if (newBtn) newBtn.classList.add('hidden');
+        }
+
+        async function loadExistingOrdersForSelectedTable() {
+            const select = document.getElementById('newOrderTableSelect');
+            const box = document.getElementById('existingTableOrdersContainer');
+            const list = document.getElementById('existingTableOrdersList');
+            const newBtn = document.getElementById('waiterNewCustomerOrderBtn');
+            if (!select || !box || !list) return;
+
+            waiterForceNewOrderForSelectedTable = false;
+            const raw = String(select.value || '').trim();
+            if (!raw) { resetWaiterExistingOrderChoice(); return; }
+
+            const tableKey = raw.split('/')[0].trim().toUpperCase();
+            box.classList.remove('hidden');
+            list.innerHTML = '<div class="text-xs text-gray-500">Checking existing orders...</div>';
+            if (newBtn) newBtn.classList.add('hidden');
+
+            const { data, error } = await _supabase
+                .from('orders')
+                .select('id,table_id,total_amount,status,payment_status,created_at')
+                .in('status',['accepted','pending','Accepted','Pending','HOLD','Held','hold'])
+                .order('created_at',{ascending:false});
+
+            if (error) {
+                waiterExistingOrdersForSelectedTable = [];
+                list.innerHTML = '<div class="text-xs text-red-600">Unable to load existing orders.</div>';
+                return;
+            }
+
+            waiterExistingOrdersForSelectedTable = (data || []).filter(o => {
+                const key = String(o.table_id || '').split('/')[0].trim().toUpperCase();
+                return key === tableKey && String(o.payment_status || '').toLowerCase() !== 'paid';
+            });
+
+            if (!waiterExistingOrdersForSelectedTable.length) {
+                list.innerHTML = '<div class="text-xs text-gray-500">No existing current order for this table.</div>';
+                return;
+            }
+
+            list.innerHTML = waiterExistingOrdersForSelectedTable.map(o => `
+                <div class="bg-white border border-amber-200 rounded-lg p-2 flex items-center justify-between gap-2">
+                    <div>
+                        <div class="text-xs font-extrabold text-gray-900">Order #${o.id}</div>
+                        <div class="text-[10px] text-gray-500">${o.table_id || raw} · ${String(o.status || '').toUpperCase()} · RM${Number(o.total_amount || 0).toFixed(2)}</div>
+                    </div>
+                    <button type="button" onclick="openExistingTableOrderFromWaiter(${o.id})"
+                        class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">OPEN</button>
+                </div>
+            `).join('');
+
+            if (newBtn) newBtn.classList.remove('hidden');
+        }
+
+        async function openExistingTableOrderFromWaiter(orderId) {
+            closeNewOrderSetupModal();
+            await openPosSystemModalWithOrder(Number(orderId), 0);
+        }
+
+        async function startNewCustomerOrderForSelectedTable() {
+            waiterForceNewOrderForSelectedTable = true;
+            await continueNewOrderToPos(true);
+        }
+
+        async function continueNewOrderToPos(forceNew = false) {
             let selectedTable = '';
 
             if (newOrderType === 'Dine In') {
@@ -1976,9 +2266,22 @@
             }
 
             newOrderTableId = selectedTable;
+
+            if (newOrderType === 'Dine In' && !forceNew && !waiterForceNewOrderForSelectedTable) {
+                await loadExistingOrdersForSelectedTable();
+                if (waiterExistingOrdersForSelectedTable.length > 0) {
+                    const box = document.getElementById('existingTableOrdersContainer');
+                    if (box) box.classList.remove('hidden');
+                    return;
+                }
+            }
+
+            waiterForceNewOrderForSelectedTable = false;
             closeNewOrderSetupModal();
 
             posTargetOrderId = null;
+            currentActiveOrderId = null;
+            setPosOrderIdDisplay(null);
             posCart = [];
             posEnteredAmountString = "";
             posDiscountPercent = 0;
@@ -1986,8 +2289,8 @@
             posOrderMode = newOrderType === 'Take Away' ? 'Take Away' : 'Dine In';
 
             document.getElementById('posDisplayTable').innerText = selectedTable;
-            document.getElementById('posDisplayCard').innerText = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('posDisplayPax').innerText = "5";
+            setPosOrderIdDisplay((typeof posTargetOrderId!=='undefined'&&posTargetOrderId)||(typeof currentActiveOrderId!=='undefined'&&currentActiveOrderId)||null);
+            loadPosPax();
             document.getElementById('posOrderNoteInput').value = "";
 
             const typeBadge = document.querySelector('#posRightPaneContainer .bg-emerald-600, #posRightPaneContainer .bg-amber-600');
@@ -2005,8 +2308,12 @@
         }
 
         async function openPosSystemModalWithOrder(orderId, totalAmount) {
+            currentActiveOrderId = orderId;
+
             posTargetOrderId = orderId;
-            posEnteredAmountString = "";
+            
+            setPosOrderIdDisplay(orderId);
+posEnteredAmountString = "";
 
             const { data: order } = await _supabase
                 .from('orders')
@@ -2021,8 +2328,8 @@
 
             document.getElementById('posDisplayTable').innerText =
                 order ? (order.table_id || 'A60 / INDOOR') : 'A60 / INDOOR';
-            document.getElementById('posDisplayCard').innerText = "1003";
-            document.getElementById('posDisplayPax').innerText = "5";
+            setPosOrderIdDisplay((typeof posTargetOrderId!=='undefined'&&posTargetOrderId)||(typeof currentActiveOrderId!=='undefined'&&currentActiveOrderId)||null);
+            loadPosPax();
 
             // Menu data MUST be loaded before resolving item names.
             await fetchPosMenuData();
@@ -2036,16 +2343,21 @@
                     const menuItem = posMenuItems.find(m => String(m.id) === String(i.menu_item_id));
                     const itemName = menuItem ? menuItem.name_en : 'Unknown Item';
 
-                    const savedPrice = Number(i.price || (menuItem ? menuItem.price : 0));
+                    const savedPrice = Number(i.price || (menuItem ? (posOrderMode === 'Take Away' ? (getTakeawayPrice(menuItem) ?? menuItem.dine_in_price) : menuItem.dine_in_price) : 0));
                     const takeawayPrice = getTakeawayPrice(menuItem);
-                    const inferredMode = (takeawayPrice !== null && Math.abs(savedPrice - takeawayPrice) < 0.0001 && Math.abs(savedPrice - Number(menuItem?.price || 0)) > 0.0001) ? 'Take Away' : 'Dine In';
+                    const inferredMode = (takeawayPrice !== null && Math.abs(savedPrice - takeawayPrice) < 0.0001 && Math.abs(savedPrice - Number(menuItem?.dine_in_price || 0)) > 0.0001) ? 'Take Away' : 'Dine In';
                     posCart.push({
+                        db_item_id: i.id,
                         menu_item_id: i.menu_item_id,
                         name_en: itemName,
                         price: savedPrice,
                         quantity: Number(i.quantity || 0),
                         order_mode: inferredMode,
-                        modifiers: Array.isArray(i.modifiers) ? i.modifiers : (Array.isArray(savedModifierFallback[index]) ? savedModifierFallback[index] : [])
+                        modifiers: Array.isArray(i.modifiers) ? i.modifiers : (Array.isArray(savedModifierFallback[index]) ? savedModifierFallback[index] : []),
+                        added_by_id: i.added_by_id ?? null,
+                        added_by_name: i.added_by_name || i.added_by || null,
+                        added_by_email: i.added_by_email || null,
+                        added_at: i.added_at || i.created_at || null
                     });
                 });
             }
@@ -2060,7 +2372,7 @@
         }
 
         async function fetchPosMenuData() {
-            const { data: menu } = await _supabase.from('menu_items').select('*');
+            const { data: menu } = await _supabase.from('menu_items').select('*').eq('is_available', true);
             if (menu) {
                 posMenuItems = menu;
                 const cats = [...new Set(menu.map(m => m.category || 'MINUMAN'))];
@@ -2082,7 +2394,6 @@
             const bar = document.getElementById('posCategoriesBar');
             if (!bar) return;
             bar.innerHTML = `
-                <button type="button" onclick="togglePosSearch()" class="pos-category-btn py-2 px-2 rounded text-xs font-bold uppercase transition bg-blue-700 hover:bg-blue-800 text-white">🔍 SEARCH</button>
                 ${posCategories.map(cat => `
                     <button onclick="selectPosCategory('${String(cat).replace(/'/g, "\\'")}')" class="pos-category-btn py-2 px-2 rounded text-xs font-bold uppercase transition ${posSelectedCategory === cat && !posSearchTerm ? 'bg-emerald-600 text-white' : 'bg-[#444] hover:bg-[#555] text-gray-200'}">
                         ${cat}
@@ -2127,7 +2438,7 @@
                 const tp = getTakeawayPrice(menuItem);
                 if (tp !== null) return tp;
             }
-            return Number(menuItem?.price || 0);
+            return Number(menuItem?.dine_in_price || 0);
         }
 
         function updatePosOrderModeToggle() {
@@ -2153,9 +2464,10 @@
                 <div class="bg-[#222] p-2 border-b border-gray-700 flex justify-between items-center flex-shrink-0 gap-2">
                     <button type="button" onclick="togglePosOrderMode()" id="posOrderModeToggle" class="bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 shadow hover:opacity-90"><span>🍽️</span> DINE IN</button>
                     <div class="flex gap-2 items-center">
-                        <div class="relative">
-                            <input id="posMenuSearchInput" type="text" autocomplete="off" placeholder="Search item..." class="w-48 bg-white text-gray-800 border border-gray-300 rounded-lg px-3 py-1.5 text-xs outline-none" oninput="filterPosMenuSearch(this.value)" onclick="event.stopPropagation()">
-                            <button type="button" onclick="document.getElementById('posMenuSearchInput').focus()" class="absolute right-1 top-1/2 -translate-y-1/2 bg-emerald-600 text-white rounded px-2 py-1 text-[10px] font-bold">🔍</button>
+                        <div class="relative pos-search-wrap">
+                            <input id="posMenuSearchInput" type="text" autocomplete="off" placeholder="Search item..." class="bg-white text-gray-800 border border-gray-300 rounded-lg px-3 py-1.5 pr-10 text-xs outline-none" oninput="filterPosMenuSearch(this.value)" onfocus="renderPosSearchSuggestions(this.value)" onclick="event.stopPropagation()">
+                            <button type="button" onclick="event.stopPropagation();document.getElementById('posMenuSearchInput').focus();renderPosSearchSuggestions(document.getElementById('posMenuSearchInput').value)" class="pos-search-go bg-emerald-600 text-white rounded text-[10px] font-bold">🔍</button>
+                            <div id="posMenuSearchSuggestions" class="hidden"></div>
                         </div>
                         <button onclick="renderPosRightPaneMenu()" class="bg-[#3b3b3b] hover:bg-[#4b4b4b] px-3 py-1.5 rounded text-xs font-semibold">📝 MENU</button>
                         <button onclick="posActionHold()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded text-xs font-semibold">💾 SAVE ORDER</button>
@@ -2167,25 +2479,196 @@
             const input=document.getElementById('posMenuSearchInput'); if(input) input.value=posSearchTerm||'';
             renderPosMenuGrid(posSearchTerm||'');
         }
-        function filterPosMenuSearch(value){ posSearchTerm=String(value||'').trim().toLowerCase(); renderPosMenuGrid(posSearchTerm); }
+        function filterPosMenuSearch(value){
+            posSearchTerm=String(value||'').trim().toLowerCase();
+            renderPosMenuGrid(posSearchTerm);
+            renderPosSearchSuggestions(value);
+        }
+
+        function renderPosSearchSuggestions(value){
+            const box=document.getElementById('posMenuSearchSuggestions');
+            if(!box)return;
+            const q=String(value||'').trim().toLowerCase();
+            if(!q){box.classList.add('hidden');box.innerHTML='';return;}
+
+            const rows=(posMenuItems||[])
+              .filter(m=>m.is_available!==false)
+              .filter(m=>String(m.name_en||'').toLowerCase().includes(q))
+              .slice(0,20);
+
+            box.innerHTML=rows.map(m=>`
+              <button type="button" onclick="event.stopPropagation();selectPosSearchSuggestion(${Number(m.id)})">
+                <span class="min-w-0 flex-1 text-left">
+                  <span class="block font-black truncate">${String(m.name_en||'')}</span>
+                  <span class="block text-[9px] text-gray-500 truncate">${String(m.category||'')}</span>
+                </span>
+                <span class="shrink-0 font-black text-emerald-700">RM${Number(getMenuDisplayPrice(m)||0).toFixed(2)}</span>
+              </button>`).join('') || '<div class="px-3 py-3 text-xs text-gray-500">No item found.</div>';
+            box.classList.remove('hidden');
+        }
+
+        function selectPosSearchSuggestion(id){
+            const item=(posMenuItems||[]).find(m=>String(m.id)===String(id));
+            if(!item)return;
+            posSelectedCategory=item.category||posSelectedCategory;
+            posSearchTerm=String(item.name_en||'').trim().toLowerCase();
+            const input=document.getElementById('posMenuSearchInput');
+            if(input)input.value=item.name_en||'';
+            const box=document.getElementById('posMenuSearchSuggestions');
+            if(box){box.classList.add('hidden');box.innerHTML='';}
+            renderPosCategories();
+            renderPosMenuGrid(posSearchTerm);
+        }
+
+        function clearPosSearchAfterAdd(id){
+            if(!posSearchTerm)return;
+            const item=(posMenuItems||[]).find(m=>String(m.id)===String(id));
+            if(item?.category)posSelectedCategory=item.category;
+            posSearchTerm='';
+            const input=document.getElementById('posMenuSearchInput');
+            if(input)input.value='';
+            const box=document.getElementById('posMenuSearchSuggestions');
+            if(box){box.classList.add('hidden');box.innerHTML='';}
+            renderPosCategories();
+            renderPosMenuGrid('');
+        }
         function renderPosMenuGrid(query=''){
             const grid=document.getElementById('posMenuItemsGrid'); if(!grid)return;
-            const items=query?posMenuItems.filter(m=>String(m.name_en||'').toLowerCase().includes(query)||String(m.category||'').toLowerCase().includes(query)):posMenuItems.filter(m=>(m.category||'MINUMAN')===posSelectedCategory);
+            const availableItems=(posMenuItems||[]).filter(m=>m.is_available!==false); const items=query?availableItems.filter(m=>String(m.name_en||'').toLowerCase().includes(query)||String(m.category||'').toLowerCase().includes(query)):availableItems.filter(m=>(m.category||'MINUMAN')===posSelectedCategory);
             if(!items.length){grid.innerHTML='<div class="col-span-5 text-center text-gray-400 py-10 text-xs">No items found.</div>';return;}
             const colors=['bg-[#C73E3A]','bg-[#2B6CB0]','bg-[#2F855A]','bg-[#7B341E]','bg-[#2C5282]','bg-[#1A202C]'];
             grid.innerHTML=items.map((item,i)=>{const n=String(item.name_en||'').replace(/'/g,"\\'");const price=Number(getMenuDisplayPrice(item)||0);return `<button onclick="addPosCartItem(${item.id}, '${n}', ${price})" class="${colors[i%colors.length]} hover:opacity-90 text-white p-3 rounded-lg shadow flex flex-col justify-between items-center h-20 text-center transition border border-black/20"><span class="font-bold text-xs leading-tight line-clamp-2">${item.name_en||''}</span><span class="text-xs font-semibold bg-black/20 px-2 py-0.5 rounded mt-1">RM${price.toFixed(2)}</span>${posOrderMode==='Take Away'?'<span class="text-[8px] font-black bg-amber-500 text-black px-1.5 rounded mt-0.5">TAKEAWAY</span>':''}</button>`}).join('');
         }
 
-        function addPosCartItem(id, name, price) {
+        let pendingVariablePosItem = null;
+
+        function addPosCartItemDirect(id, name, price) {
             const mode = posOrderMode === 'Take Away' ? 'Take Away' : 'Dine In';
-            const existing = posCart.find(i => i.menu_item_id === id && (i.order_mode || 'Dine In') === mode);
-            if (existing) {
-                existing.quantity += 1;
-            } else {
-                posCart.push({ menu_item_id: id, name_en: name, price: Number(price || 0), quantity: 1, order_mode: mode });
-            }
+            let actor={};
+            try{ actor=JSON.parse(localStorage.getItem('waiter_session')||'{}')||{}; }catch(e){}
+            // Keep the cached profile fresh so the real waiter's name is used.
+            refreshWaiterProfileSession().catch(()=>{});
+
+            // Never merge a later addition into an older database row.
+            // Every newly added item gets its own actor + exact insert moment.
+            posCart.push({
+                menu_item_id: id,
+                name_en: name,
+                price: Number(price || 0),
+                quantity: 1,
+                order_mode: mode,
+                modifiers: [],
+                added_by_id: actor.id ?? null,
+                added_by_name: actor.exact_staff_name || getExactStaffDisplayName(actor),
+                added_by_email: actor.email || null,
+                added_at: new Date().toISOString()
+            });
             renderPosCart();
+            clearPosSearchAfterAdd(id);
         }
+
+        function addPosCartItem(id, name, price) {
+            const originalName = String(name || '').trim();
+            const numericPrice = Number(price || 0);
+            const isOpenItem = /^open\b/i.test(originalName);
+
+            // OPEN... item: always require custom item name + custom price.
+            // Any other zero-price item: require price only.
+            if (isOpenItem || numericPrice <= 0) {
+                pendingVariablePosItem = {
+                    id,
+                    originalName,
+                    defaultName: isOpenItem ? '' : originalName,
+                    requiresName: isOpenItem
+                };
+
+                const modal = document.getElementById('variablePriceItemModal');
+                const nameWrap = document.getElementById('variableItemNameWrap');
+                const nameInput = document.getElementById('variableItemNameInput');
+                const priceInput = document.getElementById('variableItemPriceInput');
+                const title = document.getElementById('variablePriceItemTitle');
+                const hint = document.getElementById('variablePriceItemHint');
+                const error = document.getElementById('variableItemError');
+
+                if (error) { error.textContent = ''; error.classList.add('hidden'); }
+                if (nameWrap) nameWrap.classList.toggle('hidden', !isOpenItem);
+                if (nameInput) nameInput.value = '';
+                if (priceInput) priceInput.value = '';
+
+                if (title) title.textContent = isOpenItem ? 'Open Item' : 'Enter Price';
+                if (hint) hint.textContent = isOpenItem
+                    ? 'Enter the actual item name and price.'
+                    : 'This item has no fixed price. Enter the selling price.';
+
+                if (modal) modal.classList.remove('hidden');
+
+                setTimeout(() => {
+                    if (isOpenItem && nameInput) nameInput.focus();
+                    else if (priceInput) priceInput.focus();
+                }, 80);
+                return;
+            }
+
+            addPosCartItemDirect(id, originalName, numericPrice);
+        }
+
+        function closeVariablePriceItemModal() {
+            const modal = document.getElementById('variablePriceItemModal');
+            if (modal) modal.classList.add('hidden');
+            pendingVariablePosItem = null;
+            const error = document.getElementById('variableItemError');
+            if (error) { error.textContent = ''; error.classList.add('hidden'); }
+        }
+
+        function confirmVariablePriceItem() {
+            if (!pendingVariablePosItem) return;
+
+            const nameInput = document.getElementById('variableItemNameInput');
+            const priceInput = document.getElementById('variableItemPriceInput');
+            const error = document.getElementById('variableItemError');
+
+            const customName = String(nameInput?.value || '').trim();
+            const enteredPrice = Number(priceInput?.value || 0);
+
+            if (pendingVariablePosItem.requiresName && !customName) {
+                if (error) {
+                    error.textContent = 'Please enter the item name.';
+                    error.classList.remove('hidden');
+                }
+                nameInput?.focus();
+                return;
+            }
+
+            if (!Number.isFinite(enteredPrice) || enteredPrice <= 0) {
+                if (error) {
+                    error.textContent = 'Please enter a valid price greater than RM0.00.';
+                    error.classList.remove('hidden');
+                }
+                priceInput?.focus();
+                return;
+            }
+
+            const finalName = pendingVariablePosItem.requiresName
+                ? customName
+                : pendingVariablePosItem.defaultName;
+
+            const itemId = pendingVariablePosItem.id;
+            closeVariablePriceItemModal();
+            addPosCartItemDirect(itemId, finalName, enteredPrice);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('variablePriceItemModal');
+            if (!modal || modal.classList.contains('hidden')) return;
+            if (e.key === 'Escape') closeVariablePriceItemModal();
+            if (e.key === 'Enter') {
+                const target = e.target;
+                if (target && (target.id === 'variableItemNameInput' || target.id === 'variableItemPriceInput')) {
+                    e.preventDefault();
+                    confirmVariablePriceItem();
+                }
+            }
+        });
 
         function updatePosItemQty(index, delta) {
             posCart[index].quantity += delta;
@@ -2204,9 +2687,9 @@
             const menuItem = posMenuItems.find(m => String(m.id) === String(item.menu_item_id));
             if (!menuItem) return;
             const normalized = mode === 'Take Away' ? 'Take Away' : 'Dine In';
-            const base = normalized === 'Take Away' ? getTakeawayPrice(menuItem) : Number(menuItem.price || 0);
+            const base = normalized === 'Take Away' ? getTakeawayPrice(menuItem) : Number(menuItem.dine_in_price || 0);
             item.order_mode = normalized;
-            item.price = Math.max(0, Number(base === null ? menuItem.price : base) + getModifierAdjustment(item));
+            item.price = Math.max(0, Number(base === null ? menuItem.dine_in_price : base) + getModifierAdjustment(item));
             renderPosCart();
             if (posTargetOrderId) saveCurrentPosCartToDatabase(posTargetOrderId);
         }
@@ -2338,27 +2821,78 @@
             updatePosDiscounts();
         }
 
-        function openModifyItemModal(idx) {
+        window.posPermanentModifiers=[];
+        window.posModifierOptions=[];
+        let posPermanentModifiersLoaded=false;
+
+        async function loadPermanentPosModifiers(){
+            if(posPermanentModifiersLoaded)return window.posPermanentModifiers;
+            const {data,error}=await _supabase.from('modifiers')
+                .select('id,modifier_name,price')
+                .order('modifier_name',{ascending:true});
+            if(error){
+                console.warn('Modifier table load failed:',error.message);
+                window.posPermanentModifiers=[];
+            }else{
+                window.posPermanentModifiers=(data||[]).map(r=>({
+                    id:r.id,
+                    text:String(r.modifier_name||'').trim(),
+                    price:Number(r.price||0)
+                })).filter(x=>x.text);
+            }
+            posPermanentModifiersLoaded=true;
+            return window.posPermanentModifiers;
+        }
+
+        async function openModifyItemModal(idx) {
             if(!posCart[idx]) return;
             posActiveModifierIndex=idx;
             const item=posCart[idx];
             document.getElementById('modifyItemName').innerText=`${item.name_en || 'Unknown Item'} | ${item.order_mode === 'Take Away' ? 'TAKEAWAY' : 'DINE IN'} | Current price RM${Number(item.price).toFixed(2)}`;
             document.getElementById('modifierTextInput').value='';
             document.getElementById('modifierPriceInput').value='';
-            const options=[
-                'No Onion','No Spicy','Less Spicy','Extra Spicy','No Salt','Less Salt','Extra Sauce','No Sauce','Add Cheese','Add Egg'
-            ];
-            document.getElementById('modifierOptions').innerHTML=options.map((x,i)=>`<button type="button" onclick="selectQuickModifier(${i})" id="quickMod${i}" class="w-full text-left border rounded-lg px-3 py-2 text-xs hover:bg-blue-50">${x}</button>`).join('');
+            const pInput=document.getElementById('modifierPriceInput');
+            if(pInput){pInput.readOnly=false;pInput.title='';}
+
+            await loadPermanentPosModifiers();
+
+            window.posModifierOptions=(window.posPermanentModifiers||[]);
+            document.getElementById('modifierOptions').innerHTML=window.posModifierOptions.map((x,i)=>`
+              <button type="button" onclick="selectQuickModifier(${i})" id="quickMod${i}"
+                class="w-full text-left border rounded-lg px-3 py-2 text-xs hover:bg-blue-50 flex items-center justify-between gap-2">
+                <span>${String(x.text||'Modifier')}</span>
+                <span class="font-black text-emerald-700">RM${Number(x.price||0).toFixed(2)}</span>
+              </button>`).join('') || '<div class="text-xs text-gray-500 p-2">No permanent modifiers configured. You can still type a manual modifier below.</div>';
             document.getElementById('modifyItemModal').classList.remove('hidden');
         }
         let selectedQuickModifier='';
+        let selectedQuickModifierData=null;
         function selectQuickModifier(i){
             const el=document.getElementById('quickMod'+i);
-            selectedQuickModifier=el ? el.innerText : '';
+            const data=window.posModifierOptions?.[i]||null;
+            selectedQuickModifier=data?.text || '';
+            selectedQuickModifierData=data;
+
             document.querySelectorAll('#modifierOptions button').forEach(b=>b.classList.remove('bg-blue-100','border-blue-500'));
-            if(el) el.classList.add('bg-blue-100','border-blue-500');
+            if(el)el.classList.add('bg-blue-100','border-blue-500');
+
+            const textInput=document.getElementById('modifierTextInput');
+            const priceInput=document.getElementById('modifierPriceInput');
+            if(textInput && data)textInput.value=data.text;
+            if(priceInput && data){
+                priceInput.value=Number(data.price||0).toFixed(2);
+                priceInput.readOnly=true;
+                priceInput.title='Fixed rate from Modifier Management';
+            }
         }
-        function closeModifyItemModal(){ document.getElementById('modifyItemModal').classList.add('hidden'); posActiveModifierIndex=null; selectedQuickModifier=''; }
+        function closeModifyItemModal(){
+            document.getElementById('modifyItemModal').classList.add('hidden');
+            posActiveModifierIndex=null;
+            selectedQuickModifier='';
+            selectedQuickModifierData=null;
+            const p=document.getElementById('modifierPriceInput');
+            if(p){p.readOnly=false;p.title='';}
+        }
 
         async function deleteItemModifier(itemIndex, modifierIndex) {
             if (!posCart[itemIndex] || !Array.isArray(posCart[itemIndex].modifiers) || !posCart[itemIndex].modifiers[modifierIndex]) return;
@@ -2398,11 +2932,8 @@
                 posCart[idx].price=Math.max(0, Number(posCart[idx].price||0)+priceVal);
             }
 
-            const newPrice=prompt('Change item base price? Enter the NEW price, or Cancel to keep current.', Number(posCart[idx].price).toFixed(2));
-            if(newPrice!==null && newPrice.trim()!=='' && Number.isFinite(Number(newPrice)) && Number(newPrice)>=0){
-                posCart[idx].price=Number(newPrice);
-            }
-
+            // Permanent modifier selected from the database uses its fixed rate.
+            // Manual typed modifier keeps the existing manual price field behavior.
             renderPosCart();
             closeModifyItemModal();
 
@@ -2415,6 +2946,7 @@
 
         async function saveCurrentPosCartToDatabase(orderId){
             if(!orderId) return false;
+
             let subtotal=0;
             posCart.forEach(i=>subtotal += Number(i.price||0)*Number(i.quantity||0));
             const discount=calculateDiscount(subtotal);
@@ -2422,46 +2954,64 @@
             const sst=roundMoney(taxable*0.06);
             const total=roundToNearest5Sen(taxable+sst);
 
-            const session = JSON.parse(localStorage.getItem('waiter_session') || '{}');
-            const actor = session.full_name || session.email || 'Cashier';
+            const existingRows=posCart.filter(i=>i.db_item_id && Number(i.quantity||0)>0);
+            const removedIds=posCart.filter(i=>i.db_item_id && Number(i.quantity||0)<=0).map(i=>i.db_item_id);
+            const newRows=posCart.filter(i=>!i.db_item_id && Number(i.quantity||0)>0);
 
-            const {error:delErr}=await _supabase.from('order_items').delete().eq('order_id',orderId);
-            if(delErr){ console.error(delErr); return false; }
-
-            const rows=posCart.filter(i=>Number(i.quantity||0)>0).map(i=>({
-                order_id:orderId,
-                menu_item_id:Number(i.menu_item_id),
-                price:Number(i.price||0),
-                quantity:Number(i.quantity||0),
-                modifiers:Array.isArray(i.modifiers)?i.modifiers:null,
-                added_by:actor
-            }));
-
-            let {error:itemErr}=await _supabase.from('order_items').insert(rows);
-            if(itemErr){
-                const fallback=rows.map(({modifiers,added_by,...rest})=>rest);
-                const retry=await _supabase.from('order_items').insert(fallback);
-                itemErr=retry.error;
-                if(!itemErr) localStorage.setItem('order_modifiers_'+orderId,JSON.stringify(posCart.map(i=>i.modifiers||[])));
+            // Existing rows are UPDATED only. Their original added_at / created_at is never touched.
+            for(const i of existingRows){
+                const payload={
+                    quantity:Number(i.quantity||0),
+                    price:Number(i.price||0),
+                    modifiers:Array.isArray(i.modifiers)?i.modifiers:null
+                };
+                let r=await _supabase.from('order_items').update(payload).eq('id',i.db_item_id);
+                if(r.error){
+                    const fallback={quantity:payload.quantity,price:payload.price};
+                    r=await _supabase.from('order_items').update(fallback).eq('id',i.db_item_id);
+                }
+                if(r.error){ console.error(r.error); return false; }
             }
-            if(itemErr){ console.error(itemErr); return false; }
 
-            const {error:orderErr}=await _supabase.from('orders').update({
-                total_amount:total,
-                status:'accepted',
-                payment_status:'Pending',
-                ordered_by:actor,
-                source:'cashier'
-            }).eq('id',orderId);
-
-            if(orderErr){
-                const retry=await _supabase.from('orders').update({
-                    total_amount:total,
-                    status:'accepted',
-                    payment_status:'Pending'
-                }).eq('id',orderId);
-                if(retry.error){ console.error(retry.error); return false; }
+            // Only specifically removed old rows are deleted.
+            if(removedIds.length){
+                const r=await _supabase.from('order_items').delete().in('id',removedIds);
+                if(r.error){ console.error(r.error); return false; }
             }
+
+            // Only brand-new items are inserted, each with the exact time captured when that item was added.
+            if(newRows.length){
+                const rows=newRows.map(i=>({
+                    order_id:orderId,
+                    menu_item_id:Number(i.menu_item_id),
+                    price:Number(i.price||0),
+                    quantity:Number(i.quantity||0),
+                    modifiers:Array.isArray(i.modifiers)?i.modifiers:null,
+                    added_by_id:i.added_by_id??null,
+                    added_by_name:i.added_by_name||i.added_by||null,
+                    added_by_email:i.added_by_email||null,
+                    added_at:i.added_at||getMalaysiaSqlTimestamp()
+                }));
+
+                let ins=await _supabase.from('order_items').insert(rows)
+                    .select('id,menu_item_id,added_at,created_at,added_by_id,added_by_name,added_by_email');
+                if(ins.error){
+                    const fallback=rows.map(({modifiers,added_by_id,added_by_name,added_by_email,added_at,...rest})=>rest);
+                    ins=await _supabase.from('order_items').insert(fallback).select('id,menu_item_id,created_at');
+                }
+                if(ins.error){ console.error(ins.error); return false; }
+
+                (ins.data||[]).forEach((row,index)=>{
+                    if(!newRows[index]) return;
+                    newRows[index].db_item_id=row.id;
+                    newRows[index].added_at=row.added_at||row.created_at||newRows[index].added_at;
+                });
+            }
+
+            const {error:orderErr}=await _supabase.from('orders')
+                .update({total_amount:total,status:'accepted',payment_status:'Pending'})
+                .eq('id',orderId);
+            if(orderErr){ console.error(orderErr); return false; }
             return true;
         }
 
@@ -2493,6 +3043,8 @@
                 }
                 paymentHoldId = newOrder.id;
                 posTargetOrderId = paymentHoldId;
+                currentActiveOrderId = paymentHoldId;
+                setPosOrderIdDisplay(paymentHoldId);
 
                 const session = JSON.parse(localStorage.getItem('waiter_session') || '{}');
                 const cashierLabel = session.full_name || session.email || 'Cashier';
@@ -2796,8 +3348,8 @@
                     <div class="receipt-row"><span class="name">Subtotal:</span><span class="amount">RM${subtotal.toFixed(2)}</span></div>
                     <div class="receipt-row"><span class="name">SST (6%):</span><span class="amount">RM${sst.toFixed(2)}</span></div>
                     <div class="receipt-row"><span class="name">Rounding:</span><span class="amount">${rounding>=0?'+':''}RM${rounding.toFixed(2)}</span></div>
-                    <div class="receipt-row receipt-total"><span class="name">${isPaid?'TOTAL PAID:':'TOTAL:'}</span><span class="amount">RM${totalPaid.toFixed(2)}</span></div>
                     ${discount>0?`<div class="receipt-row"><span class="name">Discount${discountPercent>0?` (${discountPercent.toFixed(2)}%)`:''}:</span><span class="amount">- RM${discount.toFixed(2)}</span></div>`:''}
+                    <div class="receipt-row receipt-total"><span class="name">${isPaid?'TOTAL PAID:':'TOTAL:'}</span><span class="amount">RM${payable.toFixed(2)}</span></div>
                 </div>
                 ${isPaid?'<div class="receipt-status">PAID</div>':'<div class="receipt-status">UNFINALIZED BILL / GUEST CHECK</div>'}
             </div>`;
@@ -2846,7 +3398,7 @@
                 if(!posCart||posCart.length===0){try{w.close()}catch(_){}alert('No items in the current order.');return;}
                 const tableId=document.getElementById('posDisplayTable').innerText||'N/A';
                 let subtotal=0; posCart.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));
-                const sst=roundMoney(subtotal*0.06), grossCalc=roundMoney(subtotal+sst), finalTotal=roundToNearest5Sen(grossCalc), roundingDiff=getRoundingDifference(grossCalc, finalTotal), discount=calculateDiscount(finalTotal);
+                const sst=roundMoney(subtotal*0.06), grossCalc=roundMoney(subtotal+sst), finalTotal=roundToNearest5Sen(grossCalc), roundingDiff=getRoundingDifference(grossCalc, finalTotal), discount=calculateDiscount(finalTotal), payableTotal=roundMoney(Math.max(0, finalTotal-discount));
                 const itemRows=posCart.map(item=>{
                     const mods=Array.isArray(item.modifiers)?item.modifiers:[];
                     const modRows=mods.map(m=>{
@@ -2856,7 +3408,7 @@
                     }).join('');
                     return `<div class="receipt-row"><span class="name">${item.name_en} (x${item.quantity})</span><span class="amount">RM${(Number(item.price)*Number(item.quantity)).toFixed(2)}</span></div>${modRows}`;
                 }).join('');
-                const content=`<div class="receipt-print"><div class="receipt-header"><img src="images/logo.png" alt="Hameeds Bistro Logo" class="receipt-logo"><div><div class="receipt-shop-name">${BUSINESS_NAME}</div><div class="receipt-title">GUEST CHECK</div></div></div><div class="receipt-meta">${BUSINESS_ADDRESS}<br>Tel: ${BUSINESS_TEL} | Email: ${BUSINESS_EMAIL}<br>SST ID: ${SST_ID}<br>Table: ${tableId}<br>Date: ${new Date().toLocaleString()}</div><div class="receipt-items">${itemRows}</div><div class="receipt-totals"><div class="receipt-row"><span class="name">Subtotal:</span><span class="amount">RM${subtotal.toFixed(2)}</span></div><div class="receipt-row"><span class="name">SST (6%):</span><span class="amount">RM${sst.toFixed(2)}</span></div><div class="receipt-row"><span class="name">Rounding:</span><span class="amount">${roundingDiff>=0?'+':''}RM${roundingDiff.toFixed(2)}</span></div><div class="receipt-row receipt-total"><span class="name">TOTAL:</span><span class="amount">RM${finalTotal.toFixed(2)}</span></div>${discount>0?`<div class="receipt-row"><span class="name">Discount${posDiscountPercent?` (${Number(posDiscountPercent).toFixed(2)}%)`:''}:</span><span class="amount">- RM${discount.toFixed(2)}</span></div>`:''}</div><div class="receipt-status">UNFINALIZED BILL / GUEST CHECK</div></div>`;
+                const content=`<div class="receipt-print"><div class="receipt-header"><img src="images/logo.png" alt="Hameeds Bistro Logo" class="receipt-logo"><div><div class="receipt-shop-name">${BUSINESS_NAME}</div><div class="receipt-title">GUEST CHECK</div></div></div><div class="receipt-meta">${BUSINESS_ADDRESS}<br>Tel: ${BUSINESS_TEL} | Email: ${BUSINESS_EMAIL}<br>SST ID: ${SST_ID}<br>Table: ${tableId}<br>Date: ${new Date().toLocaleString()}</div><div class="receipt-items">${itemRows}</div><div class="receipt-totals"><div class="receipt-row"><span class="name">Subtotal:</span><span class="amount">RM${subtotal.toFixed(2)}</span></div><div class="receipt-row"><span class="name">SST (6%):</span><span class="amount">RM${sst.toFixed(2)}</span></div><div class="receipt-row"><span class="name">Rounding:</span><span class="amount">${roundingDiff>=0?'+':''}RM${roundingDiff.toFixed(2)}</span></div>${discount>0?`<div class="receipt-row"><span class="name">Discount${posDiscountPercent?` (${Number(posDiscountPercent).toFixed(2)}%)`:''}:</span><span class="amount">- RM${discount.toFixed(2)}</span></div>`:''}<div class="receipt-row receipt-total"><span class="name">TOTAL:</span><span class="amount">RM${payableTotal.toFixed(2)}</span></div></div><div class="receipt-status">UNFINALIZED BILL / GUEST CHECK</div></div>`;
                 writeReceiptToPrintWindow(w,content);
             }catch(error){try{w.close()}catch(_){}alert('Unable to print guest check: '+error.message)}
         }
@@ -2934,7 +3486,11 @@
                     menu_item_id: Number(item.menu_item_id),
                     price: Number(item.price || 0),
                     quantity: Number(item.quantity || 0),
-                    modifiers: Array.isArray(item.modifiers) ? item.modifiers : null
+                    modifiers: Array.isArray(item.modifiers) ? item.modifiers : null,
+                    added_by_id:item.added_by_id??null,
+                    added_by_name:item.added_by_name||item.added_by||null,
+                    added_by_email:item.added_by_email||null,
+                    added_at:item.added_at||null
                 }))
                 .filter(item => item.quantity > 0 && Number.isFinite(item.menu_item_id));
 
@@ -2942,7 +3498,7 @@
                 let { error: insertError } = await _supabase.from('order_items').insert(heldItems);
                 if (insertError) {
                     // Compatibility with DBs that do not yet have order_items.modifiers.
-                    const fallbackItems = heldItems.map(({modifiers, ...rest}) => rest);
+                    const fallbackItems = heldItems.map(({modifiers,added_by_id,added_by_name,added_by_email,added_at, ...rest}) => rest);
                     const retry = await _supabase.from('order_items').insert(fallbackItems);
                     insertError = retry.error;
                     if (!insertError) {
@@ -3073,7 +3629,7 @@
                 return;
             }
 
-            const staffName = session.full_name || session.email.split('@')[0];
+            const staffName = session.exact_staff_name || getExactStaffDisplayName(session);
             const workDate = getLocalAttendanceDate();
 
             try {
@@ -3194,5 +3750,1025 @@ document.addEventListener('focusin',e=>{const x=e.target;if((x instanceof HTMLIn
     <div id="cashierKeyboardKeys"></div>
   </div>
 </div>
+
+<script id="waiter-payment-guard-final">
+(function(){
+  const deny=function(){
+    alert('Payment is not available in the Waiter Panel. Please use the Cashier Panel.');
+    return false;
+  };
+  window.openPaymentModal=deny;
+  window.openPaymentModalFromListId=deny;
+  window.proceedToPaymentFromModal=deny;
+  window.openPosPaymentInterface=deny;
+  window.posActionHoldAndPay=deny;
+  window.completePayment=deny;
+  window.openCombineOrdersModal=deny;
+  window.openSplitBillModal=deny;
+})();
+</script>
+
+<script id="new-order-existing-final-fix">
+(function(){
+  const DEFAULT_LABEL = 'START NEW ORDER';
+
+  function mainNewOrderButton(){
+    return document.querySelector('#newOrderSetupModal button[onclick="continueNewOrderToPos()"]');
+  }
+
+  function setMainNewOrderButton(hasExisting){
+    const btn = mainNewOrderButton();
+    if(!btn) return;
+    btn.textContent = hasExisting ? 'NEW CUSTOMER' : DEFAULT_LABEL;
+    btn.classList.remove('bg-blue-600','hover:bg-blue-700','bg-emerald-600','hover:bg-emerald-700');
+    if(hasExisting) btn.classList.add('bg-blue-600','hover:bg-blue-700');
+    else btn.classList.add('bg-emerald-600','hover:bg-emerald-700');
+  }
+
+  function clearExistingOrderUI(){
+    const select = document.getElementById('newOrderTableSelect');
+    const box = document.getElementById('existingTableOrdersContainer');
+    const list = document.getElementById('existingTableOrdersList');
+    const extraBtn = document.getElementById('waiterNewCustomerOrderBtn');
+
+    if(select) select.value = '';
+    if(box) box.classList.add('hidden');
+    if(list) list.innerHTML = '';
+    if(extraBtn) extraBtn.classList.add('hidden');
+    setMainNewOrderButton(false);
+
+    if(typeof window.waiterExistingOrdersForSelectedTable !== 'undefined'){
+      window.waiterExistingOrdersForSelectedTable = [];
+    }
+    if(typeof window.waiterForceNewOrderForSelectedTable !== 'undefined'){
+      window.waiterForceNewOrderForSelectedTable = false;
+    }
+  }
+
+  // Every time NEW ORDER opens, start completely clean.
+  const originalOpenNewOrder = window.openNewOrderPosModal;
+  if(typeof originalOpenNewOrder === 'function'){
+    window.openNewOrderPosModal = async function(){
+      clearExistingOrderUI();
+      const result = await originalOpenNewOrder.apply(this, arguments);
+      clearExistingOrderUI();
+      return result;
+    };
+  }
+
+  // Final unified existing-order loader for both Cashier and Waiter.
+  window.loadExistingOrdersForSelectedTable = async function(){
+    const select = document.getElementById('newOrderTableSelect');
+    const box = document.getElementById('existingTableOrdersContainer');
+    const list = document.getElementById('existingTableOrdersList');
+    const extraBtn = document.getElementById('waiterNewCustomerOrderBtn');
+    if(!select || !box || !list) return [];
+
+    const raw = String(select.value || '').trim();
+    if(!raw){
+      box.classList.add('hidden');
+      list.innerHTML = '';
+      if(extraBtn) extraBtn.classList.add('hidden');
+      setMainNewOrderButton(false);
+      return [];
+    }
+
+    const tableKey = raw.split('/')[0].trim().toUpperCase();
+    box.classList.remove('hidden');
+    list.innerHTML = '<div class="text-xs text-gray-500">Checking existing orders...</div>';
+    if(extraBtn) extraBtn.classList.add('hidden');
+
+    const r = await _supabase
+      .from('orders')
+      .select('id,table_id,total_amount,status,payment_status,created_at')
+      .in('status',['accepted','pending','Accepted','Pending','HOLD','Held','hold'])
+      .order('created_at',{ascending:false});
+
+    if(r.error){
+      list.innerHTML = '<div class="text-xs text-red-600">Unable to load existing orders.</div>';
+      setMainNewOrderButton(false);
+      return [];
+    }
+
+    const matches = (r.data || []).filter(o => {
+      const sameTable = String(o.table_id || '').split('/')[0].trim().toUpperCase() === tableKey;
+      const unpaid = String(o.payment_status || '').toLowerCase() !== 'paid';
+      return sameTable && unpaid;
+    });
+
+    if(typeof window.waiterExistingOrdersForSelectedTable !== 'undefined'){
+      window.waiterExistingOrdersForSelectedTable = matches;
+    }
+
+    if(!matches.length){
+      list.innerHTML = '<div class="text-xs text-gray-500">No existing current order for this table.</div>';
+      setMainNewOrderButton(false);
+      return [];
+    }
+
+    setMainNewOrderButton(true);
+
+    // The bottom button becomes NEW CUSTOMER, so hide the duplicate waiter button.
+    if(extraBtn) extraBtn.classList.add('hidden');
+
+    list.innerHTML = matches.map(o => `
+      <div class="bg-white border border-amber-200 rounded-lg p-2 flex items-center justify-between gap-2">
+        <div>
+          <div class="text-xs font-extrabold text-gray-900">Order #${o.id}</div>
+          <div class="text-[10px] text-gray-500">${o.table_id || raw} · ${String(o.status || '').toUpperCase()} · RM${Number(o.total_amount || 0).toFixed(2)}</div>
+        </div>
+        <button type="button" onclick="openExistingTableOrderFinal(${Number(o.id)})"
+          class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold">OPEN</button>
+      </div>`).join('');
+
+    return matches;
+  };
+
+  window.openExistingTableOrderFinal = async function(orderId){
+    if(typeof closeNewOrderSetupModal === 'function') closeNewOrderSetupModal();
+    await openPosSystemModalWithOrder(Number(orderId), 0);
+  };
+
+  // Bottom button behavior:
+  // no existing orders -> normal new order
+  // existing orders -> same button becomes NEW CUSTOMER and MUST still create a new order.
+  const originalContinue = window.continueNewOrderToPos;
+  window.continueNewOrderToPos = async function(){
+    let selectedTable = '';
+
+    if(newOrderType === 'Dine In'){
+      selectedTable = String(document.getElementById('newOrderTableSelect')?.value || '').trim();
+      if(!selectedTable){
+        alert('Please select a table number first.');
+        return;
+      }
+
+      const matches = await window.loadExistingOrdersForSelectedTable();
+
+      // If there are existing orders, clicking NEW CUSTOMER explicitly means:
+      // create a fresh order on the same table.
+      if(matches.length > 0){
+        if(typeof window.waiterForceNewOrderForSelectedTable !== 'undefined'){
+          window.waiterForceNewOrderForSelectedTable = true;
+        }
+      }
+    } else {
+      selectedTable = await refreshNextTakeAwayNumber();
+    }
+
+    newOrderTableId = selectedTable;
+    closeNewOrderSetupModal();
+
+    posTargetOrderId = null;
+    posCart = [];
+    posEnteredAmountString = '';
+    posDiscountPercent = 0;
+    posDiscountAmount = 0;
+    posOrderMode = newOrderType === 'Take Away' ? 'Take Away' : 'Dine In';
+
+    document.getElementById('posDisplayTable').innerText = selectedTable;
+    setPosOrderIdDisplay((typeof posTargetOrderId!=='undefined'&&posTargetOrderId)||(typeof currentActiveOrderId!=='undefined'&&currentActiveOrderId)||null);
+    loadPosPax();
+    document.getElementById('posOrderNoteInput').value = '';
+
+    const typeBadge = document.querySelector('#posRightPaneContainer .bg-emerald-600, #posRightPaneContainer .bg-amber-600');
+    if(typeBadge){
+      typeBadge.innerHTML = newOrderType === 'Dine In' ? '<span>🍽️</span> DINE IN' : '<span>🥡</span> TAKE AWAY';
+      typeBadge.className = newOrderType === 'Dine In'
+        ? 'bg-emerald-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2'
+        : 'bg-amber-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2';
+    }
+
+    await fetchPosMenuData();
+    renderPosCart();
+    renderPosRightPaneMenu();
+    document.getElementById('posSystemModal').classList.remove('hidden');
+  };
+
+  // If user switches to TAKE AWAY, existing table orders must disappear.
+  const originalSelectType = window.selectNewOrderType;
+  if(typeof originalSelectType === 'function'){
+    window.selectNewOrderType = function(type){
+      const result = originalSelectType.apply(this, arguments);
+      if(type !== 'Dine In'){
+        const box = document.getElementById('existingTableOrdersContainer');
+        const list = document.getElementById('existingTableOrdersList');
+        if(box) box.classList.add('hidden');
+        if(list) list.innerHTML = '';
+        setMainNewOrderButton(false);
+      }
+      return result;
+    };
+  }
+})();
+</script>
+
+<script id="customer-add-more-approval-audit-final">
+(function(){
+  const STAFF_SESSION_KEY = document.getElementById('cashierRole') && String(document.body.innerHTML).includes('cashier_session') ? 'cashier_session' : 'waiter_session';
+  let knownAddRequestIds = new Set();
+  let addRequestAlertActive = false;
+  let addRequestAlertTimer = null;
+
+  function staffSession(){
+    try{return JSON.parse(localStorage.getItem(STAFF_SESSION_KEY)||'{}')||{};}catch(e){return {};}
+  }
+  function staffAudit(){
+    const s=staffSession();
+    return {
+      id:s.id ?? null,
+      name:s.full_name || s.name || s.email || 'Staff',
+      email:s.email || null,
+      role:s.role || 'Staff'
+    };
+  }
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  // NEW ORDER acceptance now records exactly who accepted it and when.
+  window.sendOrderToKitchen = async function(){
+    if(!currentActiveOrderId){alert('No active order selected.');return;}
+    const s=staffAudit(), now=new Date().toISOString();
+    const {error}=await _supabase.from('orders').update({
+      status:'accepted', payment_status:'Pending',
+      accepted_by_id:s.id, accepted_by_name:s.name, accepted_by_email:s.email,
+      accepted_by_role:s.role, accepted_at:now
+    }).eq('id',currentActiveOrderId);
+    if(error){alert('Failed to accept order: '+error.message);return;}
+    alert('Order accepted and sent successfully to Kitchen and Current Orders!');
+    closeOrderModal();
+    await loadPendingOrders();
+    await fetchIncomingOrders(false);
+  };
+
+  // NEW ORDER decline records staff + time + existing decline reason.
+  window.submitDeclineOrder = async function(){
+    const reason=document.getElementById('declineReasonInput').value.trim();
+    if(!reason){alert('Please type a reason for declining.');return;}
+    const s=staffAudit(), now=new Date().toISOString();
+    const {error}=await _supabase.from('orders').update({
+      status:'Cancelled',
+      decline_reason:reason,
+      declined_by_id:s.id, declined_by_name:s.name, declined_by_email:s.email,
+      declined_by_role:s.role, declined_at:now
+    }).eq('id',orderToDeclineId);
+    if(error){alert('Failed to decline order: '+error.message);return;}
+    alert('Order declined successfully.');
+    closeDeclineModal();
+    await fetchIncomingOrders(false);
+    await loadPendingOrders();
+  };
+
+  // Individual item cancellation: keep an audit row instead of permanently deleting it.
+  window.removeItemFromOrder = async function(itemId,orderId){
+    const s=staffAudit();
+    if(!s.email){alert('Login session not found.');return;}
+    const ir=await _supabase.from('order_items').select('*').eq('id',itemId).maybeSingle();
+    if(ir.error||!ir.data){alert('Item not found.');return;}
+    const item=ir.data;
+    const reason=prompt('Reason for cancelling this item:');
+    if(reason===null||!reason.trim()){alert('Cancel reason is required.');return;}
+    const {error}=await _supabase.from('order_items').update({
+      is_cancelled:true,
+      cancelled_quantity:Number(item.quantity||0),
+      cancel_reason:reason.trim(),
+      cancelled_by_id:s.id,
+      cancelled_by_name:s.name,
+      cancelled_by_email:s.email,
+      cancelled_by_role:s.role,
+      cancelled_at:new Date().toISOString(),
+      quantity:0
+    }).eq('id',itemId);
+    if(error){alert('Item cancellation failed: '+error.message);return;}
+    if(typeof recalulateAndUpdateOrderTotal==='function') await recalulateAndUpdateOrderTotal(orderId);
+    if(typeof renderModalItems==='function') await renderModalItems(orderId,true);
+  };
+
+  function playAddRequestTone(){
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC)return;
+      const ctx=new AC(), now=ctx.currentTime;
+      [660,990].forEach((freq,idx)=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.type='sine';o.frequency.value=freq;
+        g.gain.setValueAtTime(.0001,now+idx*.18);
+        g.gain.exponentialRampToValueAtTime(.75,now+idx*.18+.01);
+        g.gain.exponentialRampToValueAtTime(.0001,now+idx*.18+.15);
+        o.connect(g);g.connect(ctx.destination);
+        o.start(now+idx*.18);o.stop(now+idx*.18+.16);
+      });
+    }catch(e){}
+  }
+  function speakAddRequest(req){
+    if(!('speechSynthesis' in window))return;
+    const msg=`Hameeds Bistro, new items have been added to order number ${req.order_id}, from table ${req.table_id||'N A'}.`;
+    try{
+      speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(msg);u.lang='en-US';u.rate=.9;u.volume=1;
+      u.onend=()=>{if(addRequestAlertActive)addRequestAlertTimer=setTimeout(()=>speakAddRequest(req),700);};
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function startAddRequestAlert(req){
+    addRequestAlertActive=true;
+    clearTimeout(addRequestAlertTimer);
+    playAddRequestTone();
+    addRequestAlertTimer=setTimeout(()=>{if(addRequestAlertActive)speakAddRequest(req)},500);
+  }
+  function stopAddRequestAlert(){
+    addRequestAlertActive=false;
+    clearTimeout(addRequestAlertTimer);
+    addRequestAlertTimer=null;
+    try{speechSynthesis.cancel();}catch(e){}
+  }
+
+  async function loadPendingAddRequests(shouldAlert=false){
+    const {data,error}=await _supabase.from('order_item_add_requests')
+      .select('*').eq('status','pending').order('created_at',{ascending:false});
+    if(error){console.warn('Add-item request load:',error.message);return [];}
+    const rows=Array.isArray(data)?data:[];
+    const ids=new Set(rows.map(r=>String(r.id)));
+    if(shouldAlert){
+      const fresh=rows.find(r=>!knownAddRequestIds.has(String(r.id)));
+      if(fresh)startAddRequestAlert(fresh);
+    }
+    knownAddRequestIds=ids;
+    return rows;
+  }
+
+  window.openAddItemRequest=async function(requestId){
+    stopAddRequestAlert();
+    const {data:req,error}=await _supabase.from('order_item_add_requests').select('*').eq('id',requestId).maybeSingle();
+    if(error||!req){alert('Request not found.');return;}
+    let items=req.items;
+    if(typeof items==='string'){try{items=JSON.parse(items)}catch(e){items=[]}}
+    items=Array.isArray(items)?items:[];
+    const names=new Map();
+    const ids=[...new Set(items.map(i=>i.menu_item_id).filter(Boolean))];
+    if(ids.length){
+      const mr=await _supabase.from('menu_items').select('id,name_en').in('id',ids);
+      (mr.data||[]).forEach(m=>names.set(String(m.id),m.name_en));
+    }
+    const lines=items.map(i=>`${Number(i.quantity||1)} × ${names.get(String(i.menu_item_id))||i.item_name||('Item #'+i.menu_item_id)} @ RM${Number(i.price||0).toFixed(2)}`).join('\n');
+    const choice=confirm(`NEW ITEMS ADDED\nOrder #${req.order_id}\nTable: ${req.table_id||'N/A'}\n\n${lines}\n\nOK = ACCEPT\nCancel = DECLINE`);
+    if(choice) await window.acceptAddItemRequest(requestId);
+    else {
+      const reason=prompt('Reason for declining these new items:');
+      if(reason!==null && reason.trim()) await window.declineAddItemRequest(requestId,reason.trim());
+    }
+  };
+
+  window.acceptAddItemRequest=async function(requestId){
+    const {data:req,error}=await _supabase.from('order_item_add_requests').select('*').eq('id',requestId).maybeSingle();
+    if(error||!req){alert('Request not found.');return;}
+    let items=req.items; if(typeof items==='string'){try{items=JSON.parse(items)}catch(e){items=[]}}
+    items=Array.isArray(items)?items:[];
+    if(!items.length){alert('No requested items found.');return;}
+    const rows=items.map(i=>({
+      order_id:req.order_id, menu_item_id:i.menu_item_id, quantity:Number(i.quantity||1),
+      price:Number(i.price||0), modifiers:i.modifiers||[]
+    }));
+    let ins=await _supabase.from('order_items').insert(rows);
+    if(ins.error){
+      const fallback=rows.map(({modifiers,...r},idx)=>({...r,modifier_notes:(items[idx].modifierNote||'')}));
+      ins=await _supabase.from('order_items').insert(fallback);
+    }
+    if(ins.error){alert('Could not add requested items: '+ins.error.message);return;}
+
+    const all=await _supabase.from('order_items').select('price,quantity,is_cancelled').eq('order_id',req.order_id);
+    const subtotal=(all.data||[]).filter(i=>!i.is_cancelled).reduce((s,i)=>s+Number(i.price||0)*Number(i.quantity||0),0);
+    const sst=Math.round(subtotal*.06*100)/100,total=Math.round((subtotal+sst)*100)/100;
+    await _supabase.from('orders').update({subtotal,sst_tax:sst,total_amount:total,status:'accepted'}).eq('id',req.order_id);
+
+    const s=staffAudit(),now=new Date().toISOString();
+    await _supabase.from('order_item_add_requests').update({
+      status:'accepted',accepted_by_id:s.id,accepted_by_name:s.name,accepted_by_email:s.email,
+      accepted_by_role:s.role,accepted_at:now
+    }).eq('id',requestId);
+    alert(`New items accepted and added to Order #${req.order_id}.`);
+    await fetchIncomingOrders(false); await loadPendingOrders();
+  };
+
+  window.declineAddItemRequest=async function(requestId,reason){
+    const s=staffAudit(),now=new Date().toISOString();
+    const {error}=await _supabase.from('order_item_add_requests').update({
+      status:'declined',decline_reason:reason,
+      declined_by_id:s.id,declined_by_name:s.name,declined_by_email:s.email,
+      declined_by_role:s.role,declined_at:now
+    }).eq('id',requestId);
+    if(error){alert('Decline failed: '+error.message);return;}
+    alert('New-item request declined.');
+    await fetchIncomingOrders(false);
+  };
+
+  const oldFetch=window.fetchIncomingOrders;
+  window.fetchIncomingOrders=async function(shouldAlert=false){
+    const ordersResult=await _supabase.from('orders').select('*').eq('status','pending').order('created_at',{ascending:false});
+    const pending=ordersResult.data||[];
+    const addReqs=await loadPendingAddRequests(shouldAlert);
+    const badge=document.getElementById('notificationBadge');
+    const container=document.getElementById('incomingOrdersList');
+    if(!badge||!container)return;
+    const total=pending.length+addReqs.length;
+    badge.innerText=total;
+    badge.classList.toggle('hidden',total===0);
+    const orderHtml=pending.map(o=>`
+      <div class="border p-3 rounded-xl bg-gray-50 text-xs">
+        <div class="flex justify-between items-center gap-2"><div>
+          <span class="font-bold text-sm">NEW ORDER #${o.id}</span>
+          <p class="text-gray-500">Table: ${esc(o.table_id||'N/A')} | RM${Number(o.total_amount||0).toFixed(2)}</p>
+        </div><div class="flex gap-2">
+          <button onclick='openOrderDetailsById(${o.id},"incoming")' class="bg-emerald-600 text-white px-3 py-1 rounded-lg">Open</button>
+          <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 text-white px-3 py-1 rounded-lg">Decline</button>
+        </div></div>
+      </div>`).join('');
+    const addHtml=addReqs.map(r=>`
+      <div class="border-2 border-amber-300 p-3 rounded-xl bg-amber-50 text-xs">
+        <div class="flex justify-between items-center gap-2"><div>
+          <span class="font-extrabold text-sm text-amber-900">NEW ITEMS ADDED · ORDER #${r.order_id}</span>
+          <p class="text-amber-800">Table: ${esc(r.table_id||'N/A')} · Customer modified existing order</p>
+        </div><button onclick="openAddItemRequest(${r.id})" class="bg-amber-600 text-white px-3 py-1.5 rounded-lg font-bold">Open</button></div>
+      </div>`).join('');
+    container.innerHTML=(addHtml+orderHtml)||'<p class="text-gray-500 text-sm text-center py-4">No new notifications.</p>';
+  };
+
+  // Extra realtime channel for customer add-more requests.
+  try{
+    _supabase.channel('public:order_item_add_requests')
+      .on('postgres_changes',{event:'*',schema:'public',table:'order_item_add_requests'},payload=>{
+        fetchIncomingOrders(true);
+        // fetchIncomingOrders(true) -> loadPendingAddRequests(true) starts this alert once.
+      }).subscribe();
+  }catch(e){console.warn(e)}
+
+  // Include pending modification count from first page load.
+  setTimeout(()=>loadPendingAddRequests(false).then(()=>fetchIncomingOrders(false)),700);
+})();
+</script>
+
+<script id="final-order-item-note-display-fix">
+(function(){
+  function readableItemNote(i){
+    if(i?.item_note) return String(i.item_note);
+    if(i?.modifier_notes) return String(i.modifier_notes);
+    return '';
+  }
+
+  /* When a customer Add-More request is accepted, preserve the direct item note
+     in order_items.item_note when that column exists, with safe fallback. */
+  const oldAccept=window.acceptAddItemRequest;
+  window.acceptAddItemRequest=async function(requestId){
+    const {data:req,error}=await _supabase.from('order_item_add_requests').select('*').eq('id',requestId).maybeSingle();
+    if(error||!req){alert('Request not found.');return;}
+    let items=req.items;
+    if(typeof items==='string'){try{items=JSON.parse(items)}catch(e){items=[]}}
+    items=Array.isArray(items)?items:[];
+    if(!items.length){alert('No requested items found.');return;}
+
+    const orderForActor=await _supabase.from('orders').select('customer_name,customer_id').eq('id',req.order_id).maybeSingle();
+    const customerActor=orderForActor.data?.customer_name||'Customer';
+    const rows=items.map(i=>({
+      order_id:req.order_id,
+      menu_item_id:i.menu_item_id,
+      quantity:Number(i.quantity||1),
+      price:Number(i.price||0),
+      modifiers:i.modifiers||[],
+      item_note:i.modifierNote||i.item_note||null,
+      added_by_name:customerActor,
+      added_at:new Date().toISOString()
+    }));
+    let ins=await _supabase.from('order_items').insert(rows);
+    if(ins.error){
+      const fallback=rows.map(({modifiers,item_note,...r},idx)=>({
+        ...r,
+        modifier_notes:[
+          ...(Array.isArray(items[idx].modifiers)?items[idx].modifiers.map(x=>typeof x==='string'?x:(x?.text||'')).filter(Boolean):[]),
+          items[idx].modifierNote||items[idx].item_note||''
+        ].filter(Boolean).join(', ')||null
+      }));
+      ins=await _supabase.from('order_items').insert(fallback);
+    }
+    if(ins.error){alert('Could not add requested items: '+ins.error.message);return;}
+
+    let all=await _supabase.from('order_items').select('*').eq('order_id',req.order_id);
+    const subtotal=(all.data||[]).filter(i=>!i.is_cancelled).reduce((s,i)=>s+Number(i.price||0)*Number(i.quantity||0),0);
+    const sst=Math.round(subtotal*.06*100)/100,total=Math.round((subtotal+sst)*100)/100;
+    await _supabase.from('orders').update({subtotal,sst_tax:sst,total_amount:total,status:'accepted'}).eq('id',req.order_id);
+
+    let session={};try{
+      session=JSON.parse(localStorage.getItem('cashier_session')||localStorage.getItem('waiter_session')||'{}')||{};
+    }catch(e){}
+    const now=new Date().toISOString();
+    await _supabase.from('order_item_add_requests').update({
+      status:'accepted',
+      accepted_by_id:session.id??null,
+      accepted_by_name:session.exact_staff_name||getExactStaffDisplayName(session),
+      accepted_by_email:session.email||null,
+      accepted_by_role:session.role||'Staff',
+      accepted_at:now
+    }).eq('id',requestId);
+    alert(`New items accepted and added to Order #${req.order_id}.`);
+    if(typeof fetchIncomingOrders==='function')await fetchIncomingOrders(false);
+    if(typeof loadPendingOrders==='function')await loadPendingOrders();
+  };
+
+  window.getReadableItemNote = readableItemNote;
+})();
+</script>
+
+
+<style id="show-order-details-item-actor-style">
+#orderDetailsAuditModal .audit-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px}
+#orderDetailsAuditModal .audit-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 0;border-bottom:1px dashed #d1d5db}
+#orderDetailsAuditModal .audit-item:last-child{border-bottom:0}
+#orderDetailsAuditModal .audit-name{font-weight:800;color:#111827}
+#orderDetailsAuditModal .audit-meta{font-size:12px;color:#64748b;margin-top:4px;line-height:1.4}
+#orderDetailsAuditModal .audit-actor{font-size:12px;font-weight:800;color:#065f46}
+</style>
+
+<div id="orderDetailsAuditModal" class="hidden fixed inset-0 bg-black/60 z-[10050] p-3 sm:p-5 overflow-y-auto">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto my-6 overflow-hidden">
+    <div class="bg-slate-900 text-white p-4 flex items-center justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-extrabold">Order Details</h3>
+        <div id="orderDetailsAuditSubtitle" class="text-xs text-slate-300 mt-1"></div>
+      </div>
+      <button onclick="closeOrderDetailsAudit()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-xl font-bold">×</button>
+    </div>
+    <div id="orderDetailsAuditBody" class="p-4 space-y-3"></div>
+    <div class="p-4 border-t bg-slate-50">
+      <button onclick="closeOrderDetailsAudit()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl py-2.5">Close</button>
+    </div>
+  </div>
+</div>
+
+<script id="show-order-details-item-actor-final">
+(function(){
+  function auditEsc(v){
+    return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function localTime(v){
+    if(!v)return 'Time not recorded';
+    const d=new Date(v);
+    if(Number.isNaN(d.getTime()))return String(v);
+    return new Intl.DateTimeFormat('en-GB',{
+      timeZone:'Asia/Kuala_Lumpur',
+      year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',second:'2-digit',
+      hour12:false
+    }).format(d);
+  }
+  function actorFromOrder(order){
+    return order?.ordered_by_name ||
+           order?.created_by_name ||
+           order?.customer_name ||
+           order?.accepted_by_name ||
+           order?.staff_name ||
+           order?.waiter_name ||
+           'Customer';
+  }
+
+  function actorFromItem(item,order){
+    return item?.added_by_name ||
+           item?.added_by ||
+           item?.ordered_by ||
+           item?.created_by_name ||
+           item?.created_by ||
+           item?.staff_name ||
+           item?.customer_name ||
+           actorFromOrder(order);
+  }
+  async function resolveActor(item,order){
+    let name=actorFromItem(item,order);
+    const id=item?.added_by_id || item?.staff_id || item?.created_by_id || null;
+    const email=item?.added_by_email || item?.staff_email || item?.created_by_email || null;
+    if(id||email){
+      try{
+        let q=_supabase.from('profiles').select('*').limit(1);
+        q=id?q.eq('id',id):q.eq('email',email);
+        const r=await q.maybeSingle();
+        if(r.data)name=r.data.full_name||r.data.name||r.data.email||name;
+      }catch(e){}
+    }
+    return name||'Staff';
+  }
+
+  window.closeOrderDetailsAudit=function(){
+    document.getElementById('orderDetailsAuditModal').classList.add('hidden');
+  };
+
+  window.showOrderDetailsAudit=async function(orderId){
+    const modal=document.getElementById('orderDetailsAuditModal');
+    const body=document.getElementById('orderDetailsAuditBody');
+    const sub=document.getElementById('orderDetailsAuditSubtitle');
+    body.innerHTML='<div class="text-center py-6 text-slate-500">Loading order details...</div>';
+    modal.classList.remove('hidden');
+
+    const {data:order,error:oErr}=await _supabase.from('orders').select('*').eq('id',orderId).maybeSingle();
+    if(oErr||!order){
+      body.innerHTML=`<div class="text-red-600">Could not load order: ${auditEsc(oErr?.message||'Order not found')}</div>`;
+      return;
+    }
+    const prettyType=formatPrettyOrderType(order.order_type,order.table_id);
+    const typeClass=prettyType==='Takeaway'
+      ?'bg-amber-100 text-amber-800 border-amber-300'
+      :'bg-emerald-100 text-emerald-800 border-emerald-300';
+    sub.innerHTML=`<span class="font-bold text-white">Order #${auditEsc(order.id)}</span>
+      <span class="mx-1 text-slate-500">•</span>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full border font-extrabold ${typeClass}">${auditEsc(prettyType)}</span>
+      <span class="mx-1 text-slate-500">•</span>
+      <span>Table ${auditEsc(order.table_id||order.table_number||'N/A')}</span>`;
+
+    const {data:items,error:iErr}=await _supabase
+      .from('order_items')
+      .select('*,menu_items(name_en)')
+      .eq('order_id',orderId)
+      .order('id',{ascending:true});
+
+    if(iErr){
+      body.innerHTML=`<div class="text-red-600">Could not load items: ${auditEsc(iErr.message)}</div>`;
+      return;
+    }
+
+    const rows=[];
+    for(const item of (items||[])){
+      const actor=await resolveActor(item,order);
+      const orderedAt=item.added_at||item.created_at||item.updated_at||order.created_at;
+      const note=item.item_note||item.modifier_notes||'';
+      const itemStatus=String(item.item_status||'processing').toLowerCase();
+      const statusLabel=itemStatus==='ready'?'READY':'PROCESSING';
+      const statusClass=itemStatus==='ready'
+        ?'background:#dcfce7;color:#166534;border:1px solid #86efac'
+        :'background:#fef3c7;color:#92400e;border:1px solid #fcd34d';
+      rows.push(`<div class="audit-item">
+        <div>
+          <div class="audit-name">${auditEsc(item.menu_items?.name_en||item.item_name||('Item #'+(item.menu_item_id||'')))} × ${Number(item.quantity||0)}</div>
+          <div class="audit-meta">Ordered: ${auditEsc(localTime(orderedAt))}</div>
+          <div class="audit-actor">Ordered By: ${auditEsc(actor)}</div>
+          <div class="audit-meta">Item Status: <span style="${statusClass};padding:2px 8px;border-radius:999px;font-weight:800">${statusLabel}</span></div>
+          ${note?`<div class="audit-meta">Note: ${auditEsc(note)}</div>`:''}
+        </div>
+        <div class="font-extrabold whitespace-nowrap">RM${(Number(item.price||0)*Number(item.quantity||0)).toFixed(2)}</div>
+      </div>`);
+    }
+
+    body.innerHTML=`
+      <div class="audit-card">
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div><span class="text-slate-500">Order:</span> <b>#${auditEsc(order.id)}</b></div>
+          <div><span class="text-slate-500">Table:</span> <b>${auditEsc(order.table_id||order.table_number||'N/A')}</b></div>
+          <div><span class="text-slate-500">Order Time:</span> <b>${auditEsc(localTime(order.created_at))}</b></div>
+          <div><span class="text-slate-500">Ordered By:</span> <b>${auditEsc(actorFromOrder(order))}</b></div>
+        </div>
+      </div>
+      <div class="audit-card">${rows.join('')||'<div class="text-slate-500 text-sm">No items found.</div>'}</div>`;
+  };
+
+  function findActiveOrderId(){
+    try{
+      if(typeof currentActiveOrderId!=='undefined' && currentActiveOrderId) return currentActiveOrderId;
+      if(typeof posTargetOrderId!=='undefined' && posTargetOrderId) return posTargetOrderId;
+      if(typeof activeOrderData!=='undefined' && activeOrderData?.id) return activeOrderData.id;
+    }catch(e){}
+    return window.currentOrderId || window.activeOrderId || window.selectedOrderId || null;
+  }
+
+  function replaceOrderNoteButtons(){
+    const buttons=[...document.querySelectorAll('button')];
+    for(const btn of buttons){
+      const txt=(btn.textContent||'').trim().toLowerCase();
+      if(txt==='order note' || txt.includes('order note')){
+        btn.textContent='Show Order Details';
+        btn.onclick=function(){
+          const id=findActiveOrderId();
+          if(!id){alert('Open an order first.');return;}
+          showOrderDetailsAudit(id);
+        };
+        btn.classList.add('bg-blue-600','hover:bg-blue-700','text-white');
+      }
+    }
+  }
+
+  const mo=new MutationObserver(()=>replaceOrderNoteButtons());
+  mo.observe(document.documentElement,{subtree:true,childList:true});
+  document.addEventListener('DOMContentLoaded',replaceOrderNoteButtons);
+  setTimeout(replaceOrderNoteButtons,300);
+})();
+</script>
+
+
+<script id="malaysia-per-item-time-helper">
+function getMalaysiaSqlTimestamp(){
+  const p=new Intl.DateTimeFormat('en-CA',{
+    timeZone:'Asia/Kuala_Lumpur',
+    year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',
+    hour12:false
+  }).formatToParts(new Date()).reduce((a,x)=>{a[x.type]=x.value;return a},{});
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`;
+}
+function formatMalaysiaItemTime(value){
+  if(!value)return 'Time not recorded';
+  const raw=String(value);
+  // If stored as local timestamp without timezone, display as-is to avoid double-shifting.
+  if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(raw)){
+    const [d,tm]=raw.split('T');
+    const [y,m,day]=d.split('-');
+    return `${day}/${m}/${y}, ${tm.slice(0,8)}`;
+  }
+  const dt=new Date(value);
+  if(Number.isNaN(dt.getTime()))return raw;
+  return new Intl.DateTimeFormat('en-GB',{
+    timeZone:'Asia/Kuala_Lumpur',
+    year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',
+    hour12:false
+  }).format(dt);
+}
+</script>
+
+
+<script id="waiter-real-name-helper">
+function getExactStaffDisplayName(profile){
+  const generic=new Set(['waiter','cashier','staff','manager','admin','cook','user']);
+  const candidates=[
+    profile?.name,
+    profile?.full_name,
+    profile?.display_name,
+    profile?.staff_name,
+    profile?.username,
+    profile?.email
+  ].filter(Boolean).map(v=>String(v).trim()).filter(Boolean);
+
+  for(const c of candidates){
+    if(!generic.has(c.toLowerCase()) && !c.includes('@')) return c;
+  }
+  const nonEmail=candidates.find(c=>!c.includes('@'));
+  return nonEmail || candidates[0] || 'Staff';
+}
+
+async function refreshWaiterProfileSession(){
+  let session={};
+  try{session=JSON.parse(localStorage.getItem('waiter_session')||'{}')||{};}catch(e){}
+  if(!session?.email) return session;
+
+  try{
+    const {data,error}=await _supabase
+      .from('profiles')
+      .select('*')
+      .eq('email',session.email)
+      .maybeSingle();
+
+    if(!error && data){
+      const merged={...session,...data};
+      merged.exact_staff_name=getExactStaffDisplayName(data);
+      localStorage.setItem('waiter_session',JSON.stringify(merged));
+      return merged;
+    }
+  }catch(e){}
+  session.exact_staff_name=getExactStaffDisplayName(session);
+  localStorage.setItem('waiter_session',JSON.stringify(session));
+  return session;
+}
+</script>
+
+
+<script id="waiter-session-name-refresh-startup">
+window.addEventListener('load', async function(){
+  try{
+    if(typeof refreshWaiterProfileSession !== 'function') return;
+    const s=await refreshWaiterProfileSession();
+    if(!s) return;
+    const name=s.exact_staff_name || (typeof getExactStaffDisplayName==='function' ? getExactStaffDisplayName(s) : '') || s.full_name || s.name || s.email || 'Waiter';
+    const el=document.getElementById('cashierName');
+    if(el) el.textContent=name;
+  }catch(e){ console.warn('Waiter profile refresh skipped:',e); }
+});
+</script>
+
+
+<script id="waiter-order-id-pax-pretty-type-final">
+(function(){
+  const PAX_KEY='hameeds_waiter_pos_pax';
+
+  window.setPosOrderIdDisplay=function(orderId){
+    const el=document.getElementById('posDisplayCard');
+    if(!el)return;
+    const id=(orderId!==null&&orderId!==undefined&&String(orderId).trim()!=='')?String(orderId):'NEW';
+    el.textContent=id;
+  };
+
+  window.savePosPax=function(value){
+    let n=parseInt(value,10);
+    if(!Number.isFinite(n)||n<1)n=1;
+    if(n>99)n=99;
+    try{localStorage.setItem(PAX_KEY,String(n));}catch(e){}
+    const el=document.getElementById('posDisplayPax');
+    if(el&&String(el.value)!==String(n))el.value=String(n);
+  };
+
+  window.loadPosPax=function(){
+    let value='4';
+    try{value=localStorage.getItem(PAX_KEY)||'4';}catch(e){}
+    let n=parseInt(value,10);
+    if(!Number.isFinite(n)||n<1)n=4;
+    if(n>99)n=99;
+    const el=document.getElementById('posDisplayPax');
+    if(el)el.value=String(n);
+    return n;
+  };
+
+  window.formatPrettyOrderType=function(orderType,tableId){
+    const raw=String(orderType||'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+    const table=String(tableId||'').trim().toUpperCase();
+    if(raw.includes('take')||raw==='takeaway'||raw==='take_away'||table.startsWith('TAKEAWAY'))return 'Takeaway';
+    return 'Dine In';
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    loadPosPax();
+    const id=(typeof posTargetOrderId!=='undefined'&&posTargetOrderId)||
+             (typeof currentActiveOrderId!=='undefined'&&currentActiveOrderId)||null;
+    setPosOrderIdDisplay(id);
+  });
+
+  // Keep the header correct if older code later tries to overwrite it.
+  const observer=new MutationObserver(()=>{
+    const card=document.getElementById('posDisplayCard');
+    if(card){
+      const id=(typeof posTargetOrderId!=='undefined'&&posTargetOrderId)||
+               (typeof currentActiveOrderId!=='undefined'&&currentActiveOrderId)||null;
+      const wanted=id?String(id):'NEW';
+      if(card.textContent!==wanted)card.textContent=wanted;
+    }
+  });
+  document.addEventListener('DOMContentLoaded',()=>observer.observe(document.body,{childList:true,subtree:true}));
+})();
+</script>
+
+
+<style id="hameeds-mobile-responsive-final">
+html,body{max-width:100%;overflow-x:hidden}button,input,select,textarea{touch-action:manipulation}img,svg,canvas,video{max-width:100%}
+@media(max-width:768px){html,body{width:100%!important;min-width:0!important}body{overflow-x:hidden!important}button{min-height:42px}input,select,textarea{font-size:16px!important;max-width:100%!important}.fixed{max-width:100vw!important}#notificationModal,#orderDetailsModal,#posSystemModal,#newOrderSetupModal,#historyModal{padding-left:max(6px,env(safe-area-inset-left))!important;padding-right:max(6px,env(safe-area-inset-right))!important}#notificationModal>div,#orderDetailsModal>div,#posSystemModal>div,#newOrderSetupModal>div,#historyModal>div{max-width:100vw!important}}
+@supports(padding:max(0px)){body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}}
+</style>
+
+<style id="hameeds-desktop-full-keyboard-style">
+#cashierVirtualKeyboard{padding:10px!important;background:#111827!important;border-top:2px solid #374151!important;box-shadow:0 -10px 28px rgba(0,0,0,.35)!important;max-height:48vh!important;overflow:auto!important;z-index:999999!important}
+#cashierVirtualKeyboard .vk-shell{max-width:1180px;margin:0 auto}
+#cashierVirtualKeyboard .vk-row{display:flex;gap:6px;margin:6px 0;align-items:stretch}
+#cashierVirtualKeyboard .vk-key{min-width:48px;height:48px;padding:0 10px;border:1px solid #4b5563;border-radius:7px;background:#1f2937;color:#fff;font:700 14px/1 Arial,sans-serif;user-select:none;touch-action:manipulation}
+#cashierVirtualKeyboard .vk-key.active{background:#2563eb;border-color:#60a5fa}
+#cashierVirtualKeyboard .vk-backspace{min-width:112px}.vk-tab{min-width:82px}.vk-caps{min-width:112px}.vk-enter{min-width:118px}.vk-shift{min-width:136px}
+#cashierVirtualKeyboard .vk-space{flex:1;min-width:330px}.vk-hide{min-width:92px}.vk-grow{flex:1}
+@media(max-width:768px){#cashierVirtualKeyboard{display:none!important}}
+</style>
+
+<script id="hameeds-desktop-full-keyboard-script">
+(function(){
+ let target=null,caps=false,shift=false,manuallyDisabled=false;
+ const shifted={'`':'~','1':'!','2':'@','3':'#','4':'$','5':'%','6':'^','7':'&','8':'*','9':'(','0':')','-':'_','=':'+','[':'{',']':'}','\\':'|',';':':',"'":'"',',':'<','.':'>','/':'?'};
+
+ // WEB RULE:
+ // - Phone/tablet/mobile: never show the custom virtual keyboard.
+ // - Desktop/PC: show it when an input gets focus.
+ // - After the user manually closes/hides it, keep it off until page reload.
+ function isMobileOrTouch(){
+   const ua=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+   const narrow=window.matchMedia&&window.matchMedia('(max-width:768px)').matches;
+   const coarse=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
+   return ua || (narrow && coarse);
+ }
+ function allowed(){return !isMobileOrTouch() && !manuallyDisabled}
+
+ function label(k){if(/^[a-z]$/i.test(k))return(caps!==shift)?k.toUpperCase():k.toLowerCase();return shift&&shifted[k]?shifted[k]:k}
+ function btn(k,c=''){const m={BACKSPACE:'⌫ Backspace',TAB:'Tab',CAPS:'Caps Lock',ENTER:'Enter',SHIFT:'Shift',SPACE:'Space',HIDE:'Hide'};return `<button type="button" class="vk-key ${c} ${((k==='CAPS'&&caps)||(k==='SHIFT'&&shift))?'active':''}" data-vk="${k.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">${m[k]||label(k)}</button>`}
+ function render(){const b=document.getElementById('cashierKeyboardKeys');if(!b)return;b.className='vk-shell';b.innerHTML=`
+ <div class="vk-row">${['`','1','2','3','4','5','6','7','8','9','0','-','='].map(k=>btn(k)).join('')}${btn('BACKSPACE','vk-backspace')}</div>
+ <div class="vk-row">${btn('TAB','vk-tab')}${['q','w','e','r','t','y','u','i','o','p','[',']','\\'].map(k=>btn(k)).join('')}</div>
+ <div class="vk-row">${btn('CAPS','vk-caps')}${['a','s','d','f','g','h','j','k','l',';',"'"].map(k=>btn(k)).join('')}${btn('ENTER','vk-enter')}</div>
+ <div class="vk-row">${btn('SHIFT','vk-shift')}${['z','x','c','v','b','n','m',',','.','/'].map(k=>btn(k)).join('')}${btn('SHIFT','vk-shift')}</div>
+ <div class="vk-row"><span class="vk-grow"></span>${btn('SPACE','vk-space')}${btn('HIDE','vk-hide')}<span class="vk-grow"></span></div>`}
+
+ function ins(s){if(!target)return;const a=target.selectionStart??target.value.length,b=target.selectionEnd??target.value.length;target.value=target.value.slice(0,a)+s+target.value.slice(b);const p=a+s.length;try{target.setSelectionRange(p,p)}catch(_){}target.dispatchEvent(new Event('input',{bubbles:true}));target.dispatchEvent(new Event('change',{bubbles:true}))}
+ function del(){if(!target)return;const a=target.selectionStart??target.value.length,b=target.selectionEnd??target.value.length;if(a!==b){target.value=target.value.slice(0,a)+target.value.slice(b);try{target.setSelectionRange(a,a)}catch(_){}}else if(a>0){target.value=target.value.slice(0,a-1)+target.value.slice(b);try{target.setSelectionRange(a-1,a-1)}catch(_){}}target.dispatchEvent(new Event('input',{bubbles:true}))}
+
+ function silentHide(){document.getElementById('cashierVirtualKeyboard')?.classList.add('hidden');target=null}
+
+ window.showCashierVirtualKeyboard=function(el){
+   if(!allowed()||!el||el.disabled||el.readOnly){silentHide();return}
+   target=el;
+   const kb=document.getElementById('cashierVirtualKeyboard');
+   const lab=document.getElementById('cashierKeyboardTargetLabel');
+   if(lab)lab.textContent=el.placeholder||el.id||'Keyboard';
+   render();
+   kb?.classList.remove('hidden');
+ };
+
+ // Manual Close / Hide means "I don't need it anymore" for this page session.
+ window.hideCashierVirtualKeyboard=function(){
+   manuallyDisabled=true;
+   silentHide();
+ };
+
+ window.cashierKeyboardPress=function(k){
+   if(!target)return;
+   if(k==='BACKSPACE'){del();return}
+   if(k==='TAB'){ins('\t');return}
+   if(k==='CAPS'){caps=!caps;render();return}
+   if(k==='SHIFT'){shift=!shift;render();return}
+   if(k==='SPACE'){ins(' ');if(shift){shift=false;render()}return}
+   if(k==='ENTER'){
+     if(target instanceof HTMLTextAreaElement)ins('\n');
+     else silentHide();
+     return;
+   }
+   if(k==='HIDE'){window.hideCashierVirtualKeyboard();return}
+   ins(label(k));
+   if(shift){shift=false;render()}
+ };
+
+ document.addEventListener('click',e=>{
+   const b=e.target.closest?.('[data-vk]');
+   if(b){e.preventDefault();window.cashierKeyboardPress(b.getAttribute('data-vk'))}
+ });
+
+ document.addEventListener('focusin',e=>{
+   const el=e.target;
+   if(!(el instanceof HTMLInputElement||el instanceof HTMLTextAreaElement)||el.disabled||el.readOnly||el.closest('#cashierVirtualKeyboard'))return;
+   if(allowed())window.showCashierVirtualKeyboard(el);
+   else silentHide();
+ },true);
+
+ addEventListener('resize',()=>{if(isMobileOrTouch())silentHide()});
+
+ // Force-hide immediately on mobile, including cases where an older listener fired first.
+ if(isMobileOrTouch())silentHide();
+})();
+</script>
+
+
+<script id="pos-modifier-search-final-hooks">
+document.addEventListener('click',function(e){
+  const input=document.getElementById('posMenuSearchInput');
+  const box=document.getElementById('posMenuSearchSuggestions');
+  if(box && input && !input.parentElement.contains(e.target))box.classList.add('hidden');
+});
+</script>
+
+
+<script id="pos-table-change-final">
+async function openPosTableChangeModal(){
+  const modal=document.getElementById('posTableChangeModal');
+  const select=document.getElementById('posTableChangeSelect');
+  const source=document.getElementById('newOrderTableSelect');
+  const current=String(document.getElementById('posDisplayTable')?.innerText||'').trim();
+  if(!modal||!select)return;
+
+  let options=[];
+  if(source){
+    options=[...source.options].filter(o=>String(o.value||'').trim())
+      .map(o=>({value:String(o.value),text:String(o.textContent||o.value)}));
+  }
+  if(current && !options.some(o=>o.value===current))options.unshift({value:current,text:current});
+
+  select.innerHTML=options.map(o=>`<option value="${String(o.value).replace(/"/g,'&quot;')}">${String(o.text)}</option>`).join('');
+  if(current)select.value=current;
+  document.getElementById('posTableChangeStatus').textContent='Current: '+(current||'N/A');
+  modal.classList.remove('hidden');
+}
+function closePosTableChangeModal(){document.getElementById('posTableChangeModal')?.classList.add('hidden');}
+async function confirmPosTableChange(){
+  const next=String(document.getElementById('posTableChangeSelect')?.value||'').trim();
+  const old=String(document.getElementById('posDisplayTable')?.innerText||'').trim();
+  const status=document.getElementById('posTableChangeStatus');
+  if(!next)return;
+  if(next===old){closePosTableChangeModal();return;}
+
+  try{
+    if(status)status.textContent='Saving table change...';
+    const orderId=(typeof posTargetOrderId!=='undefined'&&posTargetOrderId) ||
+                  (typeof currentActiveOrderId!=='undefined'&&currentActiveOrderId) || null;
+
+    if(orderId){
+      const r=await _supabase.from('orders').update({table_id:next}).eq('id',orderId);
+      if(r.error)throw r.error;
+      try{await _supabase.from('invoices').update({table_id:next}).eq('order_id',orderId)}catch(_){}
+    }
+
+    if(typeof newOrderTableId!=='undefined')newOrderTableId=next;
+    const display=document.getElementById('posDisplayTable');
+    if(display)display.innerText=next;
+    const setup=document.getElementById('newOrderTableSelect');
+    if(setup && [...setup.options].some(o=>o.value===next))setup.value=next;
+
+    if(status)status.textContent='Table changed successfully.';
+    setTimeout(closePosTableChangeModal,250);
+  }catch(e){
+    if(status)status.textContent='Failed: '+(e?.message||e);
+  }
+}
+</script>
+
 </body>
 </html>
