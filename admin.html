@@ -12,6 +12,251 @@
   .nav-active{background:#059669!important;color:#fff!important}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 4px 16px rgba(15,23,42,.05)}
   .toast{position:fixed;right:18px;bottom:18px;z-index:10000;max-width:360px}.hiddenx{display:none!important}
 </style>
+
+<style id="admin-drag-order-style">
+  .admin-sort-row{cursor:grab;user-select:none;transition:transform .12s ease,box-shadow .12s ease,opacity .12s ease}
+  .admin-sort-row:active{cursor:grabbing}
+  .admin-sort-row.dragging{opacity:.45;box-shadow:0 10px 25px rgba(15,23,42,.18)}
+  .admin-sort-row.drag-over{outline:2px dashed #059669;outline-offset:2px}
+  .admin-drag-handle{font-size:18px;line-height:1;color:#64748b;letter-spacing:-2px}
+</style>
+
+<style id="menu-compact-edit-style">
+  #menuItems .admin-sort-row{background:#fff}
+  @media(max-width:640px){
+    #menuItems .admin-sort-row{padding:.75rem!important}
+    #menuItems .admin-sort-row>div>div:first-child{align-items:flex-start!important}
+    #menuItems .admin-sort-row .w-16.h-16{width:56px!important;height:56px!important}
+    #menuItems .admin-sort-row img.w-16.h-16{width:56px!important;height:56px!important}
+  }
+</style>
+
+<style id="category-order-toggle-edit-style">
+  #categoryOrderList [data-category-order] > .flex.items-center.gap-2.shrink-0{
+    flex-wrap:nowrap;
+  }
+  @media(max-width:640px){
+    #categoryOrderList [data-category-order]{
+      gap:.55rem!important;
+      padding:.65rem!important;
+    }
+    #categoryOrderList [data-category-order] .font-bold.text-sm{
+      font-size:.78rem!important;
+    }
+    #categoryOrderList [data-category-order] button{
+      padding:.45rem .6rem!important;
+      font-size:.68rem!important;
+    }
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+
+<style id="qr-label-reference-style">
+  .qr-label-ref{
+    position:relative;
+    width:50mm;
+    height:77.5mm;
+    background:#fff;
+    color:#000;
+    border:0.8mm double #000;
+    box-sizing:border-box;
+    padding:2.3mm 2.0mm 2.0mm;
+    text-align:center;
+    overflow:hidden;
+    font-family:Georgia,"Times New Roman",serif;
+    box-shadow:0 8px 24px rgba(0,0,0,.12);
+  }
+
+  .qr-label-ref:before,
+  .qr-label-ref:after{
+    content:"";
+    position:absolute;
+    width:8mm;
+    height:8mm;
+    border:0.8mm solid #000;
+    border-radius:50%;
+    top:-4.7mm;
+  }
+  .qr-label-ref:before{left:-4.7mm}
+  .qr-label-ref:after{right:-4.7mm}
+
+  .qr-ornament{
+    font-size:4.2mm;
+    line-height:.9;
+    height:2.7mm;
+    margin-top:-.7mm;
+  }
+
+  .qr-brand-script{
+    font-family:"Brush Script MT","Segoe Script","URW Chancery L",cursive;
+    font-size:5.1mm;
+    line-height:.9;
+    font-style:italic;
+    margin-top:.6mm;
+    white-space:nowrap;
+  }
+
+  .qr-brand-main{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:5.4mm;
+    line-height:1;
+    font-weight:900;
+    letter-spacing:-.15mm;
+    white-space:nowrap;
+    transform:none;
+  }
+
+  .qr-divider{
+    font-size:1.8mm;
+    letter-spacing:-.1mm;
+    line-height:1;
+    margin:.8mm 0 .7mm;
+    white-space:nowrap;
+  }
+
+  .qr-code-frame{
+    width:28mm;
+    height:28mm;
+    margin:0 auto;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#fff;
+  }
+
+  #adminQrCode{
+    width:28mm!important;
+    height:28mm!important;
+    max-width:none!important;
+    overflow:hidden!important;
+  }
+  #adminQrCode canvas{
+    width:28mm!important;
+    height:28mm!important;
+    max-width:none!important;
+    display:block!important;
+  }
+  #adminQrCode > img{
+    display:none!important;
+  }
+
+  .qr-logo-center{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:6.2mm;
+    height:6.2mm;
+    border-radius:50%;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:.45mm;
+    box-shadow:0 0 0 .45mm #fff;
+    overflow:hidden;
+    pointer-events:none;
+  }
+
+  .qr-logo-center img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    border-radius:50%;
+    display:block;
+  }
+
+  .qr-scan-text{
+    font-size:3.2mm;
+    font-weight:900;
+    line-height:1;
+    margin-top:1.15mm;
+    white-space:nowrap;
+  }
+
+  .qr-divider-small{
+    font-size:1.5mm;
+    line-height:1;
+    margin:.35mm 0 .3mm;
+  }
+
+  .qr-table-label{
+    font-size:2.8mm;
+    line-height:1;
+    font-weight:700;
+  }
+
+  .qr-bottom-row{
+    display:grid;
+    grid-template-columns:1fr 11mm;
+    align-items:center;
+    justify-content:center;
+    gap:1.5mm;
+    margin-top:.4mm;
+    padding:0 1.5mm;
+  }
+
+  .qr-table-number{
+    font-family:Arial Black,Impact,sans-serif;
+    font-size:10.2mm;
+    line-height:.82;
+    font-weight:900;
+    letter-spacing:-.35mm;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+
+  .qr-no-smoking{
+    width:9.5mm;
+    height:9.5mm;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .qr-no-smoking svg{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+
+  .qr-footer-lines{
+    position:absolute;
+    left:2mm;
+    right:2mm;
+    bottom:.9mm;
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    gap:1mm;
+    align-items:center;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:1.9mm;
+    font-weight:700;
+    white-space:nowrap;
+  }
+
+  .qr-footer-lines span{
+    height:.35mm;
+    background:#000;
+    display:block;
+  }
+
+  .qr-footer-lines b{
+    font-weight:700;
+  }
+
+  @media(max-width:640px){
+    .qr-label-ref{
+      transform:scale(.96);
+      transform-origin:top center;
+      margin-bottom:-2mm;
+    }
+  }
+</style>
+
 </head>
 <body class="bg-slate-100 text-slate-800">
 
@@ -40,7 +285,10 @@
       <button data-section="summary" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 nav-active">📊 Summary</button>
       <button data-section="menu" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🍽️ Menu Management</button>
       <button data-section="category-management" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🗂️ Category Management</button>
+      <button data-section="modifiers" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🧩 Modifier Management</button>
+      <button data-section="table-qr" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🔳 Table QR Printing</button>
       <button data-section="reports" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">📑 Reports</button>
+      <button data-section="order-history" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🧾 Order History</button>
       <button data-section="attendance" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🕒 Attendance</button>
       <button data-section="staff" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">👥 Staff Management</button>
       <button data-section="kitchen-display" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🧑‍🍳 Kitchen Display Management</button>
@@ -58,15 +306,24 @@
     <div class="p-4 md:p-6">
       <!-- SUMMARY -->
       <section id="section-summary" class="section space-y-5">
-        <div class="flex justify-between items-center"><div><h2 class="text-2xl font-black">Summary</h2><p class="text-xs text-slate-500">Sales overview from the invoices and order data.</p></div><button onclick="loadSummary()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button></div>
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <div class="card p-4"><div class="text-xs text-slate-500">Total Sales</div><div id="sumSales" class="text-2xl font-black mt-1">RM 0.00</div></div>
-          <div class="card p-4"><div class="text-xs text-slate-500">Invoices</div><div id="sumInvoices" class="text-2xl font-black mt-1">0</div></div>
-          <div class="card p-4"><div class="text-xs text-slate-500">SST (6%)</div><div id="sumSst" class="text-2xl font-black mt-1">RM 0.00</div></div>
-          <div class="card p-4"><div class="text-xs text-slate-500">Cash Sales</div><div id="sumCash" class="text-2xl font-black mt-1">RM 0.00</div></div>
-          <div class="card p-4"><div class="text-xs text-slate-500">Rounding</div><div id="sumRound" class="text-2xl font-black mt-1">RM 0.00</div></div>
+        <div class="flex flex-wrap justify-between items-end gap-3">
+          <div><h2 class="text-2xl font-black">Dashboard</h2><p class="text-xs text-slate-500">Today and current-shift sales overview.</p></div>
+          <div class="flex items-end gap-2">
+            <div><label class="text-[10px] font-black text-slate-500">7-Day Chart Ending</label><input id="summaryEndDate" type="date" onchange="loadSummary()" class="block border rounded-xl px-3 py-2 text-sm"></div>
+            <button onclick="loadSummary()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button>
+          </div>
         </div>
-        <div class="grid lg:grid-cols-2 gap-5"><div class="card p-4"><h3 class="font-black mb-3">Category Sales</h3><div class="h-72"><canvas id="categoryChart"></canvas></div></div><div class="card p-4"><h3 class="font-black mb-3">Top 20 Selling Items</h3><div id="top20" class="space-y-2 max-h-72 overflow-y-auto scrollbar"></div></div></div>
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div class="card p-4"><div class="text-xs text-slate-500">Today's Sales</div><div id="sumSales" class="text-2xl font-black mt-1">RM 0.00</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">Current Shift Sales</div><div id="sumInvoices" class="text-2xl font-black mt-1">RM 0.00</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">Today's SST</div><div id="sumSst" class="text-2xl font-black mt-1">RM 0.00</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">Today's Cash Sales</div><div id="sumCash" class="text-2xl font-black mt-1">RM 0.00</div></div>
+          <div class="card p-4"><div class="text-xs text-slate-500">Today's Invoices</div><div id="sumRound" class="text-2xl font-black mt-1">0</div></div>
+        </div>
+        <div class="grid lg:grid-cols-2 gap-5">
+          <div class="card p-4"><h3 class="font-black mb-3">7-Day Sales</h3><div class="h-72"><canvas id="categoryChart"></canvas></div></div>
+          <div class="card p-4"><h3 class="font-black mb-3">Today's Top 20 Selling Items</h3><div id="top20" class="space-y-2 max-h-72 overflow-y-auto scrollbar"></div></div>
+        </div>
       </section>
 
       <!-- MENU -->
@@ -80,11 +337,140 @@
       <!-- CATEGORY MANAGEMENT -->
       <section id="section-category-management" class="section hiddenx space-y-5">
         <div class="flex flex-wrap justify-between items-center gap-3">
-          <div><h2 class="text-2xl font-black">Category Management</h2><p class="text-xs text-slate-500">Turn complete categories or individual menu items ON/OFF for the customer page.</p></div>
+          <div><h2 class="text-2xl font-black">Category Management</h2><p class="text-xs text-slate-500">Select one category at a time, then control the complete category or individual menu items.</p></div>
           <button onclick="loadCategoryManagement()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button>
         </div>
-        <div class="card p-4 bg-amber-50 border-amber-200 text-xs text-amber-800">Category OFF = all items in that category are hidden from the customer page. Category ON = all items in that category are enabled again. Individual item switches can be used separately while the category is ON.</div>
-        <div id="categoryManagementList" class="space-y-4"><div class="card p-4 text-sm text-slate-500">Loading categories...</div></div>
+
+        <div class="card p-4">
+          <div class="grid md:grid-cols-[1fr_auto] gap-3 items-end">
+            <div>
+              <label class="text-xs font-black text-slate-600">Select Category</label>
+              <select id="categoryManagementSelect" onchange="showSelectedCategoryManagement()" class="mt-1 w-full border rounded-xl px-3 py-3 text-sm font-bold bg-white">
+                <option value="">Select category...</option>
+              </select>
+            </div>
+            <button onclick="showSelectedCategoryManagement()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-sm font-black">Show Category</button>
+          </div>
+          <div id="categoryManagementSummary" class="mt-3 text-xs text-slate-500">Choose a category to show only the items inside that category.</div>
+        </div>
+
+        <div class="card p-4 bg-amber-50 border-amber-200 text-xs text-amber-800">Category OFF = all items in the selected category are hidden from the customer page. Category ON = all items in that category are enabled again. Individual item switches can be controlled separately.</div>
+
+        <div class="card p-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+              <h3 class="font-black">Category Display Order</h3>
+              <p class="text-xs text-slate-500">Drag categories up/down. Customer page will follow this exact category order.</p>
+            </div>
+            <span id="categoryOrderSaveStatus" class="text-xs text-slate-400"></span>
+          </div>
+          <div id="categoryOrderList" class="space-y-2"></div>
+        </div>
+
+        <div id="categoryManagementList" class="space-y-4">
+          <div class="card p-4 text-sm text-slate-500">Select a category above.</div>
+        </div>
+      </section>
+
+      <!-- MODIFIER MANAGEMENT -->
+      <section id="section-modifiers" class="section hiddenx space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-black">Modifier Management</h2>
+            <p class="text-xs text-slate-500">Set permanent modifier names and fixed rates used by Customer, Cashier and Waiter.</p>
+          </div>
+          <button onclick="loadModifierManagement()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button>
+        </div>
+
+        <div class="card p-4">
+          <div class="grid md:grid-cols-[1fr_180px_auto] gap-3 items-end">
+            <div>
+              <label class="text-xs font-black text-slate-600">Modifier Name</label>
+              <input id="modifierAdminName" class="mt-1 w-full border rounded-xl px-3 py-3 text-sm font-bold" placeholder="e.g. Add Egg">
+            </div>
+            <div>
+              <label class="text-xs font-black text-slate-600">Fixed Price (RM)</label>
+              <input id="modifierAdminPrice" type="number" step="0.01" value="0.00" class="mt-1 w-full border rounded-xl px-3 py-3 text-sm font-bold">
+            </div>
+            <div class="flex gap-2">
+              <button id="modifierAdminSaveBtn" onclick="saveModifierAdmin()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-sm font-black">Add Modifier</button>
+              <button id="modifierAdminCancelBtn" onclick="cancelModifierAdminEdit()" class="hidden bg-slate-300 hover:bg-slate-400 px-4 py-3 rounded-xl text-sm font-bold">Cancel</button>
+            </div>
+          </div>
+          <input type="hidden" id="modifierAdminEditId">
+        </div>
+
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-black">Permanent Modifiers</h3>
+            <span id="modifierAdminStatus" class="text-xs text-slate-400"></span>
+          </div>
+          <div id="modifierAdminList" class="space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- TABLE QR PRINTING -->
+      <section id="section-table-qr" class="section hiddenx space-y-5">
+        <div>
+          <h2 class="text-2xl font-black">Table QR Printing</h2>
+          <p class="text-xs text-slate-500">Each QR opens the customer page with that exact table automatically selected for Dine-In.</p>
+        </div>
+
+        <div class="card p-4">
+          <div class="grid md:grid-cols-4 gap-3 items-end">
+            <div>
+              <label class="text-xs font-black">Area</label>
+              <select id="qrArea" onchange="refreshQrTableOptions()" class="mt-1 w-full border rounded-xl px-3 py-3">
+                <option value="A">Indoor (A)</option>
+                <option value="B">Outdoor (B)</option>
+                <option value="C">First Floor (C)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-black">Table Number</label>
+              <select id="qrTableNo" onchange="renderAdminTableQr()" class="mt-1 w-full border rounded-xl px-3 py-3"></select>
+            </div>
+            <button onclick="renderAdminTableQr()" class="bg-blue-600 text-white rounded-xl px-4 py-3 font-black">Preview QR</button>
+            <button onclick="printAdminTableQr()" class="bg-emerald-600 text-white rounded-xl px-4 py-3 font-black">🖨️ Print QR</button>
+          </div>
+          <div class="mt-3 text-xs text-slate-500">QR URL: <span id="qrTargetUrl" class="font-bold break-all"></span></div>
+        </div>
+
+        <div class="card p-5 flex justify-center overflow-auto">
+          <div id="adminQrLabel" class="qr-label-ref">
+            <div class="qr-ornament qr-ornament-top">❦</div>
+            <div class="qr-brand-script">Restoran</div>
+            <div class="qr-brand-main">Hameeds Bistro</div>
+            <div class="qr-divider">◆━━━━━━━━◆</div>
+
+            <div class="qr-code-frame">
+              <div id="adminQrCode"></div>
+              <div class="qr-logo-center">
+                <img src="data:image/png;base64,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SnLNGjd37g77H3iQM8kNN/zthGPelVnlc+H7NFokYh01w1gHJyyBEQqFQADQKRlCkvzud384Z/s9GxpfPPfSVJNfksODG/fea/Z9D774mz88HJT2qNQ9Z+Az95nPfry3V9k0Gd/dMdZ7v7b//D9l738rxZnzQa21nPHAD5xzSZIWy35HSxFpWBlOhRjvS333vQu2nHOI1aqlvTA4WL334eeHP39UVPSmz95u1eKXp267JTQsyOQC/xwEkHYQQghKMsMlnz5twvDgmp23315piuu1zhbvyUcfEXqbuNqvjUqNG9cZFXxv2222IAdrMjIUef4Nf/j5Rz90+LIlT7znXbP32qmzUkFE24DZI4+e2UjRs3rp/ntFnoi0gZ4+vtK756TpHS0l9PVtSHXBC4ot5fZtt53T3x83vIpSw8uXrVqw4IVxbTKvgs/LupLMCt/9g6fMj3NAnNmSx5zKKE7g+S888nChWHYe5i/HvGXrZNhWbwz7od1n/73+fNN9YWkWyfHMBdyPp3S1T5scRp42TsJYksBrysz+22q9Np/PHg3XHVy5WEwadZVil522U3E9CstCdNeSjnvvX7qhR0WFME6GDbw1PY37n1w+WIdx7OGHHkdskRG3LGfYm/yNydpMqSTzfQ6LHbZredfbd6sNvSzsuq1mlt9+0B6zp01dvWxFz4YNK5YuWbLwhZ133vLccz81a2aZc6gsCz0/idFaxl67z2kJ7HU//1UyhPvvuP+ZR+8JWcYcPGBg48prrvqz57Bm8ZpKX1od2CCthoHnyzhLh4aG7rnv/gsvuOSlFxeUy2277LLljjvusnLF6smTp3AiGJslsTZWCsdgWbNMxDWbcSH0GAByFpyb3t5bbvnbwYceykP84a931hLeiNNyKQoL2H2v3ectWJuoonI81XGaDmyz9aS2MkyWaJUFgffahfsvFwz82yt79LO11qVSqbpxQDK8+7AD/nzrD50sk/SY7NzQU73lb49Omjx5weK1hfKsaiW77k+3v2P/T3Au5708X8eJ8D1ILjgckFlliRgReZ7L7GhhEc45+8Q0PXH9huSZp1+E1TobgEm6OttnzuzeautZ48YFBKSJKQTck0GSZJJ5K1cuXrV8/geOP2L9htW965YPblh26MF7rNuwBmorDhQCmjaxc/H8pdOnTOls834z1Jclk6IA1VotKI3zZBiF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" alt="Hameeds Bistro Logo">
+              </div>
+            </div>
+
+            <div class="qr-scan-text">Scan to view menu</div>
+            <div class="qr-divider-small">◆━━━━━━◆</div>
+            <div class="qr-table-label">Table Number</div>
+
+            <div class="qr-bottom-row">
+              <div id="adminQrTableText" class="qr-table-number">A1</div>
+              <div class="qr-no-smoking" aria-label="No Smoking">
+                <svg viewBox="0 0 100 100" role="img">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="black" stroke-width="8"/>
+                  <line x1="20" y1="80" x2="80" y2="20" stroke="black" stroke-width="8"/>
+                  <rect x="25" y="54" width="40" height="10" rx="2" fill="black"/>
+                  <rect x="65" y="54" width="12" height="10" rx="2" fill="none" stroke="black" stroke-width="4"/>
+                  <path d="M58 44 C52 39 61 34 56 28" fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M68 44 C62 38 72 34 66 27" fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="qr-footer-lines"><span></span><b>RMP Solutions</b><span></span></div>
+          </div>
+        </div>
       </section>
 
       <!-- REPORTS -->
@@ -92,6 +478,23 @@
         <div><h2 class="text-2xl font-black">Reports</h2><p class="text-xs text-slate-500">Saved Shift Close and EOD Close reports.</p></div>
         <div class="card p-4"><div class="grid md:grid-cols-2 gap-4"><div><label class="text-xs font-bold">Date</label><input id="reportDate" type="date" class="mt-1 w-full border rounded-xl px-3 py-2" onchange="loadReportDate()"></div><div><label class="text-xs font-bold">Report Type</label><div class="flex gap-2 mt-1"><button id="shiftReportBtn" onclick="showReportType('SHIFT')" class="flex-1 bg-emerald-600 text-white rounded-xl py-2 text-sm font-bold">Shift Close</button><button id="eodReportBtn" onclick="showReportType('EOD')" class="flex-1 bg-slate-200 rounded-xl py-2 text-sm font-bold">EOD Close</button></div></div></div><div id="shiftPicker" class="mt-4"><label class="text-xs font-bold">Select Shift</label><select id="shiftSelect" onchange="loadSelectedClose()" class="mt-1 w-full border rounded-xl px-3 py-2"><option value="">Select shift...</option></select></div></div>
         <div id="reportResult"></div>
+      </section>
+
+      <!-- ORDER HISTORY -->
+      <section id="section-order-history" class="section hiddenx space-y-5">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div><h2 class="text-2xl font-black">Order History / Sales Report</h2><p class="text-xs text-slate-500">Default: today's sales. Choose any From/To date range.</p></div>
+          <button onclick="printAdminOrderHistory()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black">🖨️ Print Sales Report</button>
+        </div>
+        <div class="card p-4">
+          <div class="grid md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+            <div><label class="text-xs font-bold">From</label><input id="orderHistoryFrom" type="date" class="mt-1 w-full border rounded-xl px-3 py-2"></div>
+            <div><label class="text-xs font-bold">To</label><input id="orderHistoryTo" type="date" class="mt-1 w-full border rounded-xl px-3 py-2"></div>
+            <button onclick="loadAdminOrderHistory()" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-black">Show Report</button>
+          </div>
+        </div>
+        <div id="orderHistorySummary" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+        <div id="adminOrderHistoryResult" class="card p-4 overflow-x-auto"></div>
       </section>
 
       <!-- ATTENDANCE -->
@@ -140,6 +543,18 @@
             <button onclick="openAddEmailModal()" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 text-sm font-black">+ Add Email Address</button>
           </div>
           <div class="card p-4"><h3 class="font-black text-lg mb-1">👤 Profile Settings</h3><p class="text-xs text-slate-500 mb-4">Manage profiles and staff accounts.</p><button onclick="showSection('staff')" class="bg-slate-900 text-white px-4 py-3 rounded-xl text-sm font-bold">Open Profile Settings</button></div>
+          <div class="card p-4 lg:col-span-2">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h3 class="font-black text-lg">🛒 Customer Ordering System</h3>
+                <p class="text-xs text-slate-500 mt-1">Turn customer ordering ON/OFF. When OFF, customers can still choose Dine-In or Takeaway and browse the correct prices, but cannot add items or checkout.</p>
+              </div>
+              <div class="flex items-center gap-3">
+                <span id="customerOrderingStatus" class="text-xs font-black px-3 py-2 rounded-full bg-slate-100 text-slate-600">Checking...</span>
+                <button id="customerOrderingToggleBtn" type="button" onclick="toggleCustomerOrdering()" class="px-5 py-3 rounded-xl text-sm font-black bg-slate-800 text-white shadow">Loading...</button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 </div>
@@ -158,8 +573,8 @@ const SUPABASE_URL='https://tbvcaolnufayuvrqicpd.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const MENU_TABLE='menu_items', CLOSE_TABLE='shift_closures', ATT_TABLE='attendance', PROFILE_TABLE='profiles', INVOICE_TABLE='invoices', ORDER_ITEM_TABLE='order_items', ORDER_TABLE='orders', MENU_BUCKET='menu-images';
-const KITCHEN_TABLE='kitchen_sections', KITCHEN_CATEGORY_TABLE='kitchen_section_categories';
-let session=null, menuData=[], profiles=[], currentReportType='SHIFT', categoryChart=null, menuColumns=new Set(), profileColumns=new Set();
+const KITCHEN_TABLE='kitchen_sections', KITCHEN_CATEGORY_TABLE='kitchen_section_categories', APP_SETTING_TABLE='app_settings';
+let session=null, menuData=[], profiles=[], currentReportType='SHIFT', categoryChart=null, menuColumns=new Set(), profileColumns=new Set(), customerOrderingEnabled=true;
 const money=n=>'RM '+(Number(n)||0).toFixed(2); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 function toast(msg,ok=true){const el=document.getElementById('toast');el.innerHTML='<div class="bg-'+(ok?'emerald':'red')+'-600 text-white rounded-xl px-4 py-3 shadow-xl text-sm font-bold">'+esc(msg)+'</div>';el.classList.remove('hiddenx');setTimeout(()=>el.classList.add('hiddenx'),3500)}
 function today(){const d=new Date();return d.toISOString().slice(0,10)}
@@ -172,7 +587,7 @@ async function login(e){e.preventDefault();const email=document.getElementById('
  const {data,error}=await db.from(PROFILE_TABLE).select('*').eq('email',email).eq('password',password).maybeSingle();
  if(error||!data||!roleAllowed(data.role)){er.textContent='Invalid login or unauthorized role. Only Admin and Manager can access this panel.';er.classList.remove('hiddenx');return}
  session=data;sessionStorage.setItem('hameeds_admin_session',JSON.stringify(data));showApp();}
-function showApp(){document.getElementById('loginSection').classList.add('hiddenx');document.getElementById('app').classList.remove('hiddenx');const name=getName(session);document.getElementById('headerUser').textContent=name;document.getElementById('headerRole').textContent=session.role;document.getElementById('sideUser').textContent=name;document.getElementById('sideRole').textContent=session.role;document.getElementById('reportDate').value=today();document.getElementById('attendanceMonth').value=monthNow();loadSummary();loadStaff();loadMenu();loadStaffDropdown();loadKitchenSections();initializeEmailSettings();}
+function showApp(){document.getElementById('loginSection').classList.add('hiddenx');document.getElementById('app').classList.remove('hiddenx');const name=getName(session);document.getElementById('headerUser').textContent=name;document.getElementById('headerRole').textContent=session.role;document.getElementById('sideUser').textContent=name;document.getElementById('sideRole').textContent=session.role;document.getElementById('reportDate').value=today();document.getElementById('attendanceMonth').value=monthNow();loadSummary();loadStaff();loadMenu();loadStaffDropdown();loadKitchenSections();initializeEmailSettings();loadCustomerOrderingSetting();}
 function adminLogout(){session=null;sessionStorage.removeItem('hameeds_admin_session');location.reload()}
 
 /* =========================================================
@@ -248,7 +663,80 @@ function getEnabledEmailRecipients(){return emailMasterEnabled?emailRecipients.f
 async function initializeEmailSettings(){await loadEmailRecipientsFromDatabase();await loadEmailMasterSetting();renderEmailSettings()}
 
 
-function showSection(name){document.querySelectorAll('.section').forEach(x=>x.classList.add('hiddenx'));document.getElementById('section-'+name).classList.remove('hiddenx');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('nav-active'));const n=document.querySelector('.nav[data-section="'+name+'"]');if(n)n.classList.add('nav-active');if(name==='summary')loadSummary();if(name==='menu')loadMenu();if(name==='category-management')loadCategoryManagement();if(name==='reports')loadReportDate();if(name==='attendance'){loadStaffDropdown();loadStaffAttendance()}if(name==='staff')loadStaff();if(name==='kitchen-display')loadKitchenSections();if(name==='settings')initializeEmailSettings()}
+
+async function loadCustomerOrderingSetting(){
+  const status=document.getElementById('customerOrderingStatus');
+  const btn=document.getElementById('customerOrderingToggleBtn');
+  if(!status||!btn)return;
+  status.textContent='Checking...';
+  btn.disabled=true;
+  try{
+    const {data,error}=await db.from(APP_SETTING_TABLE)
+      .select('setting_key,setting_value')
+      .eq('setting_key','customer_ordering_enabled')
+      .maybeSingle();
+    if(error)throw error;
+    customerOrderingEnabled = data ? String(data.setting_value).toLowerCase()!=='false' : true;
+  }catch(e){
+    console.warn('Customer ordering setting:',e);
+    customerOrderingEnabled=true;
+  }
+  btn.disabled=false;
+  renderCustomerOrderingControl();
+}
+
+function renderCustomerOrderingControl(){
+  const status=document.getElementById('customerOrderingStatus');
+  const btn=document.getElementById('customerOrderingToggleBtn');
+  if(!status||!btn)return;
+  if(customerOrderingEnabled){
+    status.textContent='ORDERING ON';
+    status.className='text-xs font-black px-3 py-2 rounded-full bg-emerald-100 text-emerald-700';
+    btn.textContent='Turn Ordering OFF';
+    btn.className='px-5 py-3 rounded-xl text-sm font-black bg-red-600 hover:bg-red-700 text-white shadow';
+  }else{
+    status.textContent='MENU ONLY';
+    status.className='text-xs font-black px-3 py-2 rounded-full bg-amber-100 text-amber-700';
+    btn.textContent='Turn Ordering ON';
+    btn.className='px-5 py-3 rounded-xl text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow';
+  }
+}
+
+async function toggleCustomerOrdering(){
+  const next=!customerOrderingEnabled;
+  const btn=document.getElementById('customerOrderingToggleBtn');
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
+  try{
+    const now=new Date().toISOString();
+    const payload={setting_key:'customer_ordering_enabled',setting_value:next?'true':'false',updated_at:now};
+
+    let result=await db.from(APP_SETTING_TABLE).upsert([payload],{onConflict:'setting_key'});
+    if(result.error){
+      const existing=await db.from(APP_SETTING_TABLE)
+        .select('setting_key')
+        .eq('setting_key','customer_ordering_enabled')
+        .maybeSingle();
+
+      if(existing.error)throw existing.error;
+
+      result=existing.data
+        ? await db.from(APP_SETTING_TABLE).update({setting_value:payload.setting_value,updated_at:now}).eq('setting_key','customer_ordering_enabled')
+        : await db.from(APP_SETTING_TABLE).insert([payload]);
+    }
+    if(result.error)throw result.error;
+
+    customerOrderingEnabled=next;
+    renderCustomerOrderingControl();
+    toast(next?'Customer ordering is ON.':'Customer ordering is OFF — menu browsing only.');
+  }catch(e){
+    toast('Could not change customer ordering: '+(e.message||e),false);
+    renderCustomerOrderingControl();
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+
+function showSection(name){document.querySelectorAll('.section').forEach(x=>x.classList.add('hiddenx'));document.getElementById('section-'+name).classList.remove('hiddenx');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('nav-active'));const n=document.querySelector('.nav[data-section="'+name+'"]');if(n)n.classList.add('nav-active');if(name==='summary')loadSummary();if(name==='menu')loadMenu();if(name==='category-management')loadCategoryManagement();if(name==='modifiers')loadModifierManagement();if(name==='table-qr'){refreshQrTableOptions();renderAdminTableQr();}if(name==='reports')loadReportDate();if(name==='order-history')loadAdminOrderHistory();if(name==='attendance'){loadStaffDropdown();loadStaffAttendance()}if(name==='staff')loadStaff();if(name==='kitchen-display')loadKitchenSections();if(name==='settings'){initializeEmailSettings();loadCustomerOrderingSetting()}}
 document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>showSection(b.dataset.section)));document.getElementById('loginForm').addEventListener('submit',login);document.getElementById('staffForm').addEventListener('submit',addStaff);
 
 async function loadKitchenSections(){
@@ -285,17 +773,116 @@ async function doCheckIn(){if(!session)return;const workDate=today();const {data
 async function doCheckOut(){if(!session)return;const {data:r,error}=await db.from(ATT_TABLE).select('id').eq('staff_email',session.email).eq('work_date',today()).not('check_in','is',null).is('check_out',null).order('check_in',{ascending:false}).limit(1);if(error){toast(error.message,false);return}if(!r?.length){toast('No open Check-In found.',false);return}const {error:er}=await db.from(ATT_TABLE).update({check_out:new Date().toISOString(),status:'Completed'}).eq('id',r[0].id);if(er)toast(er.message,false);else toast('Check-Out saved.')}
 
 async function loadSummary(){
- const [ir,mr]=await Promise.all([db.from(INVOICE_TABLE).select('*').order('created_at',{ascending:false}).limit(5000),db.from(MENU_TABLE).select('*').limit(5000)]);if(ir.error){toast('Summary: '+ir.error.message,false);return}const invoices=ir.data||[],menus=mr.data||[];const menuById={};menus.forEach(m=>menuById[String(m.id)]=m);const ids=invoices.map(x=>x.order_id).filter(Boolean);let items=[];if(ids.length){const {data}=await db.from(ORDER_ITEM_TABLE).select('*').in('order_id',ids);items=data||[]}
- const sales=invoices.reduce((s,r)=>s+Number(r.total_amount||0),0),cash=invoices.filter(r=>String(r.payment_method||'').toLowerCase()==='cash').reduce((s,r)=>s+Number(r.total_amount||0),0);let subtotal=0;items.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));const sst=subtotal*.06;const rounding=sales-(subtotal+sst);document.getElementById('sumSales').textContent=money(sales);document.getElementById('sumInvoices').textContent=invoices.length;document.getElementById('sumSst').textContent=money(sst);document.getElementById('sumCash').textContent=money(cash);document.getElementById('sumRound').textContent=money(rounding);
- const cats={},tops={};items.forEach(i=>{const m=menuById[String(i.menu_item_id)]||{};const cat=m.category||'Uncategorized',name=m.name||m.name_en||String(i.menu_item_id||'Unknown'),val=Number(i.price||0)*Number(i.quantity||0);cats[cat]=(cats[cat]||0)+val;tops[name]=(tops[name]||0)+Number(i.quantity||0)});renderCategoryChart(cats);const top=Object.entries(tops).sort((a,b)=>b[1]-a[1]).slice(0,20);document.getElementById('top20').innerHTML=top.length?top.map((x,i)=>`<div class="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-2"><div><span class="font-black mr-2">${i+1}.</span>${esc(x[0])}</div><b>${x[1]}</b></div>`).join(''):'<div class="text-sm text-slate-400">No sales item data found.</div>';
+  const endInput=document.getElementById('summaryEndDate');
+  if(endInput && !endInput.value)endInput.value=today();
+  const chartEnd=endInput?.value||today();
+
+  const [ty,tm,td]=today().split('-').map(Number);
+  const todayStart=new Date(ty,tm-1,td,0,0,0,0);
+  const now=new Date();
+
+  const {data:todayInvoices,error:invErr}=await db.from(INVOICE_TABLE)
+    .select('*')
+    .gte('created_at',todayStart.toISOString())
+    .lte('created_at',now.toISOString())
+    .order('created_at',{ascending:true});
+  if(invErr){toast('Dashboard: '+invErr.message,false);return;}
+
+  const invoices=todayInvoices||[];
+  const orderIds=invoices.map(x=>x.order_id).filter(Boolean);
+  let items=[];
+  if(orderIds.length){
+    const r=await db.from(ORDER_ITEM_TABLE).select('*').in('order_id',orderIds);
+    if(!r.error)items=r.data||[];
+  }
+
+  const {data:menus}=await db.from(MENU_TABLE).select('*').limit(5000);
+  const menuById={};(menus||[]).forEach(m=>menuById[String(m.id)]=m);
+
+  const todaySales=invoices.reduce((s,r)=>s+Number(r.total_amount||0),0);
+  const cashSales=invoices.filter(r=>String(r.payment_method||'').toLowerCase()==='cash')
+    .reduce((s,r)=>s+Number(r.total_amount||0),0);
+  let subtotal=0;items.forEach(i=>subtotal+=Number(i.price||0)*Number(i.quantity||0));
+  const sst=subtotal*.06;
+
+  // Current shift begins at the last SHIFT close today; otherwise midnight.
+  let shiftStart=todayStart;
+  const closeRes=await db.from(CLOSE_TABLE).select('closed_at,close_type')
+    .eq('close_date',today())
+    .order('closed_at',{ascending:false})
+    .limit(100);
+  if(!closeRes.error){
+    const lastShift=(closeRes.data||[]).find(r=>String(r.close_type||'').toUpperCase()==='SHIFT');
+    if(lastShift?.closed_at)shiftStart=new Date(lastShift.closed_at);
+  }
+  const currentShiftSales=invoices
+    .filter(r=>new Date(r.created_at)>=shiftStart)
+    .reduce((s,r)=>s+Number(r.total_amount||0),0);
+
+  document.getElementById('sumSales').textContent=money(todaySales);
+  document.getElementById('sumInvoices').textContent=money(currentShiftSales);
+  document.getElementById('sumSst').textContent=money(sst);
+  document.getElementById('sumCash').textContent=money(cashSales);
+  document.getElementById('sumRound').textContent=String(invoices.length);
+
+  const tops={};
+  items.forEach(i=>{
+    const m=menuById[String(i.menu_item_id)]||{};
+    const name=m.name_en||m.name||String(i.menu_item_id||'Unknown');
+    tops[name]=(tops[name]||0)+Number(i.quantity||0);
+  });
+  const top=Object.entries(tops).sort((a,b)=>b[1]-a[1]).slice(0,20);
+  document.getElementById('top20').innerHTML=top.length
+    ?top.map((x,i)=>`<div class="flex justify-between items-center bg-slate-50 rounded-xl px-3 py-2"><div><span class="font-black mr-2">${i+1}.</span>${esc(x[0])}</div><b>${x[1]}</b></div>`).join('')
+    :'<div class="text-sm text-slate-400">No sales item data found today.</div>';
+
+  const [ey,em,ed]=chartEnd.split('-').map(Number);
+  const endDate=new Date(ey,em-1,ed,23,59,59,999);
+  const startDate=new Date(ey,em-1,ed-6,0,0,0,0);
+
+  const chartRes=await db.from(INVOICE_TABLE).select('total_amount,created_at')
+    .gte('created_at',startDate.toISOString())
+    .lte('created_at',endDate.toISOString())
+    .order('created_at',{ascending:true});
+
+  const labels=[],values=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(startDate);d.setDate(startDate.getDate()+i);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    labels.push(key);
+    values.push(0);
+  }
+  (chartRes.data||[]).forEach(r=>{
+    const d=new Date(r.created_at);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const idx=labels.indexOf(key);
+    if(idx>=0)values[idx]+=Number(r.total_amount||0);
+  });
+  renderCategoryChart(labels,values);
 }
-function renderCategoryChart(cats){const ctx=document.getElementById('categoryChart');if(categoryChart)categoryChart.destroy();categoryChart=new Chart(ctx,{type:'bar',data:{labels:Object.keys(cats),datasets:[{label:'Sales (RM)',data:Object.values(cats)}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}})}
+function renderCategoryChart(labels,values){
+  const ctx=document.getElementById('categoryChart');
+  if(categoryChart)categoryChart.destroy();
+  categoryChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels.map(x=>x.slice(5)),datasets:[{label:'Sales (RM)',data:values}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+  });
+}
 
 function parseCSV(text){const rows=[];let row=[],cell='',quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quote&&text[i+1]==='"'){cell+='"';i++}else quote=!quote}else if(c===','&&!quote){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);cell='';if(row.some(v=>v.trim()!==''))rows.push(row);row=[]}else cell+=c}if(cell!==''||row.length){row.push(cell);rows.push(row)}if(!rows.length)return[];const headers=rows.shift().map(h=>h.trim().toLowerCase());return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]??'').trim()]))).filter(r=>Object.values(r).some(Boolean))}
 function normalizeCSVRow(r){const get=(...keys)=>{for(const k of keys)if(r[k]!==undefined)return r[k];return ''};return{name_en:get('name_en','name','item_name'),category:get('category'),dine_in_price:get('dine_in_price','price','dine in price','dinein_price'),takeaway_price:get('takeaway_price','take away price','takeaway')};}
-async function loadMenu(){const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){document.getElementById('menuItems').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}menuData=(data||[]).slice().sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''))||String(a.name_en||a.name||a.item_name||'').localeCompare(String(b.name_en||b.name||b.item_name||'')));menuColumns=new Set(menuData[0]?Object.keys(menuData[0]):[]);const cats=[...new Set(menuData.map(x=>x.category).filter(Boolean))].sort();const sel=document.getElementById('categorySelect');sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');document.getElementById('menuItems').innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>'; }
-function renderMenuCategory(){const cat=document.getElementById('categorySelect').value;const box=document.getElementById('menuItems');if(!cat){box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';return}const rows=menuData.filter(x=>x.category===cat);box.innerHTML=rows.map(m=>`<div class="card p-4"><div class="grid lg:grid-cols-[90px_1fr_140px_140px_130px] gap-3 items-center"><div><img id="img-${esc(String(m.id))}" src="${esc(getImage(m))}" class="w-20 h-20 rounded-xl object-cover border" onerror="this.style.display='none'"></div><div><label class="text-[10px] font-bold text-slate-400">ITEM NAME</label><input id="name-${esc(String(m.id))}" value="${esc(m.name_en||m.name||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"><label class="text-[10px] font-bold text-slate-400 mt-2 block">CATEGORY</label><input id="cat-${esc(String(m.id))}" value="${esc(m.category||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">DINE-IN</label><input id="dine-${esc(String(m.id))}" value="${esc(m.dine_in_price??m.price??m.dinein_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">TAKEAWAY</label><input id="take-${esc(String(m.id))}" value="${esc(m.takeaway_price??m.take_away_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">IMAGE</label><input id="file-${esc(String(m.id))}" type="file" accept="image/*" class="w-full text-[10px] mt-1"><button onclick="saveMenuItem('${esc(String(m.id))}')" class="mt-2 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-bold">Save Item</button></div></div></div>`).join('')||'<div class="card p-4 text-slate-500">No items in this category.</div>'}
-function getImage(m){return m.image_url||'images/logo.png'}
+async function loadMenu(){const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);if(error){document.getElementById('menuItems').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}menuData=(data||[]).slice().sort((a,b)=>
+  (Number(a.category_sort_order)||999999)-(Number(b.category_sort_order)||999999) ||
+  String(a.category||'').localeCompare(String(b.category||''),undefined,{numeric:true,sensitivity:'base'}) ||
+  (Number(a.item_sort_order)||999999)-(Number(b.item_sort_order)||999999) ||
+  String(a.name_en||a.name||a.item_name||'').localeCompare(String(b.name_en||b.name||b.item_name||''),undefined,{numeric:true,sensitivity:'base'})
+);menuColumns=new Set(menuData[0]?Object.keys(menuData[0]):[]);const cats=orderedCategoryNames().filter(c=>c&&c!=='Uncategorized');const sel=document.getElementById('categorySelect');sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');document.getElementById('menuItems').innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>'; }
+function renderMenuCategory(){const cat=document.getElementById('categorySelect').value;const box=document.getElementById('menuItems');if(!cat){box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';return}const rows=menuData.filter(x=>x.category===cat);box.innerHTML=rows.map(m=>`<div class="card p-4"><div class="grid lg:grid-cols-[90px_1fr_140px_140px_130px] gap-3 items-center"><div><img id="img-${esc(String(m.id))}" src="${esc(getImage(m))}" class="w-20 h-20 rounded-xl object-cover border" onerror="this.onerror=null;this.src='images/logo.png';this.style.display='block'"></div><div><label class="text-[10px] font-bold text-slate-400">ITEM NAME</label><input id="name-${esc(String(m.id))}" value="${esc(m.name_en||m.name||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"><label class="text-[10px] font-bold text-slate-400 mt-2 block">CATEGORY</label><input id="cat-${esc(String(m.id))}" value="${esc(m.category||'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">DINE-IN</label><input id="dine-${esc(String(m.id))}" value="${esc(m.dine_in_price??m.price??m.dinein_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">TAKEAWAY</label><input id="take-${esc(String(m.id))}" value="${esc(m.takeaway_price??m.take_away_price??'')}" class="w-full border rounded-lg px-2 py-2 text-sm"></div><div><label class="text-[10px] font-bold text-slate-400">IMAGE</label><input id="file-${esc(String(m.id))}" type="file" accept="image/*" class="w-full text-[10px] mt-1"><button onclick="saveMenuItem('${esc(String(m.id))}')" class="mt-2 w-full bg-emerald-600 text-white rounded-lg py-2 text-xs font-bold">Save Item</button></div></div></div>`).join('')||'<div class="card p-4 text-slate-500">No items in this category.</div>'}
+function getImage(m){
+  const url=String(m?.image_url||'').trim();
+  return url || 'images/logo.png';
+}
 function getMenuStoragePath(imageUrl){
   if(!imageUrl||String(imageUrl).startsWith('images/'))return null;
   try{
@@ -306,16 +893,134 @@ function getMenuStoragePath(imageUrl){
     return decodeURIComponent(u.pathname.slice(i+marker.length));
   }catch(e){return null}
 }
+
+function blobToFile(blob,originalName='image.jpg'){
+  const base=(originalName||'image').replace(/\.[^.]+$/,'').replace(/[^\w\-]+/g,'_')||'image';
+  return new File([blob],base+'.jpg',{type:'image/jpeg',lastModified:Date.now()});
+}
+
+async function canvasToJpegBlob(canvas,quality){
+  return await new Promise((resolve,reject)=>{
+    canvas.toBlob(b=>b?resolve(b):reject(new Error('Image conversion failed.')),'image/jpeg',quality);
+  });
+}
+
+async function optimizeMenuImage(file){
+  if(!file)throw new Error('No image selected.');
+
+  const MAX_BYTES=500*1024;      // hard target: <= 500 KB
+  const SOFT_MIN=100*1024;       // very small images may be gently enhanced
+  const SOFT_MAX=220*1024;       // preferred range for tiny originals when possible
+  const MAX_DIM=1800;            // sufficient for menu display, keeps quality high
+  const MIN_DIM=640;
+
+  const srcUrl=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((resolve,reject)=>{
+      const i=new Image();
+      i.onload=()=>resolve(i);
+      i.onerror=()=>reject(new Error('Could not read the selected image.'));
+      i.src=srcUrl;
+    });
+
+    let w=img.naturalWidth||img.width;
+    let h=img.naturalHeight||img.height;
+    if(!w||!h)throw new Error('Invalid image dimensions.');
+
+    // Large files: reduce dimensions first.
+    let scale=Math.min(1,MAX_DIM/Math.max(w,h));
+
+    // Tiny files: if low-resolution, gently upscale for better menu clarity.
+    if(file.size<SOFT_MIN && Math.max(w,h)<MIN_DIM){
+      scale=Math.max(scale,Math.min(1.75,MIN_DIM/Math.max(w,h)));
+    }
+
+    let outW=Math.max(1,Math.round(w*scale));
+    let outH=Math.max(1,Math.round(h*scale));
+
+    const makeCanvas=(cw,ch)=>{
+      const c=document.createElement('canvas');
+      c.width=cw;c.height=ch;
+      const ctx=c.getContext('2d',{alpha:false});
+      ctx.imageSmoothingEnabled=true;
+      ctx.imageSmoothingQuality='high';
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,cw,ch);
+      ctx.drawImage(img,0,0,cw,ch);
+      return c;
+    };
+
+    let canvas=makeCanvas(outW,outH);
+
+    // Start high, then reduce JPEG quality until <=500 KB.
+    let quality=0.92;
+    let blob=await canvasToJpegBlob(canvas,quality);
+
+    while(blob.size>MAX_BYTES && quality>0.55){
+      quality-=0.06;
+      blob=await canvasToJpegBlob(canvas,quality);
+    }
+
+    // If quality alone isn't enough, reduce dimensions gradually.
+    while(blob.size>MAX_BYTES && Math.max(canvas.width,canvas.height)>900){
+      outW=Math.max(1,Math.round(canvas.width*0.88));
+      outH=Math.max(1,Math.round(canvas.height*0.88));
+      canvas=makeCanvas(outW,outH);
+      quality=Math.max(0.68,quality);
+      blob=await canvasToJpegBlob(canvas,quality);
+    }
+
+    // Final fallback to guarantee target as closely as browser encoding allows.
+    while(blob.size>MAX_BYTES && quality>0.40){
+      quality-=0.05;
+      blob=await canvasToJpegBlob(canvas,quality);
+    }
+
+    // For very small originals, try a higher-quality output, but do not force file bloat.
+    if(file.size<SOFT_MIN && blob.size<SOFT_MIN){
+      let best=blob;
+      for(const q of [0.96,0.98,1.0]){
+        const candidate=await canvasToJpegBlob(canvas,q);
+        if(candidate.size<=SOFT_MAX && candidate.size>best.size)best=candidate;
+      }
+      blob=best;
+    }
+
+    if(blob.size>MAX_BYTES){
+      throw new Error('Image could not be reduced below 500 KB. Please try a different image.');
+    }
+
+    return blobToFile(blob,file.name);
+  } finally {
+    URL.revokeObjectURL(srcUrl);
+  }
+}
+
 async function uploadImage(file,id){
   if(!file)return null;
-  if(file.size>1024*1024)throw new Error('Image must be 1 MB or smaller.');
-  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-  const path=`menu/${id}-${Date.now()}.${ext}`;
-  const up=await db.storage.from(MENU_BUCKET).upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});
+
+  const originalKB=Math.round(file.size/1024);
+  const optimizedFile=await optimizeMenuImage(file);
+  const finalKB=Math.round(optimizedFile.size/1024);
+
+  const path=`menu/${id}-${Date.now()}.jpg`;
+  const up=await db.storage.from(MENU_BUCKET).upload(path,optimizedFile,{
+    upsert:true,
+    contentType:'image/jpeg'
+  });
   if(up.error)throw new Error('Image upload failed: '+up.error.message);
+
   const pub=db.storage.from(MENU_BUCKET).getPublicUrl(path);
-  return {url:pub.data.publicUrl,path};
+
+  // Small status hint in Admin.
+  try{
+    const st=document.getElementById('bulkStatus');
+    if(st)st.textContent=`Image optimized: ${originalKB} KB → ${finalKB} KB`;
+  }catch(e){}
+
+  return {url:pub.data.publicUrl,path,size:optimizedFile.size};
 }
+
 async function saveMenuItem(id){
   const old=menuData.find(x=>String(x.id)===String(id));if(!old)return;
   const payload={name_en:document.getElementById('name-'+id).value.trim(),category:document.getElementById('cat-'+id).value.trim(),dine_in_price:Number(document.getElementById('dine-'+id).value||0),takeaway_price:Number(document.getElementById('take-'+id).value||0)};
@@ -350,49 +1055,431 @@ async function bulkUploadCsv(){const file=document.getElementById('menuCsv').fil
 function downloadMenuCsv(){const headers=['ID','Category','Name','Dine-In Price','Takeaway Price','Image URL','Kitchen Section ID','Popular','Available'];const escCsv=v=>{const x=String(v??'');return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x};const rows=menuData.map(m=>[m.id,m.category,m.name_en,m.dine_in_price,m.takeaway_price,m.image_url,m.kitchen_section_id,m.is_popular,m.is_available]);const csv='\ufeff'+[headers,...rows].map(r=>r.map(escCsv).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`menu-${today()}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
 
 
+
+let selectedManagedCategory='';
+
+
+function categoryOrderValue(cat){
+  const rows=menuData.filter(m=>(String(m.category||'Uncategorized').trim()||'Uncategorized')===cat);
+  const vals=rows.map(m=>Number(m.category_sort_order)).filter(Number.isFinite);
+  return vals.length ? Math.min(...vals) : 999999;
+}
+
+function itemOrderValue(item){
+  const v=Number(item?.item_sort_order);
+  return Number.isFinite(v) ? v : 999999;
+}
+
+function orderedCategoryNames(){
+  const cats=[...new Set(menuData.map(m=>String(m.category||'Uncategorized').trim()||'Uncategorized'))];
+  return cats.sort((a,b)=>
+    categoryOrderValue(a)-categoryOrderValue(b) ||
+    a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'})
+  );
+}
+
+function renderCategoryOrderManager(){
+  const box=document.getElementById('categoryOrderList');
+  if(!box)return;
+  const cats=orderedCategoryNames();
+  if(!cats.length){
+    box.innerHTML='<div class="text-sm text-slate-400">No categories found.</div>';
+    return;
+  }
+
+  box.innerHTML=cats.map((cat,i)=>{
+    const items=menuData.filter(m=>(String(m.category||'Uncategorized').trim()||'Uncategorized')===cat);
+    const categoryOn=items.some(m=>m.is_available!==false);
+    const safeCat=encodeURIComponent(cat);
+
+    return `
+    <div class="admin-sort-row flex items-center gap-3 border rounded-xl px-3 py-3 bg-white"
+         draggable="true" data-category-order="${esc(cat)}">
+      <span class="admin-drag-handle" title="Drag">⋮⋮</span>
+      <span class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-black">${i+1}</span>
+
+      <div class="min-w-0 flex-1">
+        <div class="font-bold text-sm break-words">${esc(cat)}</div>
+        <div class="text-[10px] text-slate-400">${items.length} item${items.length===1?'':'s'}</div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0"
+           draggable="false"
+           onmousedown="event.stopPropagation()"
+           onclick="event.stopPropagation()">
+
+        <label class="relative inline-flex items-center cursor-pointer shrink-0" title="Category ON/OFF">
+          <input type="checkbox"
+                 class="sr-only peer"
+                 ${categoryOn?'checked':''}
+                 onchange="toggleCategoryAvailabilityFromOrderList(decodeURIComponent('${safeCat}'),this)">
+          <div class="w-12 h-7 bg-slate-300 rounded-full peer peer-checked:bg-emerald-600
+                      after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                      after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all
+                      peer-checked:after:translate-x-5"></div>
+        </label>
+
+        <span class="text-[10px] font-black ${categoryOn?'text-emerald-700':'text-red-600'}">
+          ${categoryOn?'ON':'OFF'}
+        </span>
+
+        <button type="button"
+                draggable="false"
+                onclick="event.stopPropagation();editManagedCategoryName(decodeURIComponent('${safeCat}'))"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-black">
+          ✏️ Edit
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  bindCategoryDragAndDrop();
+}
+
+function bindCategoryDragAndDrop(){
+  const box=document.getElementById('categoryOrderList');
+  if(!box)return;
+  let dragged=null;
+
+  box.querySelectorAll('[data-category-order]').forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      dragged=row;
+      row.classList.add('dragging');
+      try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',row.dataset.categoryOrder||'');}catch(_){}
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('dragging');
+      box.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));
+      if(dragged)saveCategoryOrderFromDom();
+      dragged=null;
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(!dragged||dragged===row)return;
+      row.classList.add('drag-over');
+      const r=row.getBoundingClientRect();
+      const after=e.clientY > r.top+r.height/2;
+      box.insertBefore(dragged,after?row.nextSibling:row);
+    });
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drag-over');});
+  });
+}
+
+async function saveCategoryOrderFromDom(){
+  const rows=[...document.querySelectorAll('#categoryOrderList [data-category-order]')];
+  const status=document.getElementById('categoryOrderSaveStatus');
+  if(status)status.textContent='Saving...';
+
+  try{
+    for(let i=0;i<rows.length;i++){
+      const cat=rows[i].dataset.categoryOrder;
+      const order=i+1;
+      const {error}=await db.from(MENU_TABLE).update({category_sort_order:order}).eq('category',cat);
+      if(error)throw error;
+      menuData.forEach(m=>{
+        if((String(m.category||'Uncategorized').trim()||'Uncategorized')===cat)m.category_sort_order=order;
+      });
+      const n=rows[i].querySelector('.w-7');
+      if(n)n.textContent=String(order);
+    }
+    if(status)status.textContent='Saved';
+    refreshCategorySelectOrders();
+    toast('Category order saved.');
+  }catch(e){
+    if(status)status.textContent='Save failed';
+    toast('Category order save failed: '+(e.message||e),false);
+  }
+}
+
+function refreshCategorySelectOrders(){
+  const cats=orderedCategoryNames();
+  const sel=document.getElementById('categorySelect');
+  const cms=document.getElementById('categoryManagementSelect');
+
+  if(sel){
+    const old=sel.value;
+    sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if(cats.includes(old))sel.value=old;
+  }
+  if(cms){
+    const old=cms.value;
+    cms.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if(cats.includes(old))cms.value=old;
+  }
+}
+
+function bindItemDragAndDrop(){
+  const box=document.getElementById('menuItems');
+  if(!box)return;
+  let dragged=null;
+
+  box.querySelectorAll('[data-menu-sort-id]').forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      dragged=row;row.classList.add('dragging');
+      try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',row.dataset.menuSortId||'');}catch(_){}
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('dragging');
+      box.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));
+      if(dragged)saveItemOrderFromDom();
+      dragged=null;
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(!dragged||dragged===row)return;
+      row.classList.add('drag-over');
+      const r=row.getBoundingClientRect();
+      const after=e.clientY > r.top+r.height/2;
+      box.insertBefore(dragged,after?row.nextSibling:row);
+    });
+    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drag-over');});
+  });
+}
+
+async function saveItemOrderFromDom(){
+  const rows=[...document.querySelectorAll('#menuItems [data-menu-sort-id]')];
+  if(!rows.length)return;
+  try{
+    for(let i=0;i<rows.length;i++){
+      const id=rows[i].dataset.menuSortId;
+      const order=i+1;
+      const {error}=await db.from(MENU_TABLE).update({item_sort_order:order}).eq('id',id);
+      if(error)throw error;
+      const item=menuData.find(m=>String(m.id)===String(id));
+      if(item)item.item_sort_order=order;
+      const n=rows[i].querySelector('[data-sort-number]');
+      if(n)n.textContent=String(order);
+    }
+    toast('Item order saved.');
+  }catch(e){
+    toast('Item order save failed: '+(e.message||e),false);
+  }
+}
+
 async function loadCategoryManagement(){
   const box=document.getElementById('categoryManagementList');
-  if(!box)return;
+  const sel=document.getElementById('categoryManagementSelect');
+  const summary=document.getElementById('categoryManagementSummary');
+  if(!box||!sel)return;
+
   box.innerHTML='<div class="card p-4 text-sm text-slate-500">Loading categories...</div>';
-  const {data,error}=await db.from(MENU_TABLE).select('*').limit(5000);
-  if(error){box.innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}
-  menuData=(data||[]).slice().sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''),undefined,{numeric:true,sensitivity:'base'})||String(a.name_en||a.name||'').localeCompare(String(b.name_en||b.name||''),undefined,{numeric:true,sensitivity:'base'}));
-  renderCategoryManagement();
+  if(summary)summary.textContent='Loading categories...';
+
+  const {data,error}=await db.from(MENU_TABLE).select('*').limit(10000);
+  if(error){
+    box.innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';
+    if(summary)summary.textContent='Unable to load categories.';
+    return;
+  }
+
+  menuData=(data||[]).slice().sort((a,b)=>
+    (Number(a.category_sort_order)||999999)-(Number(b.category_sort_order)||999999) ||
+    String(a.category||'').localeCompare(String(b.category||''),undefined,{numeric:true,sensitivity:'base'}) ||
+    (Number(a.item_sort_order)||999999)-(Number(b.item_sort_order)||999999) ||
+    String(a.name_en||a.name||'').localeCompare(String(b.name_en||b.name||''),undefined,{numeric:true,sensitivity:'base'})
+  );
+
+  const categories=orderedCategoryNames();
+
+  const previous=selectedManagedCategory && categories.includes(selectedManagedCategory)
+    ? selectedManagedCategory : '';
+
+  sel.innerHTML='<option value="">Select category...</option>'+
+    categories.map(cat=>`<option value="${esc(cat)}">${esc(cat)}</option>`).join('');
+
+  renderCategoryOrderManager();
+
+  if(previous){
+    sel.value=previous;
+    renderCategoryManagement(previous);
+  }else{
+    selectedManagedCategory='';
+    box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category above.</div>';
+    if(summary)summary.textContent=`${categories.length} categories available. Select one category to manage its items.`;
+  }
 }
-function renderCategoryManagement(){
-  const box=document.getElementById('categoryManagementList');if(!box)return;
-  const grouped={};
-  menuData.forEach(m=>{const cat=String(m.category||'Uncategorized').trim()||'Uncategorized';(grouped[cat]||(grouped[cat]=[])).push(m)});
-  const categories=Object.keys(grouped).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
-  if(!categories.length){box.innerHTML='<div class="card p-4 text-slate-500">No categories found.</div>';return}
-  box.innerHTML=categories.map((cat,ci)=>{
-    const items=grouped[cat].slice().sort((a,b)=>String(a.name_en||a.name||'').localeCompare(String(b.name_en||b.name||''),undefined,{numeric:true,sensitivity:'base'}));
-    const categoryOn=items.some(i=>i.is_available!==false);
-    const safeCat=encodeURIComponent(cat);
-    const itemRows=items.map(m=>{
-      const on=m.is_available!==false;
-      return `<div class="flex items-center justify-between gap-3 border-t px-4 py-3 bg-white"><div class="min-w-0"><div class="font-bold text-sm truncate">${esc(m.name_en||m.name||'Unnamed Item')}</div><div class="text-[10px] text-slate-400">ID: ${esc(String(m.id))}</div></div><label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" class="sr-only peer" ${on?'checked':''} onchange="toggleItemAvailability('${esc(String(m.id))}',this)"><div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div><span class="ml-2 text-xs font-bold ${on?'text-emerald-700':'text-red-600'}">${on?'ON':'OFF'}</span></label></div>`;
-    }).join('');
-    return `<div class="card overflow-hidden"><div class="flex items-center justify-between gap-3 p-4 bg-slate-50"><div><div class="font-black text-lg">${esc(cat)}</div><div class="text-xs text-slate-500">${items.length} item${items.length===1?'':'s'}</div></div><label class="relative inline-flex items-center cursor-pointer shrink-0"><input type="checkbox" class="sr-only peer" ${categoryOn?'checked':''} onchange="toggleCategoryAvailability(decodeURIComponent('${safeCat}'),this)"><div class="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-[28px]"></div><span class="ml-2 text-xs font-black ${categoryOn?'text-blue-700':'text-red-600'}">${categoryOn?'CATEGORY ON':'CATEGORY OFF'}</span></label></div><div>${itemRows}</div></div>`;
+
+function showSelectedCategoryManagement(){
+  const sel=document.getElementById('categoryManagementSelect');
+  selectedManagedCategory=String(sel?.value||'').trim();
+  renderCategoryManagement(selectedManagedCategory);
+}
+
+function renderCategoryManagement(category=selectedManagedCategory){
+  const box=document.getElementById('categoryManagementList');
+  const summary=document.getElementById('categoryManagementSummary');
+  if(!box)return;
+
+  const cat=String(category||'').trim();
+  if(!cat){
+    box.innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category above, then press <b>Show Category</b>.</div>';
+    if(summary)summary.textContent='Choose a category to show only the items inside that category.';
+    return;
+  }
+
+  const items=menuData
+    .filter(m=>(String(m.category||'Uncategorized').trim()||'Uncategorized')===cat)
+    .sort((a,b)=>
+      itemOrderValue(a)-itemOrderValue(b) ||
+      String(a.name_en||a.name||'').localeCompare(String(b.name_en||b.name||''),undefined,{numeric:true,sensitivity:'base'})
+    );
+
+  if(!items.length){
+    box.innerHTML='<div class="card p-4 text-slate-500">No items found in this category.</div>';
+    if(summary)summary.textContent=`${cat}: 0 items`;
+    return;
+  }
+
+  const enabledCount=items.filter(i=>i.is_available!==false).length;
+  const categoryOn=enabledCount>0;
+  const safeCat=encodeURIComponent(cat);
+
+  const itemRows=items.map(m=>{
+    const on=m.is_available!==false;
+    return `<div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 border-t px-4 py-3 bg-white">
+      <div class="min-w-0 flex-1">
+        <div class="font-bold text-sm break-words">${esc(m.name_en||m.name||'Unnamed Item')}</div>
+        <div class="text-[10px] text-slate-400">ID: ${esc(String(m.id))}</div>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer shrink-0">
+        <input type="checkbox" class="sr-only peer" ${on?'checked':''} onchange="toggleItemAvailability('${esc(String(m.id))}',this)">
+        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+        <span class="ml-2 text-xs font-bold ${on?'text-emerald-700':'text-red-600'}">${on?'ON':'OFF'}</span>
+      </label>
+    </div>`;
   }).join('');
+
+  box.innerHTML=`<div class="card overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-50">
+      <div>
+        <div class="font-black text-lg">${esc(cat)}</div>
+        <div class="text-xs text-slate-500">${items.length} item${items.length===1?'':'s'} · ${enabledCount} ON · ${items.length-enabledCount} OFF</div>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+          <input type="checkbox" class="sr-only peer" ${categoryOn?'checked':''} onchange="toggleCategoryAvailability(decodeURIComponent('${safeCat}'),this)">
+          <div class="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-[28px]"></div>
+          <span class="ml-2 text-xs font-black ${categoryOn?'text-blue-700':'text-red-600'}">${categoryOn?'CATEGORY ON':'CATEGORY OFF'}</span>
+        </label>
+
+        <button type="button"
+          onclick="editManagedCategoryName(decodeURIComponent('${safeCat}'))"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black">
+          ✏️ Edit
+        </button>
+      </div>
+    </div>
+    <div class="max-h-[65vh] overflow-y-auto scrollbar">${itemRows}</div>
+  </div>`;
+
+  if(summary)summary.textContent=`Showing only ${cat} · ${items.length} item${items.length===1?'':'s'}.`;
 }
+
+
+async function editManagedCategoryName(oldCategory){
+  const oldName=String(oldCategory||'').trim();
+  if(!oldName)return;
+
+  const newName=prompt('Edit category name:',oldName);
+  if(newName===null)return;
+
+  const clean=String(newName).trim();
+  if(!clean){
+    toast('Category name cannot be empty.',false);
+    return;
+  }
+  if(clean===oldName)return;
+
+  try{
+    const ids=menuData
+      .filter(m=>(String(m.category||'Uncategorized').trim()||'Uncategorized')===oldName)
+      .map(m=>m.id);
+
+    if(!ids.length){
+      toast('No items found in this category.',false);
+      return;
+    }
+
+    const {error}=await db.from(MENU_TABLE)
+      .update({category:clean})
+      .in('id',ids);
+
+    if(error)throw error;
+
+    // Keep local data in sync immediately.
+    menuData.forEach(m=>{
+      if((String(m.category||'Uncategorized').trim()||'Uncategorized')===oldName){
+        m.category=clean;
+      }
+    });
+
+    selectedManagedCategory=clean;
+
+    // Refresh both category selectors and the drag order UI.
+    refreshCategorySelectOrders();
+    const cms=document.getElementById('categoryManagementSelect');
+    if(cms)cms.value=clean;
+    const menuSel=document.getElementById('categorySelect');
+    if(menuSel && menuSel.value===oldName)menuSel.value=clean;
+
+    renderCategoryOrderManager();
+    renderCategoryManagement(clean);
+
+    toast(`Category renamed: ${oldName} → ${clean}`);
+  }catch(e){
+    toast('Category name update failed: '+(e.message||e),false);
+  }
+}
+
+
+async function toggleCategoryAvailabilityFromOrderList(category,checkbox){
+  await toggleCategoryAvailability(category,checkbox);
+  renderCategoryOrderManager();
+
+  const selected=document.getElementById('categoryManagementSelect')?.value;
+  if(selected===category){
+    renderCategoryManagement(category);
+  }
+}
+
 async function toggleCategoryAvailability(category,checkbox){
-  const desired=!!checkbox.checked;checkbox.disabled=true;
+  const desired=!!checkbox.checked;
+  checkbox.disabled=true;
   try{
     const {error}=await db.from(MENU_TABLE).update({is_available:desired}).eq('category',category);
     if(error)throw error;
-    menuData.forEach(m=>{if(String(m.category||'')===String(category))m.is_available=desired});
-    toast(`${category} ${desired?'enabled':'disabled'} for customer page.`);renderCategoryManagement();
-  }catch(e){checkbox.checked=!desired;toast(e.message,false)}finally{checkbox.disabled=false}
+    menuData.forEach(m=>{
+      if((String(m.category||'Uncategorized').trim()||'Uncategorized')===String(category))m.is_available=desired;
+    });
+    toast(`${category} ${desired?'enabled':'disabled'} for customer page.`);
+    selectedManagedCategory=category;
+    renderCategoryManagement(category);
+  }catch(e){
+    checkbox.checked=!desired;
+    toast(e.message,false);
+  }finally{
+    checkbox.disabled=false;
+  }
 }
+
 async function toggleItemAvailability(id,checkbox){
-  const desired=!!checkbox.checked;checkbox.disabled=true;
+  const desired=!!checkbox.checked;
+  checkbox.disabled=true;
   try{
     const {error}=await db.from(MENU_TABLE).update({is_available:desired}).eq('id',id);
     if(error)throw error;
-    const item=menuData.find(m=>String(m.id)===String(id));if(item)item.is_available=desired;
-    toast(`${item?.name_en||item?.name||'Item'} ${desired?'enabled':'disabled'} for customer page.`);renderCategoryManagement();
-  }catch(e){checkbox.checked=!desired;toast(e.message,false)}finally{checkbox.disabled=false}
+    const item=menuData.find(m=>String(m.id)===String(id));
+    if(item)item.is_available=desired;
+    toast(`${item?.name_en||item?.name||'Item'} ${desired?'enabled':'disabled'} for customer page.`);
+    renderCategoryManagement(selectedManagedCategory);
+  }catch(e){
+    checkbox.checked=!desired;
+    toast(e.message,false);
+  }finally{
+    checkbox.disabled=false;
+  }
 }
 
 async function loadReportDate(){const date=document.getElementById('reportDate').value||today();if(currentReportType==='SHIFT')await loadShiftList(date);else await loadEod(date)}
@@ -402,9 +1489,108 @@ function closeTypeOf(r){return String(r?.close_type??r?.type??'').trim().toUpper
 function shiftNoOf(r){return r?.shift_no??r?.shift_number??r?.shiftNo??''}
 async function fetchCloseRows(){const {data,error}=await db.from(CLOSE_TABLE).select('*').limit(10000);return {data:data||[],error}}
 async function loadShiftList(date){const {data,error}=await fetchCloseRows();const sel=document.getElementById('shiftSelect');if(error){sel.innerHTML='<option value="">Table unavailable</option>';document.getElementById('reportResult').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}const rows=data.filter(r=>closeDateOf(r)===date&&closeTypeOf(r)==='SHIFT').sort((a,b)=>Number(shiftNoOf(a)||0)-Number(shiftNoOf(b)||0));sel.innerHTML='<option value="">Select shift...</option>'+rows.map(r=>`<option value="${esc(String(r.id))}">Shift ${esc(String(shiftNoOf(r)))} · ${r.closed_at?new Date(r.closed_at).toLocaleString():''}</option>`).join('');document.getElementById('reportResult').innerHTML=(rows.length?'':'<div class="card p-4 text-slate-500">No Shift Close saved for this date.</div>')}
-async function loadSelectedClose(){const id=document.getElementById('shiftSelect').value;if(!id)return;const {data,error}=await db.from(CLOSE_TABLE).select('*').eq('id',id).maybeSingle();if(error){toast(error.message,false);return}renderClose(data)}
+async function loadSelectedClose(){
+  const id=document.getElementById('shiftSelect').value;
+  const box=document.getElementById('reportResult');
+  if(!id){box.innerHTML='';return;}
+  box.innerHTML='<div class="card p-4 text-slate-500">Loading shift details...</div>';
+  const {data,error}=await db.from(CLOSE_TABLE).select('*').eq('id',id).maybeSingle();
+  if(error){toast(error.message,false);box.innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return;}
+  if(!data){box.innerHTML='<div class="card p-4 text-slate-500">Shift report not found.</div>';return;}
+  box.innerHTML=renderClose(data,false);
+}
 async function loadEod(date){const {data,error}=await fetchCloseRows();if(error){document.getElementById('reportResult').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';return}const rows=data.filter(r=>closeDateOf(r)===date&&closeTypeOf(r)==='EOD').sort((a,b)=>new Date(b.closed_at||0)-new Date(a.closed_at||0));document.getElementById('reportResult').innerHTML=rows.length?renderClose(rows[0],true):'<div class="card p-4 text-slate-500">No EOD Close saved for this date.</div>'}
-function renderClose(r,eod=false){const cats=r.category_sales||{},items=r.item_sales||{};const catHtml=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(x=>`<div class="flex justify-between border-b py-2 text-sm"><span>${esc(x[0])}</span><b>${money(x[1])}</b></div>`).join('')||'<div class="text-slate-400 text-sm">No category data</div>';const itemHtml=Object.entries(items).sort((a,b)=>b[1]-a[1]).slice(0,50).map(x=>`<div class="flex justify-between border-b py-2 text-sm"><span>${esc(x[0])}</span><b>${x[1]}</b></div>`).join('')||'<div class="text-slate-400 text-sm">No item data</div>';return `<div class="card p-5 space-y-5"><div class="flex justify-between"><div><h3 class="text-xl font-black">${eod?'EOD Close':'Shift '+esc(String(shiftNoOf(r)))}</h3><p class="text-xs text-slate-500">Date: ${esc(closeDateOf(r))} · Closed by: ${esc(r.cashier_name||r.closed_by||'')}</p></div></div><div class="grid grid-cols-2 md:grid-cols-5 gap-3"><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Total Sales</div><b>${money(r.total_sales)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">SST</div><b>${money(r.total_sst)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Rounding</div><b>${money(r.total_rounding)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Net Cash</div><b>${money(r.net_cash)}</b></div><div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Invoices</div><b>${esc(String(r.total_orders||0))}</b></div></div><div class="grid lg:grid-cols-2 gap-5"><div><h4 class="font-black mb-2">Category-wise Sales</h4>${catHtml}</div><div><h4 class="font-black mb-2">Item-wise Sales</h4>${itemHtml}</div></div></div>`}
+function parseCloseReportJson(r){
+  let j=r?.report_json||{};
+  if(typeof j==='string'){
+    try{j=JSON.parse(j)}catch(e){j={}}
+  }
+  return (j&&typeof j==='object')?j:{};
+}
+
+function renderClose(r,eod=false){
+  const j=parseCloseReportJson(r);
+  const cats=r.category_sales||j.category_sales||{};
+  const items=r.item_sales||j.item_sales||{};
+  const cancelledItems=Array.isArray(j.cancelled_items)?j.cancelled_items:[];
+  const deletedItems=Array.isArray(j.deleted_items)?j.deleted_items:[];
+  const cancelledOrders=Array.isArray(j.cancelled_orders)?j.cancelled_orders:[];
+
+  const catHtml=Object.entries(cats).sort((a,b)=>Number(b[1]||0)-Number(a[1]||0))
+    .map(x=>`<div class="flex justify-between border-b py-2 text-sm"><span>${esc(x[0])}</span><b>${money(x[1])}</b></div>`).join('')
+    ||'<div class="text-slate-400 text-sm">No category data</div>';
+
+  const itemHtml=Object.entries(items).sort((a,b)=>Number(b[1]||0)-Number(a[1]||0)).slice(0,100)
+    .map(x=>`<div class="flex justify-between border-b py-2 text-sm"><span>${esc(x[0])}</span><b>${esc(String(x[1]))}</b></div>`).join('')
+    ||'<div class="text-slate-400 text-sm">No item data</div>';
+
+  const totalSales=r.total_sales??j.total_sales??j.sales??0;
+  const sst=r.sst_amount??r.total_sst??j.sst??j.sst_amount??0;
+  const rounding=r.rounding_amount??r.total_rounding??j.rounding??j.rounding_amount??0;
+  const netCash=r.net_cash??j.net_cash??0;
+  const invoices=r.invoice_count??r.total_orders??j.invoice_count??j.total_orders??0;
+
+  const cancelItemHtml=cancelledItems.length?`
+    <div>
+      <h4 class="font-black mb-2 text-red-700">Cancelled Item History</h4>
+      <div class="overflow-x-auto"><table class="w-full text-xs border-collapse">
+        <thead><tr class="bg-red-50"><th class="border p-2 text-left">Order</th><th class="border p-2 text-left">Item</th><th class="border p-2 text-left">Qty</th><th class="border p-2 text-left">Reason</th><th class="border p-2 text-left">Cancelled By</th><th class="border p-2 text-left">Time</th></tr></thead>
+        <tbody>${cancelledItems.map(x=>`<tr><td class="border p-2">${esc(x.order_id??'')}</td><td class="border p-2">${esc(x.item_name??x.name??'')}</td><td class="border p-2">${esc(x.quantity??x.cancelled_quantity??'')}</td><td class="border p-2">${esc(x.reason??x.cancel_reason??'')}</td><td class="border p-2">${esc(x.cancelled_by_name??x.cancelled_by_email??'')}</td><td class="border p-2">${esc(x.cancelled_at?new Date(x.cancelled_at).toLocaleString():'')}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>`:'';
+
+  const deletedHtml=deletedItems.length?`
+    <div><h4 class="font-black mb-2 text-amber-700">Deleted Item History</h4>
+      <div class="space-y-2">${deletedItems.map(x=>`<div class="border rounded-xl p-3 text-xs"><b>${esc(x.item_name??x.name??'Item')}</b> · Qty ${esc(x.quantity??'')}<br><span class="text-slate-500">Reason:</span> ${esc(x.reason??x.delete_reason??'')}</div>`).join('')}</div>
+    </div>`:'';
+
+  const cancelledOrderHtml=cancelledOrders.length?`
+    <div><h4 class="font-black mb-2 text-red-700">Cancelled Order History</h4>
+      <div class="space-y-2">${cancelledOrders.map(x=>`<div class="border border-red-200 bg-red-50 rounded-xl p-3 text-xs"><b>Order ${esc(x.order_id??x.id??'')}</b><br><span class="text-slate-500">Reason:</span> ${esc(x.reason??x.decline_reason??'')}<br><span class="text-slate-500">By:</span> ${esc(x.cancelled_by_name??x.cancelled_by_email??'')}</div>`).join('')}</div>
+    </div>`:'';
+
+  return `<div id="adminCloseReportPrintable" class="card p-5 space-y-5">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h3 class="text-xl font-black">${eod?'EOD Close':'Shift '+esc(String(shiftNoOf(r)))}</h3>
+        <p class="text-xs text-slate-500">Date: ${esc(closeDateOf(r))} · Closed by: ${esc(r.cashier_name||r.closed_by||j.cashier_name||'')}</p>
+        ${j.period_start&&j.period_end?`<p class="text-xs text-blue-600 mt-1">Period: ${esc(new Date(j.period_start).toLocaleString())} → ${esc(new Date(j.period_end).toLocaleString())}</p>`:''}
+      </div>
+      <button type="button" onclick="printSelectedCloseReport()" class="bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-black shadow">🖨️ Print Report</button>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Total Sales</div><b>${money(totalSales)}</b></div>
+      <div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">SST</div><b>${money(sst)}</b></div>
+      <div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Rounding</div><b>${money(rounding)}</b></div>
+      <div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Net Cash</div><b>${money(netCash)}</b></div>
+      <div class="bg-slate-50 p-3 rounded-xl"><div class="text-xs">Invoices</div><b>${esc(String(invoices||0))}</b></div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-5">
+      <div><h4 class="font-black mb-2">Category-wise Sales</h4>${catHtml}</div>
+      <div><h4 class="font-black mb-2">Item-wise Sales</h4>${itemHtml}</div>
+    </div>
+
+    ${cancelItemHtml}
+    ${deletedHtml}
+    ${cancelledOrderHtml}
+  </div>`;
+}
+
+function printSelectedCloseReport(){
+  const el=document.getElementById('adminCloseReportPrintable');
+  if(!el){toast('Open a Shift/EOD report first.',false);return;}
+  const copy=el.cloneNode(true);
+  copy.querySelectorAll('button').forEach(b=>b.remove());
+  const w=window.open('','_blank');
+  if(!w){toast('Print popup was blocked.',false);return;}
+  const css=`@page{size:auto;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}body{font-size:12px}#adminCloseReportPrintable{width:100%;padding:8mm;border:0;box-shadow:none}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.bg-slate-50,.bg-red-50{border:1px solid #000;padding:3mm;border-radius:0}h3{text-align:center;font-size:20px;margin:0 0 3mm}h4{font-size:13px;border-bottom:1px solid #000;padding-bottom:2px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:5px;text-align:left}.text-xs{font-size:10px}.text-sm{font-size:11px}.space-y-5>*+*{margin-top:5mm}.overflow-x-auto{overflow:visible!important}`;
+  w.document.open();
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Hameeds Bistro Close Report</title><style>${css}</style></head><body>${copy.outerHTML}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{w.focus();w.print();},300);
+}
 
 async function loadStaffDropdown(){const {data,error}=await db.from(PROFILE_TABLE).select('*').order('full_name',{ascending:true}).limit(5000);if(error){toast(error.message,false);return}profiles=data||[];profileColumns=new Set(profiles[0]?Object.keys(profiles[0]):[]);const sel=document.getElementById('attendanceStaff');sel.innerHTML='<option value="">Select staff...</option>'+profiles.map(p=>`<option value="${esc(String(p.id))}">${esc(getName(p))}</option>`).join('')}
 function joiningDate(p){return p?.created_at?new Date(p.created_at).toLocaleDateString(): '-'}
@@ -421,5 +1607,825 @@ async function refundInvoice(invoiceId,orderId){if(!confirm('Confirm refund? Thi
 document.getElementById('mobileMenu').onclick=()=>{document.getElementById('sidebar').classList.toggle('hidden')};
 window.addEventListener('DOMContentLoaded',()=>{const s=sessionStorage.getItem('hameeds_admin_session');if(s){try{const d=JSON.parse(s);if(roleAllowed(d.role)){session=d;showApp();return}}catch(e){}}});
 </script>
+
+<script id="final-item-description-admin-fix">
+/* ITEM DESCRIPTION is stored in public.item_description, linked by menu_item_id. */
+window.itemDescriptionMap = window.itemDescriptionMap || {};
+
+async function loadItemDescriptionMap(){
+  const r = await db.from('item_description').select('menu_item_id,description');
+  if(r.error){
+    console.warn('item_description load:', r.error.message);
+    window.itemDescriptionMap = {};
+    return;
+  }
+  window.itemDescriptionMap = {};
+  (r.data || []).forEach(x => {
+    window.itemDescriptionMap[String(x.menu_item_id)] = x.description || '';
+  });
+}
+
+window.loadMenu = async function(){
+  const [{data,error}] = await Promise.all([
+    db.from(MENU_TABLE).select('*').limit(5000),
+    loadItemDescriptionMap()
+  ]);
+  if(error){
+    document.getElementById('menuItems').innerHTML='<div class="card p-4 text-red-600">'+esc(error.message)+'</div>';
+    return;
+  }
+  menuData=(data||[]).slice().sort((a,b)=>
+    (Number(a.category_sort_order)||999999)-(Number(b.category_sort_order)||999999) ||
+    String(a.category||'').localeCompare(String(b.category||''),undefined,{numeric:true,sensitivity:'base'}) ||
+    (Number(a.item_sort_order)||999999)-(Number(b.item_sort_order)||999999) ||
+    String(a.name_en||a.name||a.item_name||'').localeCompare(String(b.name_en||b.name||b.item_name||''),undefined,{numeric:true,sensitivity:'base'})
+  );
+  menuColumns=new Set(menuData[0]?Object.keys(menuData[0]):[]);
+  const cats=orderedCategoryNames().filter(c=>c&&c!=='Uncategorized');
+  const sel=document.getElementById('categorySelect');
+  sel.innerHTML='<option value="">Select category...</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  document.getElementById('menuItems').innerHTML='<div class="card p-4 text-sm text-slate-500">Select a category to edit its menu items.</div>';
+};
+
+window.renderMenuCategory = function(){
+  const cat=document.getElementById('categorySelect').value, box=document.getElementById('menuItems');
+  if(!cat){box.innerHTML='<div class="card p-4 text-slate-500">Select a category.</div>';return;}
+
+  const rows=menuData
+    .filter(x=>x.category===cat && x.is_available!==false)
+    .sort((a,b)=>itemOrderValue(a)-itemOrderValue(b) ||
+      String(a.name_en||a.name||'').localeCompare(String(b.name_en||b.name||''),undefined,{numeric:true,sensitivity:'base'}));
+
+  box.innerHTML=rows.map(m=>{
+    const id=m.id;
+    const img=getImage(m);
+    const dine=Number(m.dine_in_price??m.price??0).toFixed(2);
+    const take=Number(m.takeaway_price??m.price??0).toFixed(2);
+    const desc=window.itemDescriptionMap?.[String(id)] ?? m.item_description ?? '';
+
+    return `<div class="card p-4 admin-sort-row" draggable="true" data-menu-sort-id="${id}">
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <span class="admin-drag-handle shrink-0" title="Drag item">⋮⋮</span>
+
+          <div class="relative w-16 h-16 shrink-0">
+            <img id="img-${id}" src="${esc(img)}"
+              class="w-16 h-16 rounded-xl object-cover border bg-white"
+              onerror="this.onerror=null;this.src='images/logo.png';this.style.display='block'">
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="font-black text-sm md:text-base break-words">${esc(m.name_en||m.name||m.item_name||'')}</div>
+              <span class="text-[10px] text-slate-400">Position <span data-sort-number>${Number.isFinite(Number(m.item_sort_order))?Number(m.item_sort_order):''}</span></span>
+            </div>
+            <div class="text-xs text-slate-500 mt-1">${esc(m.category||'')}</div>
+          </div>
+
+          <div class="flex items-center gap-3 shrink-0">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox"
+                class="sr-only peer menu-edit-item-toggle"
+                ${m.is_available!==false?'checked':''}
+                onchange="toggleMenuEditItemAvailability('${id}',this)">
+              <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:bg-emerald-600
+                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
+                peer-checked:after:translate-x-full"></div>
+            </label>
+
+            <button type="button"
+              id="menuEditBtn-${id}"
+              onclick="toggleMenuItemEditor('${id}')"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black">
+              Edit
+            </button>
+          </div>
+        </div>
+
+        <div id="menuEditor-${id}" class="hidden border-t pt-4">
+          <div class="grid lg:grid-cols-[1fr_140px_140px_180px] gap-3 items-start">
+            <div>
+              <label class="text-[10px] font-bold text-slate-400">NAME</label>
+              <input id="name-${id}" value="${esc(m.name_en||m.name||m.item_name||'')}"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+
+              <label class="text-[10px] font-bold text-slate-400 mt-3 block">DESCRIPTION</label>
+              <textarea id="desc-${id}" rows="4"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 resize-y"
+                placeholder="Item description">${esc(desc)}</textarea>
+            </div>
+
+            <div>
+              <label class="text-[10px] font-bold text-slate-400">DINE-IN PRICE</label>
+              <input id="dine-${id}" type="number" step="0.01" value="${dine}"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+
+            <div>
+              <label class="text-[10px] font-bold text-slate-400">TAKEAWAY PRICE</label>
+              <input id="take-${id}" type="number" step="0.01" value="${take}"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+
+            <div>
+              <label class="text-[10px] font-bold text-slate-400">IMAGE</label>
+              <input id="file-${id}" type="file" accept="image/*" class="w-full text-[10px] mt-1">
+
+              <button onclick="saveMenuItem('${id}')"
+                class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-2.5 text-xs font-bold">
+                Save Item
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="card p-4 text-slate-500">No active items in this category. The category is still available; turn items ON from Category Management to show them here again.</div>';
+
+  bindItemDragAndDrop();
+};
+
+window.toggleMenuItemEditor=function(id){
+  const el=document.getElementById(`menuEditor-${id}`);
+  const btn=document.getElementById(`menuEditBtn-${id}`);
+  if(!el)return;
+
+  const opening=el.classList.contains('hidden');
+
+  if(opening){
+    el.classList.remove('hidden');
+    if(btn)btn.classList.add('hidden');
+  }else{
+    el.classList.add('hidden');
+    if(btn)btn.classList.remove('hidden');
+  }
+};
+
+window.toggleMenuEditItemAvailability = async function(id,checkbox){
+  const desired = !!checkbox.checked;
+  checkbox.disabled = true;
+
+  try{
+    const {error} = await db.from(MENU_TABLE)
+      .update({is_available:desired})
+      .eq('id',id);
+
+    if(error)throw error;
+
+    const item = menuData.find(m=>String(m.id)===String(id));
+    if(item)item.is_available = desired;
+
+    if(!desired){
+      toast(`${item?.name_en||item?.name||'Item'} hidden from customer menu.`);
+
+      // In Menu Management, an item switched OFF disappears immediately.
+      // The category itself stays in the category dropdown.
+      const cat = document.getElementById('categorySelect')?.value || item?.category || '';
+      renderMenuCategory();
+
+      // Preserve selected category even if all its items are OFF.
+      const sel = document.getElementById('categorySelect');
+      if(sel && cat)sel.value = cat;
+    }else{
+      toast(`${item?.name_en||item?.name||'Item'} enabled for customer menu.`);
+      renderMenuCategory();
+    }
+  }catch(e){
+    checkbox.checked = !desired;
+    toast(e.message,false);
+  }finally{
+    checkbox.disabled = false;
+  }
+};
+
+window.saveMenuItem = async function(id){
+  const old=menuData.find(x=>String(x.id)===String(id));
+  if(!old)return false;
+
+  const nameEl=document.getElementById('name-'+id);
+  const dineEl=document.getElementById('dine-'+id);
+  const takeEl=document.getElementById('take-'+id);
+  const descEl=document.getElementById('desc-'+id);
+  const fileEl=document.getElementById('file-'+id);
+
+  // Category is NOT editable inside the compact item editor,
+  // so keep the item's existing category.
+  const payload={
+    name_en:(nameEl?.value||old.name_en||old.name||old.item_name||'').trim(),
+    category:old.category,
+    dine_in_price:Number(dineEl?.value??old.dine_in_price??old.price??0),
+    takeaway_price:Number(takeEl?.value??old.takeaway_price??old.price??0)
+  };
+
+  const description=(descEl?.value||'').trim();
+  const file=fileEl?.files?.[0]||null;
+  let newUpload=null;
+
+  try{
+    if(file){
+      newUpload=await uploadImage(file,id);
+      payload.image_url=newUpload.url;
+    }
+
+    const {error}=await db.from(MENU_TABLE).update(payload).eq('id',id);
+    if(error)throw error;
+
+    const descWrite=await db.from('item_description').upsert(
+      [{menu_item_id:Number(id),description:description||null,updated_at:new Date().toISOString()}],
+      {onConflict:'menu_item_id'}
+    );
+    if(descWrite.error){
+      throw new Error('Item saved, but description could not be saved: '+descWrite.error.message);
+    }
+
+    if(newUpload&&old.image_url&&old.image_url!==newUpload.url){
+      const oldPath=getMenuStoragePath(old.image_url);
+      if(oldPath&&oldPath!==newUpload.path){
+        const del=await db.storage.from(MENU_BUCKET).remove([oldPath]);
+        if(del.error)console.warn('Old menu image could not be deleted:',del.error.message);
+      }
+    }
+
+    window.itemDescriptionMap[String(id)]=description;
+
+    // Keep local row in sync before rerender.
+    Object.assign(old,payload);
+    toast('Menu item and description saved.');
+
+    // Close the editor FIRST.
+    const currentEditor=document.getElementById(`menuEditor-${id}`);
+    const currentEditBtn=document.getElementById(`menuEditBtn-${id}`);
+    if(currentEditor)currentEditor.classList.add('hidden');
+    if(currentEditBtn)currentEditBtn.classList.remove('hidden');
+
+    // Re-render the selected category. New rows start collapsed with Edit visible.
+    const selectedCategory=old.category;
+    await loadMenu();
+    const sel=document.getElementById('categorySelect');
+    if(sel)sel.value=selectedCategory;
+    renderMenuCategory();
+
+    return true;
+  }catch(e){
+    if(newUpload?.path){
+      try{await db.storage.from(MENU_BUCKET).remove([newUpload.path])}catch(cleanupError){}
+    }
+    toast(e.message||String(e),false);
+    return false;
+  }
+};
+</script>
+
+
+
+<script id="modifier-management-admin-final">
+let modifierAdminRows=[];
+
+async function loadModifierManagement(){
+  const list=document.getElementById('modifierAdminList');
+  const status=document.getElementById('modifierAdminStatus');
+  if(!list)return;
+  if(status)status.textContent='Loading...';
+
+  const {data,error}=await db.from('modifiers')
+    .select('id,modifier_name,price')
+    .order('modifier_name',{ascending:true});
+
+  if(error){
+    list.innerHTML='<div class="text-sm text-red-600 p-3">Unable to load modifiers: '+esc(error.message)+'</div>';
+    if(status)status.textContent='Load failed';
+    return;
+  }
+
+  modifierAdminRows=data||[];
+  if(status)status.textContent=modifierAdminRows.length+' modifier'+(modifierAdminRows.length===1?'':'s');
+
+  list.innerHTML=modifierAdminRows.map(r=>`
+    <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 border rounded-xl p-3 bg-white">
+      <div class="min-w-0 flex-1">
+        <div class="font-black text-sm break-words">${esc(r.modifier_name||'')}</div>
+        <div class="text-xs text-emerald-700 font-bold mt-1">RM${Number(r.price||0).toFixed(2)}</div>
+      </div>
+      <div class="flex gap-2 shrink-0">
+        <button onclick="editModifierAdmin('${esc(String(r.id))}')"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-black">Edit</button>
+        <button onclick="deleteModifierAdmin('${esc(String(r.id))}')"
+          class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-black">Delete</button>
+      </div>
+    </div>`).join('') || '<div class="text-sm text-slate-400 p-3">No modifiers yet.</div>';
+}
+
+function editModifierAdmin(id){
+  const row=modifierAdminRows.find(x=>String(x.id)===String(id));
+  if(!row)return;
+  document.getElementById('modifierAdminEditId').value=String(row.id);
+  document.getElementById('modifierAdminName').value=row.modifier_name||'';
+  document.getElementById('modifierAdminPrice').value=Number(row.price||0).toFixed(2);
+  document.getElementById('modifierAdminSaveBtn').textContent='Save Modifier';
+  document.getElementById('modifierAdminCancelBtn').classList.remove('hidden');
+  document.getElementById('modifierAdminName').focus();
+}
+
+function cancelModifierAdminEdit(){
+  document.getElementById('modifierAdminEditId').value='';
+  document.getElementById('modifierAdminName').value='';
+  document.getElementById('modifierAdminPrice').value='0.00';
+  document.getElementById('modifierAdminSaveBtn').textContent='Add Modifier';
+  document.getElementById('modifierAdminCancelBtn').classList.add('hidden');
+}
+
+async function saveModifierAdmin(){
+  const id=document.getElementById('modifierAdminEditId').value.trim();
+  const name=document.getElementById('modifierAdminName').value.trim();
+  const price=Number(document.getElementById('modifierAdminPrice').value||0);
+
+  if(!name){toast('Modifier name is required.',false);return;}
+  if(!Number.isFinite(price)){toast('Modifier price is invalid.',false);return;}
+
+  let result;
+  if(id){
+    result=await db.from('modifiers').update({modifier_name:name,price}).eq('id',id);
+  }else{
+    result=await db.from('modifiers').insert([{modifier_name:name,price}]);
+  }
+
+  if(result.error){
+    toast('Modifier save failed: '+result.error.message,false);
+    return;
+  }
+
+  toast(id?'Modifier updated.':'Modifier added.');
+  cancelModifierAdminEdit();
+  await loadModifierManagement();
+}
+
+async function deleteModifierAdmin(id){
+  const row=modifierAdminRows.find(x=>String(x.id)===String(id));
+  if(!confirm('Delete modifier "'+(row?.modifier_name||'')+'"?'))return;
+
+  const {error}=await db.from('modifiers').delete().eq('id',id);
+  if(error){toast('Modifier delete failed: '+error.message,false);return;}
+
+  toast('Modifier deleted.');
+  if(document.getElementById('modifierAdminEditId').value===String(id))cancelModifierAdminEdit();
+  await loadModifierManagement();
+}
+</script>
+
+
+<script id="admin-order-history-final">
+function adminLocalDayBounds(dateStr){
+  const [y,m,d]=String(dateStr).split('-').map(Number);
+  return {
+    start:new Date(y,m-1,d,0,0,0,0),
+    end:new Date(y,m-1,d,23,59,59,999)
+  };
+}
+
+async function loadAdminOrderHistory(){
+  const fromEl=document.getElementById('orderHistoryFrom');
+  const toEl=document.getElementById('orderHistoryTo');
+  if(!fromEl||!toEl)return;
+  if(!fromEl.value)fromEl.value=today();
+  if(!toEl.value)toEl.value=today();
+
+  const from=adminLocalDayBounds(fromEl.value).start;
+  const to=adminLocalDayBounds(toEl.value).end;
+  const box=document.getElementById('adminOrderHistoryResult');
+  box.innerHTML='<div class="text-sm text-slate-500">Loading sales history...</div>';
+
+  const {data:invoices,error}=await db.from(INVOICE_TABLE)
+    .select('*')
+    .gte('created_at',from.toISOString())
+    .lte('created_at',to.toISOString())
+    .order('created_at',{ascending:false});
+
+  if(error){box.innerHTML='<div class="text-red-600">'+esc(error.message)+'</div>';return;}
+
+  const rows=invoices||[];
+  const ids=rows.map(r=>r.order_id).filter(Boolean);
+  let orders=[];
+  if(ids.length){
+    const or=await db.from(ORDER_TABLE).select('*').in('id',ids);
+    if(!or.error)orders=or.data||[];
+  }
+  const orderMap={};orders.forEach(o=>orderMap[String(o.id)]=o);
+
+  const total=rows.reduce((s,r)=>s+Number(r.total_amount||0),0);
+  const cash=rows.filter(r=>String(r.payment_method||'').toLowerCase()==='cash').reduce((s,r)=>s+Number(r.total_amount||0),0);
+  const card=rows.filter(r=>String(r.payment_method||'').toLowerCase().includes('card')).reduce((s,r)=>s+Number(r.total_amount||0),0);
+  const qr=rows.filter(r=>String(r.payment_method||'').toLowerCase().includes('qr')).reduce((s,r)=>s+Number(r.total_amount||0),0);
+
+  document.getElementById('orderHistorySummary').innerHTML=`
+    <div class="card p-3"><div class="text-xs text-slate-500">Total Sales</div><b class="text-xl">${money(total)}</b></div>
+    <div class="card p-3"><div class="text-xs text-slate-500">Invoices</div><b class="text-xl">${rows.length}</b></div>
+    <div class="card p-3"><div class="text-xs text-slate-500">Cash</div><b class="text-xl">${money(cash)}</b></div>
+    <div class="card p-3"><div class="text-xs text-slate-500">Card / QR</div><b class="text-xl">${money(card+qr)}</b></div>`;
+
+  box.innerHTML=`<table id="adminOrderHistoryPrintable" class="w-full text-xs border-collapse">
+    <thead><tr class="bg-slate-100">
+      <th class="border p-2 text-left">Date/Time</th><th class="border p-2">Order</th><th class="border p-2">Table</th>
+      <th class="border p-2">Payment</th><th class="border p-2 text-right">Amount</th><th class="border p-2 text-center">Invoice</th>
+    </tr></thead>
+    <tbody>${rows.map(r=>{
+      const o=orderMap[String(r.order_id)]||{};
+      return `<tr>
+        <td class="border p-2">${esc(new Date(r.created_at).toLocaleString())}</td>
+        <td class="border p-2">#${esc(r.order_id||'')}</td>
+        <td class="border p-2">${esc(r.table_id||o.table_id||'')}</td>
+        <td class="border p-2">${esc(r.payment_method||'')}</td>
+        <td class="border p-2 text-right font-bold">${money(r.total_amount||0)}</td>
+        <td class="border p-2 text-center">
+          <button type="button"
+                  onclick="printAdminInvoice('${esc(String(r.id||''))}','${esc(String(r.order_id||''))}')"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-[10px] font-black whitespace-nowrap">
+            🖨️ Print Invoice
+          </button>
+        </td>
+      </tr>`;
+    }).join('')||'<tr><td colspan="6" class="border p-5 text-center text-slate-400">No sales found.</td></tr>'}</tbody>
+  </table>`;
+}
+
+
+async function printAdminInvoice(invoiceId,orderId){
+  const invId=String(invoiceId||'').trim();
+  const ordId=String(orderId||'').trim();
+  if(!ordId){toast('Order ID not found.',false);return;}
+
+  const invRes=invId
+    ? await db.from(INVOICE_TABLE).select('*').eq('id',invId).maybeSingle()
+    : await db.from(INVOICE_TABLE).select('*').eq('order_id',ordId).order('created_at',{ascending:false}).limit(1).maybeSingle();
+
+  if(invRes.error||!invRes.data){
+    toast('Invoice not found.',false);
+    return;
+  }
+  const invoice=invRes.data;
+
+  const [itemRes,orderRes,menuRes]=await Promise.all([
+    db.from(ORDER_ITEM_TABLE).select('*').eq('order_id',ordId),
+    db.from(ORDER_TABLE).select('*').eq('id',ordId).maybeSingle(),
+    db.from(MENU_TABLE).select('id,name_en').limit(5000)
+  ]);
+
+  if(itemRes.error){
+    toast('Could not load invoice items: '+itemRes.error.message,false);
+    return;
+  }
+
+  const items=itemRes.data||[];
+  const order=orderRes.data||{};
+  const menuMap={};
+  (menuRes.data||[]).forEach(m=>menuMap[String(m.id)]=m.name_en||'Unknown Item');
+
+  const escPrint=v=>String(v??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+
+  let subtotal=0;
+  const itemRows=items.map(item=>{
+    const qty=Number(item.quantity||0);
+    const price=Number(item.price||0);
+    const line=qty*price;
+    subtotal+=line;
+
+    let modifiers=[];
+    try{
+      modifiers=Array.isArray(item.modifiers)
+        ? item.modifiers
+        : (typeof item.modifiers==='string' ? JSON.parse(item.modifiers||'[]') : []);
+    }catch(e){modifiers=[];}
+
+    const modHtml=(modifiers||[]).map(m=>{
+      if(typeof m==='string')return `<div class="modifier">↳ ${escPrint(m)}</div>`;
+      const mp=Number(m?.price||0);
+      return `<div class="modifier">↳ ${escPrint(m?.text||'Modifier')}${mp!==0?` ${mp>0?'+':''}RM${mp.toFixed(2)}`:''}</div>`;
+    }).join('');
+
+    return `<div class="row item-row">
+      <span class="name">${escPrint(menuMap[String(item.menu_item_id)]||item.name_en||'Unknown Item')} x${qty}</span>
+      <span class="amount">RM${line.toFixed(2)}</span>
+    </div>${modHtml}`;
+  }).join('');
+
+  const total=Number(invoice.total_amount||0);
+  const sst=Number(invoice.sst_amount ?? invoice.sst ?? subtotal*.06);
+  const rounding=Number(invoice.rounding_amount ?? (total-(subtotal+sst)));
+  const table=invoice.table_id||order.table_id||'N/A';
+  const payment=invoice.payment_method||'';
+  const invoiceDate=new Date(invoice.created_at||Date.now());
+
+  const w=window.open('','_blank');
+  if(!w){toast('Print popup was blocked.',false);return;}
+
+  const html=`<!doctype html><html><head><meta charset="utf-8">
+  <title>Invoice #${escPrint(invoice.id)}</title>
+  <style>
+    @page{size:80mm auto;margin:0}
+    *{box-sizing:border-box}
+    body{margin:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700}
+    .receipt{width:72mm;margin:0 auto;padding:2mm 1mm}
+    .header{display:flex;align-items:center;justify-content:center;gap:7px;border-bottom:1.5px dashed #333;padding-bottom:7px;margin-bottom:7px}
+    .logo{width:28px;height:28px;object-fit:contain}
+    .shop{font-family:"Times New Roman",serif;font-size:19px;font-weight:900;line-height:1}
+    .title{text-align:center;font-size:10px;font-weight:900;letter-spacing:.6px;margin-top:3px}
+    .meta{text-align:center;font-size:10px;line-height:1.45;margin-bottom:7px}
+    .items{border-top:1px dashed #777;border-bottom:1px dashed #777;padding:6px 0;margin:6px 0}
+    .row{display:flex;justify-content:space-between;gap:8px;margin:2px 0}
+    .name{flex:1}.amount{white-space:nowrap;text-align:right}
+    .modifier{font-size:10px;margin:1px 0 1px 10px}
+    .total{font-size:17px;font-weight:900;border-top:1px solid #222;padding-top:4px;margin-top:4px}
+    .status{text-align:center;font-size:11px;font-weight:900;margin-top:8px}
+  </style></head><body>
+  <div class="receipt">
+    <div class="header">
+      <img src="images/logo.png" class="logo">
+      <div><div class="shop">HAMEEDS BISTRO</div><div class="title">FINAL RECEIPT</div></div>
+    </div>
+    <div class="meta">
+      No.-11, Jalan KLIA Avenue, Pusat Perdagangan KLIA Avenue, Sepang, 43900<br>
+      Tel: +60 387059807<br>
+      Invoice: #${escPrint(invoice.id)} | Order: #${escPrint(ordId)}<br>
+      Table: ${escPrint(table)}<br>
+      Date: ${escPrint(invoiceDate.toLocaleString())}
+      ${payment?`<br>Payment: ${escPrint(payment)}`:''}
+    </div>
+    <div class="items">${itemRows||'<div>No items found.</div>'}</div>
+    <div>
+      <div class="row"><span>Subtotal:</span><span>RM${subtotal.toFixed(2)}</span></div>
+      <div class="row"><span>SST (6%):</span><span>RM${sst.toFixed(2)}</span></div>
+      <div class="row"><span>Rounding:</span><span>${rounding>=0?'+':''}RM${rounding.toFixed(2)}</span></div>
+      <div class="row total"><span>TOTAL:</span><span>RM${total.toFixed(2)}</span></div>
+    </div>
+    <div class="status">STATUS: PAID</div>
+  </div>
+  </body></html>`;
+
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>{try{w.focus();w.print();}catch(e){}},350);
+}
+
+function printAdminOrderHistory(){
+  const table=document.getElementById('adminOrderHistoryPrintable');
+  if(!table){toast('Load Order History first.',false);return;}
+  const from=document.getElementById('orderHistoryFrom').value;
+  const to=document.getElementById('orderHistoryTo').value;
+  const summary=document.getElementById('orderHistorySummary').innerText;
+  const w=window.open('','_blank');
+  if(!w){toast('Print popup was blocked.',false);return;}
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Sales Report</title>
+  <style>@page{margin:8mm}body{font-family:Arial;margin:0;color:#000}h1{text-align:center;font-size:20px}p{text-align:center;font-size:11px}table{width:100%;border-collapse:collapse;font-size:10px}th,td{border:1px solid #777;padding:5px;text-align:left}</style>
+  </head><body><h1>HAMEEDS BISTRO — SALES REPORT</h1><p>${from} to ${to}</p><p>${summary}</p>${table.outerHTML}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{w.focus();w.print();},250);
+}
+</script>
+
+
+<script id="admin-table-qr-print-final">
+const HAMEEDS_CUSTOMER_URL='https://hameedsbistro.vercel.app/';
+
+function qrAreaSection(prefix){
+  return prefix==='B'?'outdoor':prefix==='C'?'first_floor':'indoor';
+}
+
+function refreshQrTableOptions(){
+  const area=document.getElementById('qrArea');
+  const sel=document.getElementById('qrTableNo');
+  if(!area||!sel)return;
+  const prefix=area.value||'A';
+  const old=sel.value;
+  sel.innerHTML=Array.from({length:30},(_,i)=>{
+    const t=`${prefix}${i+1}`;
+    return `<option value="${t}">${t}</option>`;
+  }).join('');
+  if([...sel.options].some(o=>o.value===old))sel.value=old;
+  renderAdminTableQr();
+}
+
+function selectedQrTable(){
+  return String(document.getElementById('qrTableNo')?.value||'A1').toUpperCase();
+}
+
+function tableQrUrl(table){
+  const section=qrAreaSection(table.charAt(0));
+  const u=new URL(HAMEEDS_CUSTOMER_URL);
+  u.searchParams.set('table',table);
+  u.searchParams.set('section',section);
+  return u.toString();
+}
+
+function renderAdminTableQr(){
+  const table=selectedQrTable();
+  const target=tableQrUrl(table);
+  const qrBox=document.getElementById('adminQrCode');
+  const label=document.getElementById('adminQrTableText');
+  const url=document.getElementById('qrTargetUrl');
+  if(label)label.textContent=table;
+  if(url)url.textContent=target;
+  if(!qrBox)return;
+  qrBox.innerHTML='';
+  if(typeof QRCode==='undefined'){
+    qrBox.innerHTML='<div class="text-red-600 text-sm">QR library did not load. Internet connection is required in Admin.</div>';
+    return;
+  }
+  new QRCode(qrBox,{text:target,width:1000,height:1000,correctLevel:QRCode.CorrectLevel.H});
+}
+
+function printAdminTableQr(){
+  renderAdminTableQr();
+  const table=selectedQrTable();
+
+  setTimeout(()=>{
+    const qrCanvas=document.querySelector('#adminQrCode canvas');
+    const logoImg=document.querySelector('.qr-logo-center img');
+
+    if(!qrCanvas){
+      toast('QR is not ready yet. Please click Preview QR once, then Print QR.',false);
+      return;
+    }
+
+    // Exact TSC 203 dpi raster size for 50mm x 77.5mm.
+    const W=400, H=619;
+    const c=document.createElement('canvas');
+    c.width=W; c.height=H;
+    const ctx=c.getContext('2d');
+
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#000';
+    ctx.strokeStyle='#000';
+
+    // Outer double border.
+    ctx.lineWidth=3;
+    ctx.strokeRect(5,5,W-10,H-10);
+    ctx.lineWidth=1.5;
+    ctx.strokeRect(10,10,W-20,H-20);
+
+    // Decorative top corner arcs.
+    ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(10,10,40,0,Math.PI/2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(W-10,10,40,Math.PI/2,Math.PI); ctx.stroke();
+
+    ctx.textAlign='center';
+    ctx.textBaseline='alphabetic';
+
+    // Ornament + headings.
+    ctx.font='bold 24px Georgia, serif';
+    ctx.fillText('❦',W/2,34);
+
+    ctx.font='italic 34px "Brush Script MT","Segoe Script",cursive';
+    ctx.fillText('Restoran',W/2,68);
+
+    ctx.font='900 39px Georgia,"Times New Roman",serif';
+    ctx.fillText('Hameeds Bistro',W/2,106);
+
+    // Divider.
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(85,124); ctx.lineTo(315,124); ctx.stroke();
+    ctx.fillRect(79,121,6,6);
+    ctx.fillRect(315,121,6,6);
+
+    // QR.
+    const QR=244;
+    const qx=Math.round((W-QR)/2);
+    const qy=139;
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(qrCanvas,qx,qy,QR,QR);
+
+    // White circle + embedded logo.
+    const logoSize=56;
+    const lx=W/2, ly=qy+QR/2;
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(lx,ly,logoSize/2+5,0,Math.PI*2);
+    ctx.fill();
+
+    if(logoImg && logoImg.complete && logoImg.naturalWidth){
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(lx,ly,logoSize/2,0,Math.PI*2);
+      ctx.clip();
+      ctx.drawImage(logoImg,lx-logoSize/2,ly-logoSize/2,logoSize,logoSize);
+      ctx.restore();
+    }
+
+    ctx.fillStyle='#000';
+
+    ctx.font='900 27px Georgia,"Times New Roman",serif';
+    ctx.fillText('Scan to view menu',W/2,416);
+
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(118,435); ctx.lineTo(282,435); ctx.stroke();
+    ctx.fillRect(111,432,6,6);
+    ctx.fillRect(283,432,6,6);
+
+    ctx.font='700 24px Georgia,"Times New Roman",serif';
+    ctx.fillText('Table Number',W/2,466);
+
+    // Table number: keep it fully on the LEFT side so it can never overlap
+    // the No Smoking symbol. Font becomes slightly smaller for 3-character tables
+    // such as A10 / B25 / C30.
+    ctx.textAlign='center';
+    const tableFontSize = String(table).length >= 3 ? 76 : 92;
+    ctx.font=`900 ${tableFontSize}px Arial Black,Impact,sans-serif`;
+    ctx.fillText(table,145,553);
+
+    // No-smoking symbol: fixed on the RIGHT side with a smaller safe radius.
+    const sx=322, sy=515, sr=34;
+    ctx.lineWidth=6;
+    ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx-24,sy+24); ctx.lineTo(sx+24,sy-24); ctx.stroke();
+    ctx.fillRect(sx-20,sy+6,36,8);
+    ctx.strokeRect(sx+16,sy+6,10,8);
+    ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(sx+1,sy-3); ctx.bezierCurveTo(sx-4,sy-10,sx+6,sy-15,sx+1,sy-22); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx+11,sy-3); ctx.bezierCurveTo(sx+6,sy-10,sx+16,sy-15,sx+11,sy-23); ctx.stroke();
+
+    // Footer.
+    ctx.textAlign='center';
+    ctx.font='700 16px Georgia,"Times New Roman",serif';
+    const footerY=590;
+    ctx.fillText('RMP Solutions',W/2,footerY);
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(28,footerY-5); ctx.lineTo(135,footerY-5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(265,footerY-5); ctx.lineTo(372,footerY-5); ctx.stroke();
+
+    const data=c.toDataURL('image/png');
+
+    // SAME-PAGE PRINTING:
+    // Use a hidden iframe instead of opening a new browser tab/window.
+    let frame=document.getElementById('qrDirectPrintFrame');
+    if(!frame){
+      frame=document.createElement('iframe');
+      frame.id='qrDirectPrintFrame';
+      frame.setAttribute('aria-hidden','true');
+      frame.style.position='fixed';
+      frame.style.right='0';
+      frame.style.bottom='0';
+      frame.style.width='0';
+      frame.style.height='0';
+      frame.style.border='0';
+      frame.style.visibility='hidden';
+      document.body.appendChild(frame);
+    }
+
+    const doc=frame.contentWindow.document;
+    doc.open();
+    doc.write(`<!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Table ${table} QR</title>
+        <style>
+          @page{size:50mm 77.5mm;margin:0}
+          html,body{
+            margin:0!important;
+            padding:0!important;
+            width:50mm!important;
+            height:77.5mm!important;
+            overflow:hidden!important;
+            background:#fff!important;
+          }
+          img{
+            display:block!important;
+            width:50mm!important;
+            height:77.5mm!important;
+            margin:0!important;
+            padding:0!important;
+            object-fit:fill!important;
+          }
+        </style>
+      </head>
+      <body><img id="qrPrintImage" src="${data}" alt="Table ${table} QR Label"></body>
+      </html>`);
+    doc.close();
+
+    const img=doc.getElementById('qrPrintImage');
+    const doPrint=()=>{
+      try{
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+      }catch(e){
+        console.error('Direct print failed:',e);
+        toast('Could not open print dialog.',false);
+      }
+    };
+
+    if(img && !img.complete){
+      img.onload=()=>setTimeout(doPrint,120);
+    }else{
+      setTimeout(doPrint,180);
+    }
+  },200);
+}
+</script>
+
 </body>
 </html>
