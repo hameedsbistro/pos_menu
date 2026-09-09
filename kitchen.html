@@ -19,8 +19,31 @@
  @media(min-width:1024px){#historyContainer{grid-template-columns:repeat(4,minmax(0,1fr))}}
  @media(max-width:640px){.item-row{font-size:15px}.receipt-body{padding:11px}}
 </style>
+
+<style id="kitchen-all-sections-modifier-final">
+  #kitchenFilter option[value="__ALL__"]{font-weight:900}
+  .kitchen-modifier-line{color:#1d4ed8;font-weight:900}
+  .kitchen-note-line{color:#b91c1c;font-weight:900}
+</style>
 </head>
 <body class="min-h-screen">
+<div id="kitchenLoginScreen" class="fixed inset-0 z-[99999] bg-slate-950 flex items-center justify-center p-4">
+ <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-7">
+  <div class="text-center mb-6">
+   <img src="images/logo.png" class="w-20 h-20 rounded-full object-cover border-2 border-amber-500 mx-auto mb-3" onerror="this.style.display='none'">
+   <h1 class="text-2xl font-black text-slate-900">Hameeds Bistro</h1>
+   <p class="text-sm text-slate-500 mt-1">Kitchen Display Login</p>
+  </div>
+  <form id="kitchenLoginForm" class="space-y-4">
+   <div><label class="text-xs font-bold text-slate-700">Email</label><input id="kitchenLoginEmail" type="email" required autocomplete="username" class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500"></div>
+   <div><label class="text-xs font-bold text-slate-700">Password</label><input id="kitchenLoginPassword" type="password" required autocomplete="current-password" class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-amber-500"></div>
+   <div id="kitchenLoginError" class="hidden text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3"></div>
+   <button class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl py-3">Login to Kitchen Display</button>
+  </form>
+  <p class="text-[11px] text-slate-400 text-center mt-5">Access: Cook, Manager and Admin only.</p>
+ </div>
+</div>
+
 <header class="bg-slate-900 text-white px-4 py-3 shadow-lg">
  <div class="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-3">
   <div class="flex items-center gap-3">
@@ -28,9 +51,13 @@
    <div><div class="font-extrabold text-lg">RESTORAN HAMEED'S BISTRO</div><div class="text-xs text-slate-300">KITCHEN DISPLAY</div></div>
   </div>
   <div class="flex flex-wrap items-center gap-2">
+   <div class="text-right mr-1 hidden sm:block"><div id="kitchenUserName" class="text-xs font-extrabold">-</div><div id="kitchenUserRole" class="text-[10px] text-amber-300 uppercase">-</div></div>
+   <button onclick="doKitchenCheckIn()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3 py-2 rounded-lg text-xs">CHECK-IN</button>
+   <button onclick="doKitchenCheckOut()" class="bg-red-600 hover:bg-red-500 text-white font-extrabold px-3 py-2 rounded-lg text-xs">CHECK-OUT</button>
    <label class="text-sm font-bold">Select Section</label>
    <select id="kitchenFilter" onchange="fetchKitchenOrders()" class="text-slate-900 bg-white rounded-lg px-3 py-2 font-bold min-w-[180px]"><option value="">Select Section</option></select>
    <button onclick="openHistory()" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-extrabold px-4 py-2 rounded-lg">HISTORY</button>
+   <button onclick="kitchenLogout()" class="bg-slate-700 hover:bg-slate-600 text-white font-extrabold px-3 py-2 rounded-lg text-xs">LOGOUT</button>
   </div>
  </div>
 </header>
@@ -54,16 +81,78 @@ const _supabase=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 // Versioned KDS state. A new namespace prevents broken/old batches from older
 // versions of the page from reappearing.
-const KDS_VERSION='v5';
-const stateKey=(type,id)=>`kds_${KDS_VERSION}_${type}_${String(id)}`;
-const snapshotKey=id=>stateKey('snapshot',id);
-const batchesKey=id=>stateKey('batches',id);
-const readyKey=id=>stateKey('ready',id);
+const KDS_VERSION='v7';
+function selectedSectionKey(){
+ const el=document.getElementById('kitchenFilter');
+ return String(el?.value||'none').replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+const stateKey=(type,id,sectionKey=selectedSectionKey())=>`kds_${KDS_VERSION}_${sectionKey}_${type}_${String(id)}`;
+const snapshotKey=(id,sectionKey)=>stateKey('snapshot',id,sectionKey);
+const batchesKey=(id,sectionKey)=>stateKey('batches',id,sectionKey);
+const readyKey=(id,sectionKey)=>stateKey('ready',id,sectionKey);
 let assignedCache=new Map();
+let kitchenFetchRunning=false;
+let kitchenFetchAgain=false;
+let kitchenAlertAudioContext=null;
+const kitchenAlertedBatchIds=new Set();
+
+async function ensureKitchenAlertAudio(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return null;
+    if(!kitchenAlertAudioContext)kitchenAlertAudioContext=new AC();
+    if(kitchenAlertAudioContext.state==='suspended'){
+      try{await kitchenAlertAudioContext.resume();}catch(e){}
+    }
+    return kitchenAlertAudioContext;
+  }catch(e){return null;}
+}
+
+async function kitchenTripleBeep(){
+  const ctx=await ensureKitchenAlertAudio();
+  if(!ctx)return;
+  const base=ctx.currentTime;
+  [0,.58,1.16].forEach(offset=>{
+    try{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type='square';osc.frequency.setValueAtTime(1180,base+offset);
+      gain.gain.setValueAtTime(.0001,base+offset);
+      gain.gain.exponentialRampToValueAtTime(.85,base+offset+.02);
+      gain.gain.setValueAtTime(.85,base+offset+.30);
+      gain.gain.exponentialRampToValueAtTime(.0001,base+offset+.42);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.start(base+offset);osc.stop(base+offset+.44);
+    }catch(e){}
+  });
+  await new Promise(r=>setTimeout(r,1750));
+}
+
+function kitchenSpeakOnce(tableId){
+  return new Promise(resolve=>{
+    if(!('speechSynthesis' in window)){resolve();return;}
+    try{
+      const table=String(tableId||'N A').trim();
+      const u=new SpeechSynthesisUtterance(`Hameeds Bistro. New kitchen order from table ${table}.`);
+      u.lang='en-US';u.rate=.88;u.pitch=1;u.volume=1;
+      u.onend=resolve;u.onerror=resolve;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    }catch(e){resolve();}
+  });
+}
+
+async function playKitchenNewOrderAlert(tableId,batchId){
+  const key=String(batchId||'');
+  if(!key||kitchenAlertedBatchIds.has(key))return;
+  kitchenAlertedBatchIds.add(key);
+  await kitchenTripleBeep();
+  await kitchenSpeakOnce(tableId);
+}
+
 
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 function malaysiaDate(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
-function itemKey(i){return `${i.menu_item_id}|${Number(i.price||0).toFixed(2)}|${JSON.stringify(i.modifiers||null)}`;}
+function itemKey(i){return `${i.menu_item_id}|${Number(i.price||0).toFixed(2)}|${JSON.stringify(i.modifiers||null)}|${String(i.item_note||i.modifier_notes||'')}`;}
 function readJson(k,fallback){try{const x=localStorage.getItem(k);return x?JSON.parse(x):fallback}catch{return fallback;}}
 function writeJson(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('KDS local storage:',e);}}
 function getSnapshot(id){return readJson(snapshotKey(id),{});}
@@ -80,17 +169,18 @@ function actorLabel(order){
  if(source.includes('customer'))return order.customer_name?`Customer (${order.customer_name})`:'Customer';
  return 'Cashier';
 }
-function itemActor(item,order){return item.added_by||item.ordered_by||item.created_by_name||item.created_by||actorLabel(order);}
+function itemActor(item,order){return item.added_by_name||item.added_by||item.ordered_by||item.created_by_name||item.created_by||actorLabel(order);}
 
 async function fetchKitchenSections(){
  const sel=document.getElementById('kitchenFilter');
  const {data,error}=await _supabase.from('kitchen_sections').select('*').order('id');
  if(error){console.error('Kitchen sections:',error);return;}
- sel.innerHTML='<option value="">Select Section</option>';
+ sel.innerHTML='<option value="">Select Section</option><option value="__ALL__">ALL SECTIONS</option>';
  (data||[]).forEach(x=>sel.insertAdjacentHTML('beforeend',`<option value="${esc(x.id)}">${esc(x.section_name||x.name||'Section')}</option>`));
 }
 async function assignedCategories(sectionId){
  if(!sectionId)return new Set();
+ if(String(sectionId)==='__ALL__')return null;
  const key=String(sectionId);
  if(assignedCache.has(key))return assignedCache.get(key);
  const r=await _supabase.from('kitchen_section_categories').select('category').eq('kitchen_section_id',sectionId);
@@ -124,98 +214,127 @@ function deltaItems(items,oldMap){
 }
 function batchId(orderId){return `b_${String(orderId)}_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;}
 
-async function fetchKitchenOrders(){
- const selected=document.getElementById('kitchenFilter').value;
- const c=document.getElementById('ordersContainer');
- c.innerHTML='';
- // Nothing is displayed until a real kitchen section is selected.
- if(!selected){
+async function fetchKitchenOrders(shouldSound=false){
+ if(kitchenFetchRunning){kitchenFetchAgain=true;return;}
+ kitchenFetchRunning=true;
+ try{
+  const selected=document.getElementById('kitchenFilter').value;
+  const sectionKey=selectedSectionKey();
+  const c=document.getElementById('ordersContainer');
   c.innerHTML='';
-  return;
- }
- const mapped=await assignedCategories(selected);
- // IMPORTANT: an empty mapping means NOTHING is assigned to this section.
- // Never fall back to menu_items.kitchen_section_id because that can leak
- // unrelated categories such as Chapati/Maggi/Curry into another display.
- if(!mapped.size){
-  c.innerHTML='<div class="col-span-full text-center text-gray-500 py-12 font-semibold">No categories mapped to this kitchen section.</div>';
-  return;
- }
- // IMPORTANT: only live kitchen states. Paid/completed/cancelled/ready orders are excluded.
- const {data:orders,error}=await _supabase
-  .from('orders')
-  .select(`*,order_items(*,menu_items(name_en,category,kitchen_section_id))`)
-  .in('status',['accepted','preparing'])
-  .order('created_at',{ascending:true});
- if(error){c.innerHTML=`<div class="col-span-full text-center text-red-600 py-10">Failed to load kitchen orders: ${esc(error.message)}</div>`;return;}
- let any=false;
+  if(!selected)return;
 
- for(const o of (orders||[])){
-  let items=(o.order_items||[]).filter(i=>i.menu_items);
-  if(selected){
-   items=items.filter(i=>mapped.has(String(i.menu_items.category||'').trim().toLowerCase()));
+  const mapped=await assignedCategories(selected);
+  const isAllSections=String(selected)==='__ALL__';
+  if(!isAllSections && (!mapped || !mapped.size)){
+   c.innerHTML='<div class="col-span-full text-center text-gray-500 py-12 font-semibold">No categories mapped to this kitchen section.</div>';
+   return;
   }
-  if(!items.length)continue;
 
-  const id=String(o.id);
-  let batches=getBatches(id);
-  let ready=getReady(id);
-  const snapshot=getSnapshot(id);
-  const current=makeCurrentMap(items);
+  const {data:orders,error}=await _supabase.from('orders')
+   .select(`*,order_items(*,menu_items(name_en,category,kitchen_section_id))`)
+   .in('status',['accepted','preparing'])
+   .order('created_at',{ascending:true});
+  if(error){
+   c.innerHTML=`<div class="col-span-full text-center text-red-600 py-10">Failed to load kitchen orders: ${esc(error.message)}</div>`;
+   return;
+  }
 
-  // First time this KDS version sees a LIVE order, create exactly one batch
-  // containing its current items. This does not pull in completed/paid orders
-  // because those orders are excluded by the query above.
-  if(Object.keys(snapshot).length===0 && batches.length===0){
-   batches.push({
-    id:batchId(id),
-    order_id:id,
-    label:'NEW ORDER',
-    created_at:o.created_at||new Date().toISOString(),
-    table_id:o.table_id||o.table_number||'N/A',
-    items:items.map(i=>({...i,menu_items:{...(i.menu_items||{})}})),
-    actor:actorLabel(o)
-   });
-  }else{
-   const newItems=deltaItems(items,snapshot);
-   if(newItems.length){
-    const actors=[...new Set(newItems.map(i=>String(itemActor(i,o))).filter(Boolean))];
-    batches.push({
-     id:batchId(id),
-     order_id:id,
-     label:'NEW ITEMS',
-     created_at:new Date().toISOString(),
+  let any=false;
+  for(const o of (orders||[])){
+   const items=(o.order_items||[])
+    .filter(i=>i.menu_items && !i.is_cancelled && Number(i.quantity||0)>0)
+    .filter(i=>isAllSections || mapped.has(String(i.menu_items.category||'').trim().toLowerCase()));
+   if(!items.length)continue;
+
+   const id=String(o.id);
+   let batches=getBatchesFor(id,sectionKey);
+   let ready=getReadyFor(id,sectionKey);
+   const snapshot=getSnapshotFor(id,sectionKey);
+   const current=makeCurrentMap(items);
+
+   if(Object.keys(snapshot).length===0 && batches.length===0){
+    const firstBatch={
+     id:`initial_${id}_${sectionKey}`,
+     order_id:id,label:'NEW ORDER',
+     created_at:o.created_at||new Date().toISOString(),
      table_id:o.table_id||o.table_number||'N/A',
-     items:newItems.map(i=>({...i,menu_items:{...(i.menu_items||{})}})),
-     actor:actors.length===1?actors[0]:actorLabel(o)
-    });
+     items:items.map(i=>({...i,menu_items:{...(i.menu_items||{})}})),
+     actor:actorLabel(o)
+    };
+    batches=[firstBatch];
+    if(shouldSound)playKitchenNewOrderAlert(firstBatch.table_id,firstBatch.id);
+   }else{
+    const newItems=deltaItems(items,snapshot);
+    if(newItems.length){
+     const signature=newItems.map(i=>itemKey(i)+':'+Number(i.quantity||0)).sort().join('||');
+     const deltaId=`delta_${id}_${sectionKey}_${simpleHash(signature+'|'+JSON.stringify(current))}`;
+     if(!batches.some(b=>String(b.id)===deltaId)){
+      const actors=[...new Set(newItems.map(i=>String(itemActor(i,o))).filter(Boolean))];
+      const deltaBatch={
+       id:deltaId,order_id:id,label:'NEW ITEMS',created_at:new Date().toISOString(),
+       table_id:o.table_id||o.table_number||'N/A',
+       items:newItems.map(i=>({...i,menu_items:{...(i.menu_items||{})}})),
+       actor:actors.length===1?actors[0]:actorLabel(o)
+      };
+      batches.push(deltaBatch);
+      if(shouldSound)playKitchenNewOrderAlert(deltaBatch.table_id,deltaBatch.id);
+     }
+    }
+   }
+
+   saveSnapshotFor(id,current,sectionKey);
+
+   const uniq=new Map();
+   for(const b of batches)if(!uniq.has(String(b.id)))uniq.set(String(b.id),b);
+   batches=[...uniq.values()];
+
+   const batchIds=new Set(batches.map(b=>String(b.id)));
+   ready=ready.filter(x=>batchIds.has(String(x)));
+   saveReadyFor(id,ready,sectionKey);
+   saveBatchesFor(id,batches,sectionKey);
+
+   for(const b of batches.filter(b=>!ready.includes(String(b.id)))){
+    any=true;
+    c.insertAdjacentHTML('beforeend',receiptHtml(o,b,0,b.actor));
    }
   }
-
-  // Snapshot is ALWAYS the current database quantity. This is what prevents
-  // already displayed items from coming back when the same order is edited.
-  saveSnapshot(id,current);
-
-  // Remove a ready marker only if its batch no longer exists; otherwise retain it.
-  const batchIds=new Set(batches.map(b=>String(b.id)));
-  ready=ready.filter(x=>batchIds.has(String(x)));
-  saveReady(id,ready);
-  saveBatches(id,batches);
-
-  const visible=batches.filter(b=>!ready.includes(String(b.id)));
-  visible.forEach((b,index)=>{
-   any=true;
-   c.insertAdjacentHTML('beforeend',receiptHtml(o,b,index,b.actor));
-  });
+  if(!any)c.innerHTML='<div class="col-span-full text-center text-gray-500 py-12 font-semibold">No current kitchen orders.</div>';
+ }finally{
+  kitchenFetchRunning=false;
+  if(kitchenFetchAgain){kitchenFetchAgain=false;setTimeout(fetchKitchenOrders,60);}
  }
- if(!any)c.innerHTML='<div class="col-span-full text-center text-gray-500 py-12 font-semibold">No current kitchen orders.</div>';
+}
+function simpleHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)}
+function getSnapshotFor(id,s){return readJson(snapshotKey(id,s),{})}
+function saveSnapshotFor(id,v,s){writeJson(snapshotKey(id,s),v)}
+function getBatchesFor(id,s){return readJson(batchesKey(id,s),[])}
+function saveBatchesFor(id,v,s){writeJson(batchesKey(id,s),v)}
+function getReadyFor(id,s){return readJson(readyKey(id,s),[])}
+function saveReadyFor(id,v,s){writeJson(readyKey(id,s),v)}
+
+
+function kitchenModifierLabels(value){
+ const mods=Array.isArray(value)?value:[];
+ return mods.map(x=>{
+   if(typeof x==='string')return x.trim();
+   if(!x || typeof x!=='object')return '';
+   const text=String(x.text||x.name||x.modifier_name||x.label||'Modifier').trim();
+   const price=Number(x.price??x.modifier_price??x.amount??0);
+   return price!==0 ? `${text} (${price>0?'+':''}RM${price.toFixed(2)})` : text;
+ }).filter(Boolean);
 }
 
 function receiptHtml(o,b,index,actor){
  const orderTime=new Date(o.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
  const batchTime=new Date(b.created_at||o.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
  const isNew=b.label==='NEW ITEMS';
- const rows=(b.items||[]).map(i=>`<div class="item-row"><span class="font-bold">${esc(i.menu_items?.name_en||'Item')}</span><span class="font-extrabold text-red-600">× ${Number(i.quantity||0)}</span></div>`).join('');
+ const rows=(b.items||[]).map(i=>{
+ const note=String(i.item_note||i.modifier_notes||'').trim();
+ const mods=kitchenModifierLabels(i.modifiers);
+ const status=String(i.item_status||'processing').toLowerCase()==='ready'?'READY':'PROCESSING';
+ return `<div class="item-row"><div class="min-w-0"><span class="font-bold">${esc(i.menu_items?.name_en||'Item')}</span><div class="text-[10px] mt-1 font-extrabold ${status==='READY'?'text-emerald-700':'text-amber-700'}">${status}</div>${mods.length?`<div class="kitchen-modifier-line text-xs mt-1">MODIFY: ${esc(mods.join(', '))}</div>`:''}${note?`<div class="kitchen-note-line text-xs mt-1">NOTE: ${esc(note)}</div>`:''}</div><span class="font-extrabold text-red-600">× ${Number(i.quantity||0)}</span></div>`;
+}).join('');
  const safeOrder=JSON.stringify(String(o.id));
  const safeBatch=JSON.stringify(String(b.id));
  return `<article class="receipt ${isNew?'new-receipt':''}">
@@ -237,15 +356,32 @@ function receiptHtml(o,b,index,actor){
 
 // IMPORTANT: Ready is PER RECEIPT/BATCH. It never updates the whole order.
 async function markReady(orderId,batchIdValue){
- const id=String(orderId), bid=String(batchIdValue);
- const ready=getReady(id);
- if(!ready.includes(bid))ready.push(bid);
- saveReady(id,ready);
- // Re-render immediately. No order.status update is performed here, so other
- // receipts from the same order remain visible.
- await fetchKitchenOrders();
-}
+ const id=String(orderId),bid=String(batchIdValue),sectionKey=selectedSectionKey();
+ const batches=getBatchesFor(id,sectionKey);
+ const batch=batches.find(b=>String(b.id)===bid);
+ if(!batch){alert('Kitchen receipt not found. Please refresh and try again.');return;}
 
+ const itemIds=[...new Set((batch.items||[]).map(i=>i.id).filter(v=>v!==null&&v!==undefined))];
+ if(!itemIds.length){alert('No database item IDs found for this receipt.');return;}
+
+ let s={};try{s=kitchenSession()||{};}catch(e){}
+ const now=new Date().toISOString();
+ const readyBy=s.full_name||s.name||s.email||'Kitchen';
+
+ let r=await _supabase.from('order_items').update({
+   item_status:'ready',
+   ready_at:now,
+   ready_by_name:readyBy,
+   ready_by_email:s.email||null
+ }).in('id',itemIds);
+ if(r.error)r=await _supabase.from('order_items').update({item_status:'ready'}).in('id',itemIds);
+ if(r.error){alert('Could not mark items ready: '+r.error.message);return;}
+
+ const ready=getReadyFor(id,sectionKey);
+ if(!ready.includes(bid))ready.push(bid);
+ saveReadyFor(id,ready,sectionKey);
+ await fetchKitchenOrders(false);
+}
 function openHistory(){
  document.getElementById('historyDate').value=malaysiaDate();
  document.getElementById('historyModal').classList.remove('hidden');
@@ -255,47 +391,35 @@ function closeHistory(){document.getElementById('historyModal').classList.add('h
 async function fetchHistory(){
  const d=document.getElementById('historyDate').value||malaysiaDate();
  const c=document.getElementById('historyContainer');
+ const sectionKey=selectedSectionKey();
  c.innerHTML='';
+ if(sectionKey==='none'){c.innerHTML='<div class="col-span-full text-center text-gray-500 py-10">Select a kitchen section first.</div>';return;}
 
- // History is receipt/batch based: only batches that THIS KDS marked READY
- // are shown. It is deliberately not based on orders.status, because an
- // order can contain several separate kitchen receipts.
  const allReady=[];
+ const prefix=`kds_${KDS_VERSION}_${sectionKey}_batches_`;
  const keys=[];
- for(let i=0;i<localStorage.length;i++){
-  const k=localStorage.key(i)||'';
-  if(k.startsWith(`kds_${KDS_VERSION}_batches_`)) keys.push(k);
- }
+ for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';if(k.startsWith(prefix))keys.push(k)}
  for(const k of keys){
-  const orderId=k.split(`kds_${KDS_VERSION}_batches_`)[1];
-  const batches=readJson(k,[]);
-  const ready=readJson(readyKey(orderId),[]).map(String);
+  const orderId=k.slice(prefix.length),batches=readJson(k,[]);
+  const ready=readJson(readyKey(orderId,sectionKey),[]).map(String),seen=new Set();
   for(const b of batches){
-   if(!ready.includes(String(b.id))) continue;
-   const batchDate=malaysiaDateFor(b.created_at);
-   if(batchDate!==d) continue;
+   const bid=String(b.id);
+   if(seen.has(bid)||!ready.includes(bid))continue;
+   seen.add(bid);
+   if(malaysiaDateFor(b.created_at)!==d)continue;
    allReady.push({orderId,b});
   }
  }
  allReady.sort((a,b)=>new Date(b.b.created_at||0)-new Date(a.b.created_at||0));
- if(!allReady.length){
-  c.innerHTML='<div class="col-span-full text-center text-gray-500 py-10">No READY receipt history for this date.</div>';
-  return;
- }
+ if(!allReady.length){c.innerHTML='<div class="col-span-full text-center text-gray-500 py-10">No READY receipt history for this date and section.</div>';return;}
  for(const entry of allReady){
-  const b=entry.b;
-  // Use stored batch snapshot; no fresh order-status query is needed.
-  const orderTime=new Date(b.created_at||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const rows=(b.items||[]).map(i=>`<div class="item-row"><span class="font-bold">${esc(i.menu_items?.name_en||i.item_name||'Item')}</span><b>× ${Number(i.quantity||0)}</b></div>`).join('');
-  c.insertAdjacentHTML('beforeend',`<article class="receipt">
-   <div class="receipt-head">
-    <div class="flex justify-between gap-2"><span class="font-extrabold text-lg">#${esc(entry.orderId)}</span><span class="text-xs font-bold">${esc(b.label||'READY')}</span></div>
-    <div class="text-sm mt-1">Table: <b>${esc(b.table_id||b.table_number||'N/A')}</b></div>
-    <div class="text-xs text-slate-300 mt-1">Receipt Time: ${orderTime}</div>
-    <div class="text-xs text-slate-300 mt-1">Ordered By: <b class="text-white">${esc(b.actor||'')}</b></div>
-   </div>
-   <div class="receipt-body">${rows}<div class="mt-3 text-xs font-extrabold text-emerald-700">✓ READY</div></div>
-  </article>`);
+  const b=entry.b,receiptTime=new Date(b.created_at||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const rows=(b.items||[]).map(i=>{
+   const note=String(i.item_note||i.modifier_notes||'').trim();
+   const mods=kitchenModifierLabels(i.modifiers);
+   return `<div class="item-row"><div class="min-w-0"><span class="font-bold">${esc(i.menu_items?.name_en||i.item_name||'Item')}</span>${mods.length?`<div class="kitchen-modifier-line text-xs mt-1">MODIFY: ${esc(mods.join(', '))}</div>`:''}${note?`<div class="kitchen-note-line text-xs mt-1">NOTE: ${esc(note)}</div>`:''}</div><b>× ${Number(i.quantity||0)}</b></div>`;
+  }).join('');
+  c.insertAdjacentHTML('beforeend',`<article class="receipt"><div class="receipt-head"><div class="flex justify-between gap-2"><span class="font-extrabold text-lg">#${esc(entry.orderId)}</span><span class="text-xs font-bold">${esc(b.label||'READY')}</span></div><div class="text-sm mt-1">Table: <b>${esc(b.table_id||'N/A')}</b></div><div class="text-xs text-slate-300 mt-1">Receipt Time: ${receiptTime}</div><div class="text-xs text-slate-300 mt-1">Ordered By: <b class="text-white">${esc(b.actor||'')}</b></div></div><div class="receipt-body">${rows}<div class="mt-3 text-xs font-extrabold text-emerald-700">✓ READY</div></div></article>`);
  }
 }
 function malaysiaDateFor(value){
@@ -303,17 +427,81 @@ function malaysiaDateFor(value){
 }
 
 function subscribeRealtime(){
- _supabase.channel('kds-orders-v4')
-  .on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>fetchKitchenOrders())
-  .on('postgres_changes',{event:'*',schema:'public',table:'order_items'},()=>fetchKitchenOrders())
+ _supabase.channel('kds-orders-v8-sound')
+  .on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>fetchKitchenOrders(true))
+  .on('postgres_changes',{event:'*',schema:'public',table:'order_items'},()=>fetchKitchenOrders(true))
   .subscribe(status=>{document.getElementById('liveStatus').textContent=status==='SUBSCRIBED'?'REALTIME':'RECONNECTING';});
 }
 
-(async()=>{
- await fetchKitchenSections();
+const KITCHEN_SESSION_KEY='kitchen_session';
+let kitchenRealtimeStarted=false;
+function kitchenSession(){try{return JSON.parse(localStorage.getItem(KITCHEN_SESSION_KEY)||'null')}catch(e){return null}}
+function kitchenRoleAllowed(role){return ['cook','manager','admin'].includes(String(role||'').trim().toLowerCase())}
+function kitchenName(p){return p?.full_name||p?.name||p?.email||'Staff'}
+function showKitchenLogin(message=''){
+ document.getElementById('kitchenLoginScreen').classList.remove('hidden');
+ const err=document.getElementById('kitchenLoginError');
+ if(message){err.textContent=message;err.classList.remove('hidden')}else{err.textContent='';err.classList.add('hidden')}
+}
+function showKitchenApp(s){
+ document.getElementById('kitchenLoginScreen').classList.add('hidden');
+ document.getElementById('kitchenUserName').textContent=kitchenName(s);
+ document.getElementById('kitchenUserRole').textContent=s.role||'';
+}
+async function validateKitchenSession(){
+ const s=kitchenSession();if(!s?.email)return null;
+ const {data,error}=await _supabase.from('profiles').select('*').eq('email',s.email).maybeSingle();
+ if(error||!data||!kitchenRoleAllowed(data.role)){localStorage.removeItem(KITCHEN_SESSION_KEY);return null}
+ localStorage.setItem(KITCHEN_SESSION_KEY,JSON.stringify(data));return data;
+}
+async function startKitchenAfterLogin(s){
+ showKitchenApp(s);await fetchKitchenSections();
+ if(!kitchenRealtimeStarted){subscribeRealtime();kitchenRealtimeStarted=true}
  await fetchKitchenOrders();
- subscribeRealtime();
-})();
+}
+document.getElementById('kitchenLoginForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const email=document.getElementById('kitchenLoginEmail').value.trim(),password=document.getElementById('kitchenLoginPassword').value,err=document.getElementById('kitchenLoginError');
+ err.classList.add('hidden');
+ const {data,error}=await _supabase.from('profiles').select('*').eq('email',email).eq('password',password).maybeSingle();
+ if(error||!data){err.textContent='Invalid email or password.';err.classList.remove('hidden');return}
+ if(!kitchenRoleAllowed(data.role)){err.textContent='Access denied. Only Cook, Manager and Admin can login to Kitchen Display.';err.classList.remove('hidden');return}
+ localStorage.setItem(KITCHEN_SESSION_KEY,JSON.stringify(data));document.getElementById('kitchenLoginPassword').value='';await ensureKitchenAlertAudio();await startKitchenAfterLogin(data);
+});
+window.kitchenLogout=function(){
+ localStorage.removeItem(KITCHEN_SESSION_KEY);
+ document.getElementById('kitchenFilter').value='';document.getElementById('ordersContainer').innerHTML='';
+ showKitchenLogin('You have been logged out. Please login again.');
+};
+function kitchenLocalDate(){const n=new Date(),y=n.getFullYear(),m=String(n.getMonth()+1).padStart(2,'0'),d=String(n.getDate()).padStart(2,'0');return`${y}-${m}-${d}`}
+window.doKitchenCheckIn=async function(){
+ const s=kitchenSession();if(!s?.email){showKitchenLogin('Please login first.');return}
+ const workDate=kitchenLocalDate();
+ const {data:open,error}=await _supabase.from('attendance').select('id').eq('staff_email',s.email).eq('work_date',workDate).not('check_in','is',null).is('check_out',null).limit(1);
+ if(error){alert('Check-In failed: '+error.message);return}
+ if(open?.length){alert('You are already checked in today.');return}
+ const ins=await _supabase.from('attendance').insert([{staff_id:s.id!=null?String(s.id):null,staff_name:kitchenName(s),staff_email:s.email,role:s.role||'Cook',work_date:workDate,check_in:new Date().toISOString(),check_out:null,status:'Present'}]);
+ if(ins.error){alert('Check-In failed: '+ins.error.message);return}
+ alert(`Check-In saved successfully for ${kitchenName(s)}.`);
+};
+window.doKitchenCheckOut=async function(){
+ const s=kitchenSession();if(!s?.email){showKitchenLogin('Please login first.');return}
+ const workDate=kitchenLocalDate();
+ const {data,error}=await _supabase.from('attendance').select('id').eq('staff_email',s.email).eq('work_date',workDate).not('check_in','is',null).is('check_out',null).order('check_in',{ascending:false}).limit(1);
+ if(error){alert('Check-Out failed: '+error.message);return}
+ if(!data?.length){alert('No open Check-In record found for today.');return}
+ const upd=await _supabase.from('attendance').update({check_out:new Date().toISOString(),status:'Completed'}).eq('id',data[0].id);
+ if(upd.error){alert('Check-Out failed: '+upd.error.message);return}
+ alert('Check-Out saved successfully.');
+};
+(async()=>{const s=await validateKitchenSession();if(!s){showKitchenLogin();return}await startKitchenAfterLogin(s)})();
 </script>
+
+<style id="hameeds-mobile-responsive-final">
+html,body{max-width:100%;overflow-x:hidden}button,input,select,textarea{touch-action:manipulation}img,svg,canvas,video{max-width:100%}
+@media(max-width:768px){html,body{width:100%!important;min-width:0!important}body{overflow-x:hidden!important}button{min-height:42px}input,select,textarea{font-size:16px!important;max-width:100%!important}.fixed{max-width:100vw!important}#notificationModal,#orderDetailsModal,#posSystemModal,#newOrderSetupModal,#historyModal{padding-left:max(6px,env(safe-area-inset-left))!important;padding-right:max(6px,env(safe-area-inset-right))!important}#notificationModal>div,#orderDetailsModal>div,#posSystemModal>div,#newOrderSetupModal>div,#historyModal>div{max-width:100vw!important}}
+@supports(padding:max(0px)){body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}}
+</style>
+
 </body>
 </html>
