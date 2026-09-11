@@ -2078,9 +2078,38 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
             }
         }
 
+        function malaysiaClockMinutes() {
+            try {
+                const parts = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+                const h = Number(parts.find(x=>x.type==='hour')?.value || 0);
+                const m = Number(parts.find(x=>x.type==='minute')?.value || 0);
+                return h*60+m;
+            } catch (_) {
+                const d=new Date(); return d.getHours()*60+d.getMinutes();
+            }
+        }
+        function scheduleTimeMinutes(v){const p=String(v||'').slice(0,5).split(':').map(Number);return (p[0]||0)*60+(p[1]||0);}
+        function scheduleIsOpen(row, nowMin){
+            const a=scheduleTimeMinutes(row.start_time), b=scheduleTimeMinutes(row.end_time);
+            if(a===b)return true;
+            return a<b ? (nowMin>=a && nowMin<b) : (nowMin>=a || nowMin<b);
+        }
+        function isMenuItemVisibleBySchedule(item, schedules){
+            if(!Array.isArray(schedules)||!schedules.length)return true;
+            const own=schedules.find(r=>String(r.scope_type||'').toLowerCase()==='item' && String(r.menu_item_id)===String(item.id));
+            const cat=schedules.find(r=>String(r.scope_type||'').toLowerCase()==='category' && String(r.category_name||'')===String(item.category||''));
+            const rule=own||cat;
+            return !rule || scheduleIsOpen(rule,malaysiaClockMinutes());
+        }
+
         async function fetchMenu() {
             console.log("Fetching menu from Supabase...");
-            const { data, error } = await _supabase.from('menu_items').select('*');
+            const [{ data, error }, scheduleResult] = await Promise.all([
+                _supabase.from('menu_items').select('*'),
+                _supabase.from('menu_schedules').select('*').eq('enabled', true)
+            ]);
+            const activeMenuSchedules = scheduleResult?.error ? [] : (scheduleResult?.data || []);
+            if (scheduleResult?.error) console.warn('Menu schedule load skipped:', scheduleResult.error.message);
             
             if (error) {
                 console.error('Supabase Fetch Error Details:', error);
@@ -2090,7 +2119,7 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
             
             console.log('Fetched Menu Data:', data);
             menuItems = (data || [])
-                .filter(item => item.is_available !== false)
+                .filter(item => item.is_available !== false && isMenuItemVisibleBySchedule(item, activeMenuSchedules))
                 .sort((a, b) =>
                     (Number(a.category_sort_order)||999999)-(Number(b.category_sort_order)||999999) ||
                     String(a.category || '').localeCompare(String(b.category || ''), undefined, { numeric: true, sensitivity: 'base' }) ||
