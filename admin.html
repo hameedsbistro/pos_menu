@@ -285,7 +285,8 @@
       <button data-section="summary" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 nav-active">📊 Summary</button>
       <button data-section="menu" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🍽️ Menu Management</button>
       <button data-section="category-management" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🗂️ Category Management</button>
-      <button data-section="modifiers" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🧩 Modifier Management</button>
+      <button data-section="menu-schedule" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">⏰ Menu Scheduling</button>
+       <button data-section="modifiers" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🧩 Modifier Management</button>
       <button data-section="table-qr" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🔳 Table QR Printing</button>
       <button data-section="reports" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">📑 Reports</button>
       <button data-section="order-history" class="nav w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800">🧾 Order History</button>
@@ -370,6 +371,25 @@
         <div id="categoryManagementList" class="space-y-4">
           <div class="card p-4 text-sm text-slate-500">Select a category above.</div>
         </div>
+      </section>
+
+      <!-- MENU SCHEDULING -->
+      <section id="section-menu-schedule" class="section hiddenx space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div><h2 class="text-2xl font-black">Menu Scheduling</h2><p class="text-xs text-slate-500">Set daily customer-menu visibility times for a whole category or one item. Manual Active/Inactive always has priority.</p></div>
+          <button onclick="loadMenuScheduling()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button>
+        </div>
+        <div class="card p-4 space-y-4">
+          <div class="grid md:grid-cols-2 gap-3">
+            <div><label class="text-xs font-black">Schedule For</label><select id="scheduleScope" onchange="scheduleScopeChanged()" class="mt-1 w-full border rounded-xl px-3 py-3"><option value="category">Whole Category</option><option value="item">Individual Item</option></select></div>
+            <div><label class="text-xs font-black">Category</label><select id="scheduleCategory" onchange="scheduleCategoryChanged()" class="mt-1 w-full border rounded-xl px-3 py-3"><option value="">Select category...</option></select></div>
+          </div>
+          <div id="scheduleItemWrap" class="hidden"><label class="text-xs font-black">Menu Item</label><select id="scheduleItem" class="mt-1 w-full border rounded-xl px-3 py-3"><option value="">Select item...</option></select></div>
+          <div class="grid grid-cols-2 gap-3"><div><label class="text-xs font-black">Show From</label><input id="scheduleStart" type="time" value="10:00" class="mt-1 w-full border rounded-xl px-3 py-3"></div><div><label class="text-xs font-black">Hide After</label><input id="scheduleEnd" type="time" value="11:00" class="mt-1 w-full border rounded-xl px-3 py-3"></div></div>
+          <div class="flex flex-wrap gap-2"><button onclick="saveMenuSchedule()" class="bg-emerald-600 text-white px-5 py-3 rounded-xl font-black">Save Schedule</button><button onclick="clearMenuScheduleForm()" class="bg-slate-200 px-5 py-3 rounded-xl font-bold">Clear</button></div>
+          <p class="text-[11px] text-slate-500">Times use Malaysia time. Overnight schedules such as 22:00 → 06:00 are supported. An item-specific schedule overrides its category schedule.</p>
+        </div>
+        <div class="card p-4"><div class="flex items-center justify-between mb-3"><h3 class="font-black">Saved Schedules</h3><span id="scheduleStatus" class="text-xs text-slate-400"></span></div><div id="scheduleList" class="space-y-2"></div></div>
       </section>
 
       <!-- MODIFIER MANAGEMENT -->
@@ -587,7 +607,7 @@ async function login(e){e.preventDefault();const email=document.getElementById('
  const {data,error}=await db.from(PROFILE_TABLE).select('*').eq('email',email).eq('password',password).maybeSingle();
  if(error||!data||!roleAllowed(data.role)){er.textContent='Invalid login or unauthorized role. Only Admin and Manager can access this panel.';er.classList.remove('hiddenx');return}
  session=data;sessionStorage.setItem('hameeds_admin_session',JSON.stringify(data));showApp();}
-function showApp(){document.getElementById('loginSection').classList.add('hiddenx');document.getElementById('app').classList.remove('hiddenx');const name=getName(session);document.getElementById('headerUser').textContent=name;document.getElementById('headerRole').textContent=session.role;document.getElementById('sideUser').textContent=name;document.getElementById('sideRole').textContent=session.role;document.getElementById('reportDate').value=today();document.getElementById('attendanceMonth').value=monthNow();loadSummary();loadStaff();loadMenu();loadStaffDropdown();loadKitchenSections();initializeEmailSettings();loadCustomerOrderingSetting();}
+function showApp(){document.getElementById('loginSection').classList.add('hiddenx');document.getElementById('app').classList.remove('hiddenx');const name=getName(session);document.getElementById('headerUser').textContent=name;document.getElementById('headerRole').textContent=session.role;document.getElementById('sideUser').textContent=name;document.getElementById('sideRole').textContent=session.role;document.getElementById('reportDate').value=today();document.getElementById('attendanceMonth').value=monthNow();loadSummary();loadStaff();loadMenu();loadStaffDropdown();loadKitchenSections();initializeEmailSettings();loadCustomerOrderingSetting();loadMenuScheduling();}
 function adminLogout(){session=null;sessionStorage.removeItem('hameeds_admin_session');location.reload()}
 
 /* =========================================================
@@ -1587,7 +1607,10 @@ function printSelectedCloseReport(){
   if(!w){toast('Print popup was blocked.',false);return;}
   const css=`@page{size:auto;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}body{font-size:12px}#adminCloseReportPrintable{width:100%;padding:8mm;border:0;box-shadow:none}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.bg-slate-50,.bg-red-50{border:1px solid #000;padding:3mm;border-radius:0}h3{text-align:center;font-size:20px;margin:0 0 3mm}h4{font-size:13px;border-bottom:1px solid #000;padding-bottom:2px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:5px;text-align:left}.text-xs{font-size:10px}.text-sm{font-size:11px}.space-y-5>*+*{margin-top:5mm}.overflow-x-auto{overflow:visible!important}`;
   w.document.open();
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Hameeds Bistro Close Report</title><style>${css}</style></head><body>${copy.outerHTML}</body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Hameeds Bistro Close Report</title><style>${css}</style></head><body>${copy.outerHTML}
+
+
+</body></html>`);
   w.document.close();
   setTimeout(()=>{w.focus();w.print();},300);
 }
@@ -2161,7 +2184,10 @@ async function printAdminInvoice(invoiceId,orderId){
     </div>
     <div class="status">STATUS: PAID</div>
   </div>
-  </body></html>`;
+  
+
+
+</body></html>`;
 
   w.document.open();
   w.document.write(html);
@@ -2179,7 +2205,10 @@ function printAdminOrderHistory(){
   if(!w){toast('Print popup was blocked.',false);return;}
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Sales Report</title>
   <style>@page{margin:8mm}body{font-family:Arial;margin:0;color:#000}h1{text-align:center;font-size:20px}p{text-align:center;font-size:11px}table{width:100%;border-collapse:collapse;font-size:10px}th,td{border:1px solid #777;padding:5px;text-align:left}</style>
-  </head><body><h1>HAMEEDS BISTRO — SALES REPORT</h1><p>${from} to ${to}</p><p>${summary}</p>${table.outerHTML}</body></html>`);
+  </head><body><h1>HAMEEDS BISTRO — SALES REPORT</h1><p>${from} to ${to}</p><p>${summary}</p>${table.outerHTML}
+
+
+</body></html>`);
   w.document.close();
   setTimeout(()=>{w.focus();w.print();},250);
 }
@@ -2403,7 +2432,10 @@ function printAdminTableQr(){
           }
         </style>
       </head>
-      <body><img id="qrPrintImage" src="${data}" alt="Table ${table} QR Label"></body>
+      <body><img id="qrPrintImage" src="${data}" alt="Table ${table} QR Label">
+
+
+</body>
       </html>`);
     doc.close();
 
@@ -2427,5 +2459,25 @@ function printAdminTableQr(){
 }
 </script>
 
+
+
+
+<script id="menu-scheduling-admin-final">
+const MENU_SCHEDULE_TABLE='menu_schedules';
+let menuSchedules=[];
+function scheduleCategories(){return [...new Set((menuData||[]).map(x=>String(x.category||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));}
+function populateScheduleCategories(){const el=document.getElementById('scheduleCategory');if(!el)return;const keep=el.value;el.innerHTML='<option value="">Select category...</option>'+scheduleCategories().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if([...el.options].some(o=>o.value===keep))el.value=keep;scheduleCategoryChanged();}
+function scheduleScopeChanged(){const scope=document.getElementById('scheduleScope')?.value||'category';document.getElementById('scheduleItemWrap')?.classList.toggle('hidden',scope!=='item');scheduleCategoryChanged();}
+function scheduleCategoryChanged(){const cat=document.getElementById('scheduleCategory')?.value||'';const item=document.getElementById('scheduleItem');if(!item)return;const rows=(menuData||[]).filter(x=>String(x.category||'')===cat).sort((a,b)=>String(a.name_en||'').localeCompare(String(b.name_en||''),undefined,{numeric:true}));item.innerHTML='<option value="">Select item...</option>'+rows.map(x=>`<option value="${x.id}">${esc(x.name_en||('Item #'+x.id))}</option>`).join('');}
+function clearMenuScheduleForm(){const a=document.getElementById('scheduleScope'),b=document.getElementById('scheduleCategory'),c=document.getElementById('scheduleItem');if(a)a.value='category';if(b)b.value='';if(c)c.value='';const st=document.getElementById('scheduleStart'),en=document.getElementById('scheduleEnd');if(st)st.value='10:00';if(en)en.value='11:00';scheduleScopeChanged();}
+async function loadMenuScheduling(){populateScheduleCategories();const list=document.getElementById('scheduleList');if(list)list.innerHTML='<div class="text-sm text-slate-400">Loading...</div>';const {data,error}=await db.from(MENU_SCHEDULE_TABLE).select('*').order('scope_type',{ascending:true}).order('category_name',{ascending:true});if(error){if(list)list.innerHTML='<div class="text-sm text-red-600">'+esc(error.message)+'</div>';return;}menuSchedules=data||[];renderMenuSchedules();}
+function renderMenuSchedules(){const list=document.getElementById('scheduleList');if(!list)return;if(!menuSchedules.length){list.innerHTML='<div class="text-sm text-slate-400">No schedules saved yet.</div>';return;}const mm=new Map((menuData||[]).map(x=>[String(x.id),x]));list.innerHTML=menuSchedules.map(r=>{const item=mm.get(String(r.menu_item_id));const title=r.scope_type==='item'?(item?.name_en||('Item #'+r.menu_item_id)):(r.category_name||'Category');return `<div class="border rounded-xl p-3 flex flex-wrap items-center justify-between gap-3"><div><div class="font-black">${esc(title)}</div><div class="text-xs text-slate-500">${r.scope_type==='item'?'ITEM · '+esc(r.category_name||''):'CATEGORY'} · ${esc(String(r.start_time||'').slice(0,5))} → ${esc(String(r.end_time||'').slice(0,5))} · ${r.enabled===false?'OFF':'ON'}</div></div><div class="flex gap-2"><button onclick="toggleMenuSchedule(${Number(r.id)},${r.enabled===false?'true':'false'})" class="px-3 py-2 rounded-lg text-xs font-bold ${r.enabled===false?'bg-slate-200':'bg-emerald-100 text-emerald-800'}">${r.enabled===false?'Enable':'Disable'}</button><button onclick="deleteMenuSchedule(${Number(r.id)})" class="bg-red-100 text-red-700 px-3 py-2 rounded-lg text-xs font-bold">Delete</button></div></div>`;}).join('');}
+async function saveMenuSchedule(){const scope=document.getElementById('scheduleScope').value,cat=document.getElementById('scheduleCategory').value,itemId=document.getElementById('scheduleItem').value,start=document.getElementById('scheduleStart').value,end=document.getElementById('scheduleEnd').value;if(!cat)return toast('Select a category.',false);if(scope==='item'&&!itemId)return toast('Select an item.',false);if(!start||!end)return toast('Select both start and end time.',false);const payload={scope_type:scope,category_name:cat,menu_item_id:scope==='item'?Number(itemId):null,start_time:start,end_time:end,enabled:true,updated_at:new Date().toISOString()};let q=db.from(MENU_SCHEDULE_TABLE).select('id').eq('scope_type',scope);q=scope==='item'?q.eq('menu_item_id',Number(itemId)):q.eq('category_name',cat).is('menu_item_id',null);const found=await q.limit(1).maybeSingle();let res;if(found.data?.id)res=await db.from(MENU_SCHEDULE_TABLE).update(payload).eq('id',found.data.id);else res=await db.from(MENU_SCHEDULE_TABLE).insert(payload);if(res.error)return toast('Schedule save failed: '+res.error.message,false);toast('Menu schedule saved.');await loadMenuScheduling();}
+async function toggleMenuSchedule(id,enabled){const {error}=await db.from(MENU_SCHEDULE_TABLE).update({enabled:!!enabled,updated_at:new Date().toISOString()}).eq('id',id);if(error)return toast(error.message,false);await loadMenuScheduling();}
+async function deleteMenuSchedule(id){if(!confirm('Delete this schedule?'))return;const {error}=await db.from(MENU_SCHEDULE_TABLE).delete().eq('id',id);if(error)return toast(error.message,false);toast('Schedule deleted.');await loadMenuScheduling();}
+// Keep schedule selectors synchronized whenever menu data is refreshed.
+const _scheduleOriginalLoadMenu=loadMenu;
+loadMenu=async function(){const r=await _scheduleOriginalLoadMenu.apply(this,arguments);populateScheduleCategories();return r;};
+</script>
 </body>
 </html>
