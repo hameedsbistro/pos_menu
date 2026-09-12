@@ -403,6 +403,47 @@ body.customer-menu-only #cartBar {
 <style id="home-slide-click-hint">
   #homeTop15SlideImage:active{transform:scale(.997)}
 </style>
+
+<style id="customer-out-of-schedule-style">
+  .professional-menu-card.out-of-schedule{
+    opacity:.82;
+    background:#f8fafc;
+    border-color:#cbd5e1!important;
+  }
+  .out-of-schedule-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+    margin:.2rem 0 .55rem;
+    padding:.35rem .65rem;
+    border-radius:999px;
+    background:#fff7ed;
+    border:1px solid #fdba74;
+    color:#c2410c;
+    font-size:.72rem;
+    line-height:1;
+    font-weight:900;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+  }
+  .out-of-schedule-action{
+    width:100%;
+    min-height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:.6rem;
+    background:#e2e8f0!important;
+    color:#64748b!important;
+    border:1px solid #cbd5e1!important;
+    font-size:.78rem;
+    font-weight:900;
+    cursor:not-allowed!important;
+    user-select:none;
+    opacity:.75;
+    pointer-events:none;
+  }
+</style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans">
 
@@ -4123,6 +4164,13 @@ function getMalaysiaSqlTimestamp(){
   function menuCardHtml(item){
     const price=currentOrderType==='takeaway'&&item.takeaway_price!=null
       ?Number(item.takeaway_price):Number(item.dine_in_price||0);
+    const outOfSchedule=item._out_of_schedule===true;
+    const scheduleBadge=outOfSchedule
+      ? `<div class="out-of-schedule-badge">⏰ Out of Schedule</div>`
+      : '';
+    const orderAction=outOfSchedule
+      ? `<button type="button" class="out-of-schedule-action" disabled aria-disabled="true" title="Out of Schedule">Add to Cart</button>`
+      : quantityHtml(item.id,price);
     const itemName=getMenuDisplayName(item);
     const imgSrc=item.image_url||'images/logo.png';
     const soldText=item.sold_quantity
@@ -4131,8 +4179,8 @@ function getMalaysiaSqlTimestamp(){
       ?window.getDescriptionDisplayText(item)
       :(item.item_description||window.itemDescriptionMap?.[String(item.id)]||'');
 
-    return `<div class="professional-menu-card bg-white rounded-xl shadow p-4 flex justify-between items-center relative border border-gray-100"
-      data-menu-item-id="${Number(item.id)}">
+    return `<div class="professional-menu-card ${outOfSchedule?'out-of-schedule':''} bg-white rounded-xl shadow p-4 flex justify-between items-center relative border border-gray-100"
+      data-menu-item-id="${Number(item.id)}" data-out-of-schedule="${outOfSchedule?'1':'0'}">
       <div class="flex-1 pr-3 min-w-0">
         <h3 class="menu-item-title font-bold text-gray-800 text-base mb-1">
           ${dualItemNameHtml(
@@ -4142,12 +4190,13 @@ function getMalaysiaSqlTimestamp(){
           )}
         </h3>
         ${soldText}
+        ${scheduleBadge}
         ${desc?`<p data-description-id="${escapeHtml(String(item.id))}"
           onclick="if(typeof openDescriptionDetail==='function')openDescriptionDetail('${escapeHtml(String(item.id))}')"
           title="Tap to view image and full description"
           class="customer-item-description">${escapeHtml(desc)}</p>`:''}
         <p class="mb-3">${getMenuPriceHtml(price)}</p>
-        <div class="menu-card-action">${quantityHtml(item.id,price)}</div>
+        <div class="menu-card-action">${orderAction}</div>
       </div>
       <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center image-open-btn"
         data-image-src="${escapeHtml(imgSrc)}" data-image-name="${escapeHtml(itemName)}" data-item-id="${Number(item.id)}">
@@ -4166,7 +4215,11 @@ function getMalaysiaSqlTimestamp(){
       ?Number(item.takeaway_price):Number(item.dine_in_price||0);
 
     document.querySelectorAll(`#menuContainer [data-menu-item-id="${CSS.escape(String(id))}"] .menu-card-action`)
-      .forEach(action=>action.innerHTML=quantityHtml(id,price));
+      .forEach(action=>{
+        action.innerHTML=item._out_of_schedule===true
+          ? '<button type="button" class="out-of-schedule-action" disabled aria-disabled="true" title="Out of Schedule">Add to Cart</button>'
+          : quantityHtml(id,price);
+      });
   }
 
   function decreaseItem(itemId){
@@ -5278,6 +5331,123 @@ function getMalaysiaSqlTimestamp(){
       item.basePrice=Math.max(0,Number(item.price||0)-oldTotal);
     }
   });
+})();
+</script>
+
+
+<script id="customer-menu-schedule-groups-final">
+function scheduleGroupIsOpenMulti(group, allSlots, nowMinutes){
+  const slots=(allSlots||[]).filter(s=>String(s.schedule_group_id)===String(group.id));
+  if(!slots.length)return scheduleIsOpen(group,nowMinutes);
+  return slots.some(s=>scheduleIsOpen(s,nowMinutes));
+}
+
+function scheduleGroupVisibleForItem(item, groups, categoryTags, itemTags, groupSlots){
+  if(!Array.isArray(groups)||!groups.length)return true;
+
+  const enabledGroups=groups.filter(g=>g.enabled!==false);
+  const groupMap=new Map(enabledGroups.map(g=>[String(g.id),g]));
+  const defaultGroup=enabledGroups.find(g=>g.is_default===true)||null;
+
+  const itemGroupIds=(itemTags||[])
+    .filter(t=>String(t.menu_item_id)===String(item.id))
+    .map(t=>String(t.schedule_group_id))
+    .filter(id=>groupMap.has(id));
+
+  const categoryGroupIds=(categoryTags||[])
+    .filter(t=>String(t.category_name||'')===String(item.category||''))
+    .map(t=>String(t.schedule_group_id))
+    .filter(id=>groupMap.has(id));
+
+  // Item tags override category tags. Category tags override Default Schedule.
+  const chosenIds=itemGroupIds.length?itemGroupIds:(categoryGroupIds.length?categoryGroupIds:[]);
+  if(chosenIds.length){
+    return chosenIds.some(id=>scheduleGroupIsOpenMulti(groupMap.get(id),groupSlots,malaysiaClockMinutes()));
+  }
+  return !defaultGroup || scheduleGroupIsOpenMulti(defaultGroup,groupSlots,malaysiaClockMinutes());
+}
+
+// Final menu loader: manual availability -> direct item/category schedule -> named schedule tags/default.
+fetchMenu=async function(){
+  console.log("Fetching menu with named scheduling...");
+  const [menuResult,directResult,groupResult,catTagResult,itemTagResult,slotResult]=await Promise.all([
+    _supabase.from('menu_items').select('*'),
+    _supabase.from('menu_schedules').select('*').eq('enabled',true),
+    _supabase.from('menu_schedule_groups').select('*'),
+    _supabase.from('menu_schedule_category_tags').select('*'),
+    _supabase.from('menu_schedule_item_tags').select('*'),
+    _supabase.from('menu_schedule_group_time_slots').select('*').order('slot_order',{ascending:true})
+  ]);
+
+  if(menuResult.error){
+    console.error('Supabase Fetch Error Details:',menuResult.error);
+    alert('Menu load failed! Error: '+menuResult.error.message);
+    return;
+  }
+
+  const directSchedules=directResult.error?[]:(directResult.data||[]);
+  const groups=groupResult.error?[]:(groupResult.data||[]);
+  const categoryTags=catTagResult.error?[]:(catTagResult.data||[]);
+  const itemTags=itemTagResult.error?[]:(itemTagResult.data||[]);
+  const groupSlots=slotResult.error?[]:(slotResult.data||[]);
+
+  if(directResult.error)console.warn('Direct menu schedule load skipped:',directResult.error.message);
+  if(groupResult.error)console.warn('Named schedule groups load skipped:',groupResult.error.message);
+  if(catTagResult.error)console.warn('Category schedule tags load skipped:',catTagResult.error.message);
+  if(itemTagResult.error)console.warn('Item schedule tags load skipped:',itemTagResult.error.message);
+  if(slotResult.error)console.warn('Schedule time windows load skipped:',slotResult.error.message);
+
+  menuItems=(menuResult.data||[])
+    .filter(item=>item.is_available!==false)
+    .map(item=>{
+      // Manual Active/Inactive still controls whether an item exists on Customer page.
+      // Scheduling no longer hides the item; it only controls whether the item can be ordered.
+      const own=directSchedules.find(r=>String(r.scope_type||'').toLowerCase()==='item'&&String(r.menu_item_id)===String(item.id));
+      const cat=directSchedules.find(r=>String(r.scope_type||'').toLowerCase()==='category'&&String(r.category_name||'')===String(item.category||''));
+      const directRule=own||cat;
+
+      const scheduleOpen=directRule
+        ? scheduleIsOpen(directRule,malaysiaClockMinutes())
+        : scheduleGroupVisibleForItem(item,groups,categoryTags,itemTags,groupSlots);
+
+      return {...item,_out_of_schedule:!scheduleOpen};
+    })
+    .sort((a,b)=>
+      (Number(a.category_sort_order)||999999)-(Number(b.category_sort_order)||999999) ||
+      String(a.category||'').localeCompare(String(b.category||''),undefined,{numeric:true,sensitivity:'base'}) ||
+      (Number(a.item_sort_order)||999999)-(Number(b.item_sort_order)||999999) ||
+      getOriginalItemName(a).localeCompare(getOriginalItemName(b),undefined,{numeric:true,sensitivity:'base'})
+    );
+
+  renderCategories();
+  await loadTopSellingItems();
+  if(currentLang!=='en')translateMenuForCurrentLanguage(menuItems);
+  else renderTopPopular();
+};
+window.fetchMenu=fetchMenu;
+</script>
+
+
+<script id="customer-out-of-schedule-order-guard">
+(function(){
+  const previousAddToCart=window.addToCart;
+  if(typeof previousAddToCart!=='function')return;
+
+  window.addToCart=function(itemId,price){
+    const id=Number(itemId);
+    const item=(window.menuItems||[]).find(x=>Number(x.id)===id)
+      || (window.topSellingMenuItems||[]).find(x=>Number(x.id)===id);
+
+    if(item && item._out_of_schedule===true){
+      if(typeof showToast==='function')showToast('This item is currently out of schedule.');
+      else if(typeof toast==='function')toast('This item is currently out of schedule.',false);
+      else alert('This item is currently out of schedule.');
+      return;
+    }
+    return previousAddToCart.apply(this,arguments);
+  };
+
+  try{addToCart=window.addToCart}catch(_){}
 })();
 </script>
 
