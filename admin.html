@@ -379,6 +379,94 @@
           <div><h2 class="text-2xl font-black">Menu Scheduling</h2><p class="text-xs text-slate-500">Set daily customer-menu visibility times for a whole category or one item. Manual Active/Inactive always has priority.</p></div>
           <button onclick="loadMenuScheduling()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold">Refresh</button>
         </div>
+        <div class="card p-4 space-y-4 border-emerald-200">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-black">Schedule Names / Menu Schedules</h3>
+              <p class="text-xs text-slate-500">Create reusable schedules, then tag whole categories or individual items to them. Untagged menu uses the Default Schedule.</p>
+            </div>
+            <button onclick="clearScheduleGroupForm()" class="bg-slate-200 px-4 py-2 rounded-xl text-xs font-bold">New Schedule</button>
+          </div>
+
+          <input type="hidden" id="scheduleGroupId">
+          <div class="grid md:grid-cols-[1.2fr_auto] gap-3 items-end">
+            <div>
+              <label class="text-xs font-black">Schedule Name</label>
+              <input id="scheduleGroupName" class="mt-1 w-full border rounded-xl px-3 py-3 font-bold" placeholder="e.g. Breakfast / Lunch / Dinner">
+            </div>
+            <button onclick="saveScheduleGroup()" class="bg-emerald-600 text-white px-5 py-3 rounded-xl font-black">Save Schedule</button>
+          </div>
+
+          <div class="border rounded-2xl p-3 bg-slate-50">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h4 class="font-black">Available Time Windows</h4>
+                <p class="text-[11px] text-slate-500">Default: 2 time windows. Add more whenever needed.</p>
+              </div>
+              <button type="button" onclick="addScheduleGroupTimeRow()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black">＋ Add More Time</button>
+            </div>
+
+            <div id="scheduleGroupTimeRows" class="space-y-3"></div>
+
+            <div class="mt-3 text-[11px] text-slate-500">
+              Each row = <b>Start From → Hide From</b>. The schedule is visible if the current Malaysia time is inside <b>any</b> saved window.
+              For a 24-hour schedule, keep one row as <b>00:00 → 00:00</b>.
+            </div>
+          </div>
+
+          <div class="border-t pt-4">
+            <div class="grid md:grid-cols-[1fr_auto] gap-3 items-end">
+              <div>
+                <label class="text-xs font-black">Select Schedule to Tag Categories / Items</label>
+                <select id="scheduleGroupSelect" onchange="loadScheduleGroupTags()" class="mt-1 w-full border rounded-xl px-3 py-3 font-bold">
+                  <option value="">Select schedule...</option>
+                </select>
+              </div>
+              <button onclick="loadScheduleGroupTags()" class="bg-blue-600 text-white px-4 py-3 rounded-xl text-xs font-bold">Load Tags</button>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-4 mt-4">
+              <div class="border rounded-xl p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="font-black">Category Tags</h4>
+                  <div class="flex gap-2">
+                    <button onclick="setAllScheduleCategoryTags(true)" class="text-[11px] font-bold text-emerald-700">Select All</button>
+                    <button onclick="setAllScheduleCategoryTags(false)" class="text-[11px] font-bold text-red-600">Clear</button>
+                  </div>
+                </div>
+                <div id="scheduleGroupCategoryTags" class="space-y-2 max-h-72 overflow-y-auto scrollbar text-sm"></div>
+              </div>
+
+              <div class="border rounded-xl p-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div>
+                    <h4 class="font-black">Item Tags</h4>
+                    <div id="scheduleGroupItemTagCount" class="text-[10px] text-emerald-700 font-bold">0 item(s) selected</div>
+                  </div>
+                  <select id="scheduleGroupItemCategoryFilter" onchange="renderScheduleGroupItemTags()" class="border rounded-lg px-2 py-1 text-xs">
+                    <option value="">All Categories</option>
+                  </select>
+                </div>
+                <div id="scheduleGroupItemTags" class="space-y-2 max-h-72 overflow-y-auto scrollbar text-sm"></div>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button onclick="saveScheduleGroupTags()" class="bg-blue-700 text-white px-5 py-3 rounded-xl font-black">Save Tags</button>
+              <span id="scheduleGroupTagStatus" class="self-center text-xs text-slate-500"></span>
+            </div>
+          </div>
+
+          <div class="border-t pt-4">
+            <div class="flex items-center justify-between mb-2"><h4 class="font-black">Saved Schedule Names</h4><span id="scheduleGroupStatus" class="text-xs text-slate-400"></span></div>
+            <div id="scheduleGroupList" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <div class="card p-4 bg-blue-50 border-blue-200">
+          <div class="font-black text-blue-900">Existing Direct Category / Item Schedule</div>
+          <div class="text-xs text-blue-700 mt-1">Your existing scheduling system is kept below. A direct item schedule has first priority, then direct category schedule, then Schedule Name tags/default schedule.</div>
+        </div>
+
         <div class="card p-4 space-y-4">
           <div class="grid md:grid-cols-2 gap-3">
             <div><label class="text-xs font-black">Schedule For</label><select id="scheduleScope" onchange="scheduleScopeChanged()" class="mt-1 w-full border rounded-xl px-3 py-3"><option value="category">Whole Category</option><option value="item">Individual Item</option></select></div>
@@ -2479,5 +2567,387 @@ async function deleteMenuSchedule(id){if(!confirm('Delete this schedule?'))retur
 const _scheduleOriginalLoadMenu=loadMenu;
 loadMenu=async function(){const r=await _scheduleOriginalLoadMenu.apply(this,arguments);populateScheduleCategories();return r;};
 </script>
+
+<script id="menu-schedule-groups-final">
+const MENU_SCHEDULE_GROUP_TABLE='menu_schedule_groups';
+const MENU_SCHEDULE_CATEGORY_TAG_TABLE='menu_schedule_category_tags';
+const MENU_SCHEDULE_ITEM_TAG_TABLE='menu_schedule_item_tags';
+let menuScheduleGroups=[];
+let menuScheduleCategoryTags=[];
+let menuScheduleItemTags=[];
+let scheduleGroupSelectedItemIds=new Set();
+
+function scheduleGroupCategories(){
+  return [...new Set((menuData||[]).map(x=>String(x.category||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+}
+
+function clearScheduleGroupForm(){
+  const id=document.getElementById('scheduleGroupId');
+  const nm=document.getElementById('scheduleGroupName');
+  if(id)id.value='';
+  if(nm)nm.value='';
+  renderScheduleGroupTimeRows([
+    {start_time:'00:00',end_time:'00:00'},
+    {start_time:'00:00',end_time:'00:00'}
+  ]);
+}
+
+
+function scheduleGroupTimeRowHtml(start='00:00',end='00:00',index=0){
+  return `<div class="schedule-group-time-row grid grid-cols-[1fr_1fr_auto] gap-3 items-end border rounded-xl bg-white p-3">
+    <div>
+      <label class="text-xs font-black">Start From</label>
+      <input type="time" data-sg-start value="${esc(start)}" class="mt-1 w-full border rounded-xl px-3 py-3">
+    </div>
+    <div>
+      <label class="text-xs font-black">Hide From</label>
+      <input type="time" data-sg-end value="${esc(end)}" class="mt-1 w-full border rounded-xl px-3 py-3">
+    </div>
+    <button type="button" onclick="removeScheduleGroupTimeRow(this)" class="bg-red-100 text-red-700 px-3 py-3 rounded-xl text-xs font-black" title="Remove time">✕</button>
+  </div>`;
+}
+
+function renderScheduleGroupTimeRows(slots){
+  const box=document.getElementById('scheduleGroupTimeRows');
+  if(!box)return;
+  const rows=(Array.isArray(slots)&&slots.length)?slots:[
+    {start_time:'00:00',end_time:'00:00'},
+    {start_time:'00:00',end_time:'00:00'}
+  ];
+  box.innerHTML=rows.map((s,i)=>scheduleGroupTimeRowHtml(
+    String(s.start_time||'00:00').slice(0,5),
+    String(s.end_time||'00:00').slice(0,5),
+    i
+  )).join('');
+  updateScheduleGroupRemoveButtons();
+}
+
+function addScheduleGroupTimeRow(){
+  const box=document.getElementById('scheduleGroupTimeRows');
+  if(!box)return;
+  box.insertAdjacentHTML('beforeend',scheduleGroupTimeRowHtml('00:00','00:00',box.children.length));
+  updateScheduleGroupRemoveButtons();
+}
+
+function removeScheduleGroupTimeRow(btn){
+  const box=document.getElementById('scheduleGroupTimeRows');
+  if(!box)return;
+  const rows=box.querySelectorAll('.schedule-group-time-row');
+  if(rows.length<=1)return toast('At least one time window is required.',false);
+  btn.closest('.schedule-group-time-row')?.remove();
+  updateScheduleGroupRemoveButtons();
+}
+
+function updateScheduleGroupRemoveButtons(){
+  const box=document.getElementById('scheduleGroupTimeRows');
+  if(!box)return;
+  const rows=[...box.querySelectorAll('.schedule-group-time-row')];
+  rows.forEach(r=>{
+    const b=r.querySelector('button');
+    if(b)b.disabled=rows.length<=1;
+    if(b)b.classList.toggle('opacity-40',rows.length<=1);
+  });
+}
+
+function getScheduleGroupTimeRows(){
+  const box=document.getElementById('scheduleGroupTimeRows');
+  if(!box)return [];
+  return [...box.querySelectorAll('.schedule-group-time-row')].map(r=>({
+    start_time:r.querySelector('[data-sg-start]')?.value||'00:00',
+    end_time:r.querySelector('[data-sg-end]')?.value||'00:00'
+  }));
+}
+
+async function ensureDefaultScheduleGroup(){
+  const check=await db.from(MENU_SCHEDULE_GROUP_TABLE).select('*').eq('is_default',true).limit(1).maybeSingle();
+  if(check.error)return;
+  if(check.data)return;
+  await db.from(MENU_SCHEDULE_GROUP_TABLE).insert({
+    schedule_name:'Default Schedule',
+    start_time:'00:00',
+    end_time:'00:00',
+    enabled:true,
+    is_default:true,
+    updated_at:new Date().toISOString()
+  });
+}
+
+async function loadScheduleGroups(){
+  const list=document.getElementById('scheduleGroupList');
+  if(list)list.innerHTML='<div class="text-sm text-slate-400">Loading...</div>';
+  await ensureDefaultScheduleGroup();
+
+  const [{data,error},{data:slotData,error:slotError}]=await Promise.all([
+    db.from(MENU_SCHEDULE_GROUP_TABLE).select('*').order('is_default',{ascending:false}).order('schedule_name',{ascending:true}),
+    db.from('menu_schedule_group_time_slots').select('*').order('slot_order',{ascending:true})
+  ]);
+
+  if(error){
+    if(list)list.innerHTML='<div class="text-sm text-red-600">'+esc(error.message)+'</div>';
+    return;
+  }
+
+  const slots=slotError?[]:(slotData||[]);
+  menuScheduleGroups=(data||[]).map(g=>({
+    ...g,
+    _time_slots:slots.filter(s=>String(s.schedule_group_id)===String(g.id))
+  }));
+
+  renderScheduleGroups();
+  populateScheduleGroupSelectors();
+}
+
+function renderScheduleGroups(){
+  const list=document.getElementById('scheduleGroupList');
+  if(!list)return;
+  if(!menuScheduleGroups.length){
+    list.innerHTML='<div class="text-sm text-slate-400">No schedule names saved.</div>';
+    return;
+  }
+  list.innerHTML=menuScheduleGroups.map(g=>{
+    const slots=(g._time_slots||[]);
+    const slotText=slots.length
+      ? slots.map(s=>{
+          const a=String(s.start_time||'00:00').slice(0,5);
+          const b=String(s.end_time||'00:00').slice(0,5);
+          return a===b?'24 HOURS':`${esc(a)} → ${esc(b)}`;
+        }).join(' · ')
+      : ((String(g.start_time||'00:00').slice(0,5)===String(g.end_time||'00:00').slice(0,5))
+          ? '24 HOURS'
+          : `${esc(String(g.start_time||'00:00').slice(0,5))} → ${esc(String(g.end_time||'00:00').slice(0,5))}`);
+    return `<div class="border rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="font-black">${esc(g.schedule_name||'Schedule')} ${g.is_default?'<span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-1 rounded-full ml-1">DEFAULT</span>':''}</div>
+        <div class="text-xs text-slate-500 break-words">${slotText} · ${g.enabled===false?'OFF':'ON'}</div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="editScheduleGroup(${Number(g.id)})" class="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-xs font-bold">Edit</button>
+        <button onclick="toggleScheduleGroup(${Number(g.id)},${g.enabled===false?'true':'false'})" class="px-3 py-2 rounded-lg text-xs font-bold ${g.enabled===false?'bg-slate-200':'bg-emerald-100 text-emerald-800'}">${g.enabled===false?'Enable':'Disable'}</button>
+        ${g.is_default?'':`<button onclick="deleteScheduleGroup(${Number(g.id)})" class="bg-red-100 text-red-700 px-3 py-2 rounded-lg text-xs font-bold">Delete</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateScheduleGroupSelectors(){
+  const sel=document.getElementById('scheduleGroupSelect');
+  if(sel){
+    const keep=sel.value;
+    sel.innerHTML='<option value="">Select schedule...</option>'+menuScheduleGroups.map(g=>`<option value="${g.id}">${esc(g.schedule_name)}${g.is_default?' (Default)':''}</option>`).join('');
+    if([...sel.options].some(o=>o.value===keep))sel.value=keep;
+  }
+  const filter=document.getElementById('scheduleGroupItemCategoryFilter');
+  if(filter){
+    const keep=filter.value;
+    filter.innerHTML='<option value="">All Categories</option>'+scheduleGroupCategories().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if([...filter.options].some(o=>o.value===keep))filter.value=keep;
+  }
+}
+
+function editScheduleGroup(id){
+  const g=menuScheduleGroups.find(x=>String(x.id)===String(id));
+  if(!g)return;
+  document.getElementById('scheduleGroupId').value=g.id;
+  document.getElementById('scheduleGroupName').value=g.schedule_name||'';
+
+  const slots=(g._time_slots&&g._time_slots.length)
+    ? g._time_slots.map(s=>({start_time:String(s.start_time||'00:00').slice(0,5),end_time:String(s.end_time||'00:00').slice(0,5)}))
+    : [{start_time:String(g.start_time||'00:00').slice(0,5),end_time:String(g.end_time||'00:00').slice(0,5)}];
+
+  while(slots.length<2) slots.push({start_time:'00:00',end_time:'00:00'});
+  renderScheduleGroupTimeRows(slots);
+  window.scrollTo({top:document.getElementById('section-menu-schedule')?.offsetTop||0,behavior:'smooth'});
+}
+
+async function saveScheduleGroup(){
+  const id=document.getElementById('scheduleGroupId').value;
+  const name=document.getElementById('scheduleGroupName').value.trim();
+  if(!name)return toast('Enter a schedule name.',false);
+
+  const slots=getScheduleGroupTimeRows();
+  if(!slots.length)return toast('Add at least one time window.',false);
+
+  const first=slots[0];
+  const payload={
+    schedule_name:name,
+    start_time:first.start_time,
+    end_time:first.end_time,
+    updated_at:new Date().toISOString()
+  };
+
+  let groupId=id?Number(id):null;
+  let res;
+
+  if(groupId){
+    res=await db.from(MENU_SCHEDULE_GROUP_TABLE).update(payload).eq('id',groupId).select('id').single();
+  }else{
+    res=await db.from(MENU_SCHEDULE_GROUP_TABLE).insert({...payload,enabled:true,is_default:false}).select('id').single();
+    if(!res.error) groupId=Number(res.data.id);
+  }
+
+  if(res.error)return toast('Schedule name save failed: '+res.error.message,false);
+
+  const del=await db.from('menu_schedule_group_time_slots').delete().eq('schedule_group_id',groupId);
+  if(del.error)return toast('Schedule saved, but old time windows could not be cleared: '+del.error.message,false);
+
+  const slotRows=slots.map((s,i)=>({
+    schedule_group_id:groupId,
+    slot_order:i+1,
+    start_time:s.start_time,
+    end_time:s.end_time
+  }));
+
+  const ins=await db.from('menu_schedule_group_time_slots').insert(slotRows);
+  if(ins.error)return toast('Schedule saved, but time windows failed: '+ins.error.message,false);
+
+  toast('Schedule name and time windows saved.');
+  clearScheduleGroupForm();
+  await loadScheduleGroups();
+}
+
+async function toggleScheduleGroup(id,newState){
+  const g=menuScheduleGroups.find(x=>String(x.id)===String(id));
+  if(g?.is_default && newState===false)return toast('Default Schedule must stay enabled. Edit its time instead.',false);
+  const {error}=await db.from(MENU_SCHEDULE_GROUP_TABLE).update({enabled:newState,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)return toast(error.message,false);
+  await loadScheduleGroups();
+}
+
+async function deleteScheduleGroup(id){
+  if(!confirm('Delete this schedule name and its category/item tags?'))return;
+  const {error}=await db.from(MENU_SCHEDULE_GROUP_TABLE).delete().eq('id',id);
+  if(error)return toast(error.message,false);
+  toast('Schedule deleted.');
+  await loadScheduleGroups();
+  scheduleGroupSelectedItemIds=new Set();
+  document.getElementById('scheduleGroupCategoryTags').innerHTML='';
+  document.getElementById('scheduleGroupItemTags').innerHTML='';
+  const count=document.getElementById('scheduleGroupItemTagCount');
+  if(count)count.textContent='0 item(s) selected';
+}
+
+async function loadScheduleGroupTags(){
+  const gid=Number(document.getElementById('scheduleGroupSelect')?.value||0);
+  const catBox=document.getElementById('scheduleGroupCategoryTags');
+  const itemBox=document.getElementById('scheduleGroupItemTags');
+  if(!gid){
+    scheduleGroupSelectedItemIds=new Set();
+    if(catBox)catBox.innerHTML='<div class="text-slate-400">Select a schedule first.</div>';
+    if(itemBox)itemBox.innerHTML='<div class="text-slate-400">Select a schedule first.</div>';
+    const count=document.getElementById('scheduleGroupItemTagCount');
+    if(count)count.textContent='0 item(s) selected';
+    return;
+  }
+  const [cats,items]=await Promise.all([
+    db.from(MENU_SCHEDULE_CATEGORY_TAG_TABLE).select('*').eq('schedule_group_id',gid),
+    db.from(MENU_SCHEDULE_ITEM_TAG_TABLE).select('*').eq('schedule_group_id',gid)
+  ]);
+  if(cats.error||items.error)return toast((cats.error||items.error).message,false);
+  menuScheduleCategoryTags=cats.data||[];
+  menuScheduleItemTags=items.data||[];
+  scheduleGroupSelectedItemIds=new Set(menuScheduleItemTags.map(x=>String(x.menu_item_id)));
+  renderScheduleGroupCategoryTags();
+  renderScheduleGroupItemTags();
+}
+
+function renderScheduleGroupCategoryTags(){
+  const box=document.getElementById('scheduleGroupCategoryTags');
+  if(!box)return;
+  const selected=new Set(menuScheduleCategoryTags.map(x=>String(x.category_name)));
+  const cats=scheduleGroupCategories();
+  box.innerHTML=cats.length?cats.map(c=>`<label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer">
+    <input type="checkbox" data-schedule-cat-tag value="${esc(c)}" ${selected.has(c)?'checked':''}>
+    <span class="font-bold">${esc(c)}</span>
+  </label>`).join(''):'<div class="text-slate-400">No categories found.</div>';
+}
+
+function renderScheduleGroupItemTags(){
+  const box=document.getElementById('scheduleGroupItemTags');
+  if(!box)return;
+
+  const filter=document.getElementById('scheduleGroupItemCategoryFilter')?.value||'';
+  const rows=(menuData||[])
+    .filter(x=>!filter||String(x.category||'')===filter)
+    .sort((a,b)=>String(a.category||'').localeCompare(String(b.category||''))||String(a.name_en||'').localeCompare(String(b.name_en||'')));
+
+  box.innerHTML=rows.length?rows.map(x=>{
+    const id=String(x.id);
+    return `<label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer">
+      <input type="checkbox"
+             data-schedule-item-tag
+             value="${x.id}"
+             ${scheduleGroupSelectedItemIds.has(id)?'checked':''}
+             onchange="onScheduleGroupItemTagChange(this)">
+      <span><b>${esc(x.name_en||('Item #'+x.id))}</b><span class="block text-[10px] text-slate-400">${esc(x.category||'')}</span></span>
+    </label>`;
+  }).join(''):'<div class="text-slate-400">No items found.</div>';
+
+  const count=document.getElementById('scheduleGroupItemTagCount');
+  if(count)count.textContent=`${scheduleGroupSelectedItemIds.size} item(s) selected`;
+}
+
+function onScheduleGroupItemTagChange(cb){
+  const id=String(cb.value);
+  if(cb.checked)scheduleGroupSelectedItemIds.add(id);
+  else scheduleGroupSelectedItemIds.delete(id);
+
+  const count=document.getElementById('scheduleGroupItemTagCount');
+  if(count)count.textContent=`${scheduleGroupSelectedItemIds.size} item(s) selected`;
+}
+
+function setAllScheduleCategoryTags(on){
+  document.querySelectorAll('[data-schedule-cat-tag]').forEach(x=>x.checked=!!on);
+}
+
+async function saveScheduleGroupTags(){
+  const gid=Number(document.getElementById('scheduleGroupSelect')?.value||0);
+  if(!gid)return toast('Select a schedule first.',false);
+
+  const catNames=[...document.querySelectorAll('[data-schedule-cat-tag]:checked')].map(x=>x.value);
+  const itemIds=[...scheduleGroupSelectedItemIds].map(x=>Number(x)).filter(Number.isFinite);
+
+  const del1=await db.from(MENU_SCHEDULE_CATEGORY_TAG_TABLE).delete().eq('schedule_group_id',gid);
+  if(del1.error)return toast(del1.error.message,false);
+  const del2=await db.from(MENU_SCHEDULE_ITEM_TAG_TABLE).delete().eq('schedule_group_id',gid);
+  if(del2.error)return toast(del2.error.message,false);
+
+  if(catNames.length){
+    const ins1=await db.from(MENU_SCHEDULE_CATEGORY_TAG_TABLE).insert(catNames.map(category_name=>({schedule_group_id:gid,category_name})));
+    if(ins1.error)return toast(ins1.error.message,false);
+  }
+  if(itemIds.length){
+    const ins2=await db.from(MENU_SCHEDULE_ITEM_TAG_TABLE).insert(itemIds.map(menu_item_id=>({schedule_group_id:gid,menu_item_id})));
+    if(ins2.error)return toast(ins2.error.message,false);
+  }
+
+  const st=document.getElementById('scheduleGroupTagStatus');
+  if(st)st.textContent=`Saved ${catNames.length} category tag(s), ${itemIds.length} item tag(s).`;
+  toast('Schedule tags saved.');
+  await loadScheduleGroupTags();
+}
+
+// Extend the already-existing menu scheduling loader without removing direct scheduling.
+const _loadMenuSchedulingWithDirectRules=window.loadMenuScheduling;
+window.loadMenuScheduling=async function(){
+  if(typeof _loadMenuSchedulingWithDirectRules==='function') await _loadMenuSchedulingWithDirectRules.apply(this,arguments);
+  await loadScheduleGroups();
+};
+try{loadMenuScheduling=window.loadMenuScheduling}catch(_){}
+
+// Keep Schedule Name category/item lists synced after menu refresh.
+document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
+    populateScheduleGroupSelectors();
+    if(document.getElementById('scheduleGroupTimeRows') && !document.getElementById('scheduleGroupTimeRows').children.length){
+      renderScheduleGroupTimeRows([
+        {start_time:'00:00',end_time:'00:00'},
+        {start_time:'00:00',end_time:'00:00'}
+      ]);
+    }
+  },500);
+});
+</script>
+
 </body>
 </html>
