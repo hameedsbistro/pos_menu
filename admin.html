@@ -1847,6 +1847,11 @@ window.renderMenuCategory = function(){
                 class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-2.5 text-xs font-bold">
                 Save Item
               </button>
+
+              <button onclick="deleteMenuItem('${id}')"
+                class="mt-2 w-full bg-red-600 hover:bg-red-700 text-white rounded-lg py-2.5 text-xs font-bold">
+                Delete Item
+              </button>
             </div>
           </div>
         </div>
@@ -1983,6 +1988,62 @@ window.saveMenuItem = async function(id){
       try{await db.storage.from(MENU_BUCKET).remove([newUpload.path])}catch(cleanupError){}
     }
     toast(e.message||String(e),false);
+    return false;
+  }
+};
+
+window.deleteMenuItem = async function(id){
+  const item=menuData.find(x=>String(x.id)===String(id));
+  if(!item){
+    toast('Menu item not found.',false);
+    return false;
+  }
+
+  const itemName=String(item.name_en||item.name||item.item_name||('Item #'+id));
+  const ok=confirm(
+    `Delete "${itemName}" permanently?\n\n`+
+    `This removes the item from the database. Historical order rows are kept if the delete-support SQL has been applied.`
+  );
+  if(!ok)return false;
+
+  const selectedCategory=document.getElementById('categorySelect')?.value||item.category||'';
+  const oldImagePath=getMenuStoragePath(item.image_url||'');
+
+  try{
+    // menu_schedule_item_tags and item_description use ON DELETE CASCADE after the supplied SQL.
+    // order_items keeps historical sales and changes menu_item_id to NULL.
+    const {error}=await db.from(MENU_TABLE).delete().eq('id',id);
+    if(error)throw error;
+
+    if(oldImagePath){
+      try{
+        const rm=await db.storage.from(MENU_BUCKET).remove([oldImagePath]);
+        if(rm.error)console.warn('Deleted item, but old image cleanup failed:',rm.error.message);
+      }catch(storageError){
+        console.warn('Deleted item, but old image cleanup failed:',storageError);
+      }
+    }
+
+    try{delete window.itemDescriptionMap[String(id)]}catch(_){}
+
+    toast(`Deleted: ${itemName}`);
+    await loadMenu();
+
+    const sel=document.getElementById('categorySelect');
+    if(sel && selectedCategory){
+      const stillExists=[...sel.options].some(o=>o.value===selectedCategory);
+      if(stillExists){
+        sel.value=selectedCategory;
+        renderMenuCategory();
+      }
+    }
+    return true;
+  }catch(e){
+    toast(
+      'Delete failed: '+(e?.message||String(e))+
+      '. If this item has old orders, run the supplied HAMEEDS_MENU_ITEM_DELETE_AND_POS_SYNC_SQL.sql first.',
+      false
+    );
     return false;
   }
 };
