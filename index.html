@@ -444,8 +444,22 @@ body.customer-menu-only #cartBar {
     pointer-events:none;
   }
 </style>
+
+<style id="header-search-home-visibility-final">
+  #headerMenuSearch.header-search-home-hidden{
+    display:none!important;
+  }
+</style>
+
+<style id="both-search-buttons-after-order-selection">
+  body.customer-home-screen #headerMenuSearch,
+  body.customer-home-screen #categoryQuickSearchBtn,
+  body.customer-home-screen #categoryStickySearchPanel {
+    display:none!important;
+  }
+</style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans">
+<body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans customer-home-screen">
 
     <!-- হেডার সেকশন -->
     <header class="bg-blue-900 text-white p-4 shadow-lg flex justify-between items-center relative">
@@ -461,7 +475,7 @@ body.customer-menu-only #cartBar {
         </div>
 
         <!-- MAIN HEADER SEARCH: button morphs into input, with a small search icon button -->
-        <div id="headerMenuSearch" class="relative hidden md:flex flex-1 max-w-xl mx-6 justify-center">
+        <div id="headerMenuSearch" class="relative hidden md:flex flex-1 max-w-xl mx-6 justify-center header-search-home-hidden">
             <div id="headerSearchCollapsed" class="w-full flex justify-center">
                 <button type="button" id="headerSearchButton"
                     class="bg-slate-900/90 hover:bg-slate-950 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow flex items-center gap-2">
@@ -1701,8 +1715,25 @@ body.customer-menu-only #cartBar {
             return true;
         }
 
-        function startOrder(type) {
+        
+        function setHeaderMenuSearchVisible(visible){
+            document.body.classList.toggle('customer-home-screen', !visible);
+
+            const search=document.getElementById('headerMenuSearch');
+            if(search) search.classList.toggle('header-search-home-hidden', !visible);
+
+            const quick=document.getElementById('categoryQuickSearchBtn');
+            if(quick) quick.style.display=visible?'':'none';
+
+            if(!visible){
+                const panel=document.getElementById('categoryStickySearchPanel');
+                if(panel) panel.classList.add('hidden');
+            }
+        }
+
+function startOrder(type) {
             currentOrderType = type;
+            setHeaderMenuSearchVisible(true);
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('orderView').classList.remove('hidden');
             document.getElementById('historyView').classList.add('hidden');
@@ -1716,11 +1747,16 @@ body.customer-menu-only #cartBar {
                     updateActiveTableDropdown();
                 }
             }
-            fetchMenu();
+            Promise.resolve(fetchMenu()).finally(()=>{
+                if(typeof setHeaderMenuSearchVisible==='function'){
+                    setHeaderMenuSearchVisible(true);
+                }
+            });
         }
 
         function showHome() {
             resetAppendOrderMode();
+            setHeaderMenuSearchVisible(false);
             document.getElementById('homeView').classList.remove('hidden');
             document.getElementById('orderView').classList.add('hidden');
             document.getElementById('historyView').classList.add('hidden');
@@ -1755,6 +1791,7 @@ body.customer-menu-only #cartBar {
                 return;
             }
 
+            setHeaderMenuSearchVisible(false);
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('orderView').classList.add('hidden');
             document.getElementById('historyView').classList.remove('hidden');
@@ -5007,17 +5044,37 @@ function getMalaysiaSqlTimestamp(){
     currentOrderType = type==='takeaway' ? 'takeaway' : 'dine_in';
     cart=[];
     if(typeof saveCart==='function')saveCart();
+
     document.getElementById('homeView').classList.add('hidden');
     document.getElementById('orderView').classList.remove('hidden');
     document.getElementById('historyView').classList.add('hidden');
+
+    // Dine-In / Takeaway has now been chosen:
+    // show BOTH search controls, including in Menu Only Mode.
+    if(typeof setHeaderMenuSearchVisible==='function'){
+      setHeaderMenuSearchVisible(true);
+    }
+
     const tableBox=document.getElementById('tableChangeContainer');
     if(tableBox)tableBox.classList.add('hidden');
     const label=document.getElementById('selectedOrderType');
     if(label)label.textContent=currentOrderType==='takeaway'?'Takeaway':'Dine-In';
     const cartBar=document.getElementById('cartBar');
     if(cartBar)cartBar.classList.add('hidden');
-    fetchMenu();
-    setTimeout(applyCustomerOrderingMode,100);
+
+    Promise.resolve(fetchMenu()).finally(()=>{
+      // Category search button is created dynamically by fetchMenu(),
+      // so make both controls visible once more after menu rendering.
+      if(typeof setHeaderMenuSearchVisible==='function'){
+        setHeaderMenuSearchVisible(true);
+      }
+      setTimeout(()=>{
+        if(typeof setHeaderMenuSearchVisible==='function'){
+          setHeaderMenuSearchVisible(true);
+        }
+        applyCustomerOrderingMode();
+      },100);
+    });
   };
 
   const oldStart=window.startOrder;
@@ -5449,6 +5506,33 @@ window.fetchMenu=fetchMenu;
 
   try{addToCart=window.addToCart}catch(_){}
 })();
+</script>
+
+
+<script id="header-search-first-page-hide-final">
+document.addEventListener('DOMContentLoaded',()=>{
+  const orderView=document.getElementById('orderView');
+  const visible=orderView && !orderView.classList.contains('hidden');
+  if(typeof setHeaderMenuSearchVisible==='function'){
+    setHeaderMenuSearchVisible(!!visible);
+  }
+});
+</script>
+
+
+<script id="both-search-buttons-view-state-guard">
+document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
+    const home=document.getElementById('homeView');
+    const order=document.getElementById('orderView');
+    const homeVisible=home && !home.classList.contains('hidden');
+    const orderVisible=order && !order.classList.contains('hidden');
+
+    if(typeof setHeaderMenuSearchVisible==='function'){
+      setHeaderMenuSearchVisible(orderVisible && !homeVisible);
+    }
+  },80);
+});
 </script>
 
 </body>
