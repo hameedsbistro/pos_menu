@@ -193,11 +193,18 @@
 
 
 <style id="customer-menu-only-mode-style">
-body.customer-menu-only #menuContainer .menu-card-action,
+/* Menu Only Mode:
+   - keep item name, description, image, price and schedule status visible
+   - hide ordering controls for items that are currently orderable
+   - keep the red ⏰ Out of Schedule status visible for scheduled-out items */
 body.customer-menu-only #menuContainer .add-cart-btn,
 body.customer-menu-only #menuContainer .menu-inline-qty,
 body.customer-menu-only #cartBar {
     display:none !important;
+}
+
+body.customer-menu-only #menuContainer .out-of-schedule-action {
+    display:flex !important;
 }
 </style>
 <style id="sticky-category-search-style">
@@ -432,15 +439,18 @@ body.customer-menu-only #cartBar {
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:.6rem;
-    background:#e2e8f0!important;
-    color:#64748b!important;
-    border:1px solid #cbd5e1!important;
-    font-size:.78rem;
+    gap:.45rem;
+    border-radius:.7rem;
+    background:linear-gradient(135deg,#fee2e2,#fecaca)!important;
+    color:#b91c1c!important;
+    border:1px solid #f87171!important;
+    box-shadow:0 4px 10px rgba(185,28,28,.12);
+    font-size:.8rem;
     font-weight:900;
+    letter-spacing:.01em;
     cursor:not-allowed!important;
     user-select:none;
-    opacity:.75;
+    opacity:1;
     pointer-events:none;
   }
 </style>
@@ -499,7 +509,7 @@ body.customer-menu-only #cartBar {
 
         <div class="flex items-center gap-2">
             <!-- Header language selector: only translatable UI text changes; brand/footer stay English -->
-            <div class="relative">
+            <div id="headerLanguageWrap" class="relative">
                 <select id="langSelect" onchange="changeLanguage(this.value)" aria-label="Language" title="Language" class="appearance-none bg-blue-800 hover:bg-blue-700 text-white border border-blue-700 rounded-lg pl-9 pr-7 py-2 text-sm font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400">
                     <option value="en">English</option>
                     <option value="en_us">English (US)</option>
@@ -1733,6 +1743,9 @@ body.customer-menu-only #cartBar {
 
 function startOrder(type) {
             currentOrderType = type;
+            activeCategory = null;
+            const initialSearch=document.getElementById('menuSearchInput');
+            if(initialSearch)initialSearch.value='';
             setHeaderMenuSearchVisible(true);
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('orderView').classList.remove('hidden');
@@ -2839,6 +2852,10 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
         // Desktop: wheel zoom + mouse drag. Mobile: pinch zoom + one-finger drag.
         const imageViewerStage = document.getElementById('imageViewerStage');
         if (imageViewerStage) {
+            // Tap/click the dark blank area around the picture to close the viewer.
+            imageViewerStage.addEventListener('click', (e) => {
+                if (e.target === imageViewerStage) closeImageViewer();
+            });
             imageViewerStage.addEventListener('wheel', (e) => {
                 if (document.getElementById('imageModal').classList.contains('hidden')) return;
                 e.preventDefault();
@@ -3841,8 +3858,10 @@ window.submitOrder = async function(){
   height:100%;
   object-fit:contain;
   display:block;
-  background:#fff;
+  background:transparent;
 }
+#descriptionDetailInfoPanel{position:relative}
+#descriptionDetailPrice{white-space:nowrap}
 #descriptionDetailImageHint{
   position:absolute;
   left:50%;
@@ -3889,11 +3908,15 @@ window.submitOrder = async function(){
       <div id="descriptionDetailImageHint">🔍 Tap image to Zoom & Pan</div>
     </div>
 
-    <div class="flex items-center gap-3 px-5 pt-4 pb-3 border-b bg-white">
+    <div id="descriptionDetailInfoPanel" class="flex items-start gap-3 px-5 pt-4 pb-3 border-b bg-white">
       <div class="min-w-0 flex-1">
         <h3 id="descriptionDetailTitle" class="text-xl font-extrabold text-slate-900 leading-tight"></h3>
         <div id="descriptionDetailOriginalName" class="hidden mt-1 text-sm font-semibold text-slate-500 leading-tight"></div>
         <div class="text-xs font-bold text-amber-600 mt-2">ITEM DESCRIPTION</div>
+      </div>
+      <div id="descriptionDetailPrice"
+        class="shrink-0 rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-rose-700 text-base md:text-lg font-black shadow-sm">
+        RM0.00
       </div>
     </div>
 
@@ -3953,6 +3976,7 @@ window.submitOrder = async function(){
     const originalNameEl=document.getElementById('descriptionDetailOriginalName');
     const img=document.getElementById('descriptionDetailImage');
     const body=document.getElementById('descriptionDetailText');
+    const priceEl=document.getElementById('descriptionDetailPrice');
     const displayName=getMenuDisplayName(item);
     const originalName=getOriginalItemName(item);
     const imageSrc=item.image_url||'images/logo.png';
@@ -3971,14 +3995,49 @@ window.submitOrder = async function(){
       }
     }
 
+    const modalPrice=currentOrderType==='takeaway'&&item.takeaway_price!=null
+      ?Number(item.takeaway_price)
+      :Number(item.dine_in_price||0);
+    if(priceEl)priceEl.textContent=`RM${modalPrice.toFixed(2)}`;
+
     img.src=imageSrc;
     img.alt=displayName;
 
     const imageWrap=document.getElementById('descriptionDetailImageWrap');
     if(imageWrap){
-      // Use the SAME image viewer behavior as clicking the menu-card image.
-      // Passing item.id lets the viewer show original DB name + translated name correctly.
-      imageWrap.onclick=()=>openImageViewer(imageSrc,displayName,item.id);
+      // Object-fit: contain can leave white space INSIDE the IMG element.
+      // Detect the real painted image rectangle:
+      // real picture => Zoom & Pan, white side/top/bottom area => close popup.
+      imageWrap.onclick=(e)=>{
+        e.stopPropagation();
+
+        const wrapRect=imageWrap.getBoundingClientRect();
+        const boxW=wrapRect.width;
+        const boxH=wrapRect.height;
+        const naturalW=Number(img.naturalWidth||0);
+        const naturalH=Number(img.naturalHeight||0);
+
+        if(!naturalW || !naturalH){
+          if(e.target===img) openImageViewer(imageSrc,displayName,item.id);
+          else closeDescriptionDetail();
+          return;
+        }
+
+        const scale=Math.min(boxW/naturalW,boxH/naturalH);
+        const paintedW=naturalW*scale;
+        const paintedH=naturalH*scale;
+        const left=wrapRect.left+(boxW-paintedW)/2;
+        const top=wrapRect.top+(boxH-paintedH)/2;
+        const insidePaintedImage=
+          e.clientX>=left && e.clientX<=left+paintedW &&
+          e.clientY>=top && e.clientY<=top+paintedH;
+
+        if(insidePaintedImage){
+          openImageViewer(imageSrc,displayName,item.id);
+        }else{
+          closeDescriptionDetail();
+        }
+      };
       imageWrap.onkeydown=(e)=>{
         if(e.key==='Enter'||e.key===' '){
           e.preventDefault();
@@ -4138,6 +4197,130 @@ function getMalaysiaSqlTimestamp(){
   }
 </style>
 
+<style id="final-compact-two-row-category-toolbar">
+  #categoryContainer{
+    background:#f3f4f6;
+    border:1px solid #e2e8f0;
+    border-radius:12px;
+    padding:7px 8px!important;
+    margin-bottom:12px!important;
+    box-shadow:0 3px 12px rgba(15,23,42,.08);
+  }
+  #categoryToolbarTopRow{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    width:100%;
+    min-width:0;
+  }
+  .category-toolbar-home{
+    flex:0 0 auto;
+    min-height:40px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    padding:0 11px;
+    border-radius:9px;
+    border:1px solid #cbd5e1;
+    background:#fff;
+    color:#1e3a8a;
+    font-size:12px;
+    font-weight:900;
+    box-shadow:0 1px 3px rgba(15,23,42,.08);
+  }
+  .category-toolbar-dropdown{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  #categoryDropdownButton{
+    min-width:0!important;
+    width:100%!important;
+    min-height:40px!important;
+    max-height:50px;
+    overflow:hidden;
+  }
+  #categoryDropdownLabel{
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-align:left;
+  }
+  .category-toolbar-icon{
+    width:40px;
+    height:40px;
+    flex:0 0 40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:9px;
+    background:#fff;
+    border:1px solid #cbd5e1;
+    color:#0f172a;
+    box-shadow:0 1px 3px rgba(15,23,42,.08);
+    font-size:16px;
+  }
+  #categoryQuickLang{
+    height:40px!important;
+    max-width:82px!important;
+    border-radius:9px!important;
+    font-size:11px!important;
+    padding:0 7px!important;
+    background:#fff!important;
+  }
+  #categoryGrid{
+    display:flex!important;
+    width:100%;
+    min-width:0;
+    gap:6px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    margin-top:7px!important;
+    padding:0 1px 2px!important;
+    scrollbar-width:thin;
+    -webkit-overflow-scrolling:touch;
+  }
+  #categoryGrid button{
+    min-height:38px!important;
+    padding:6px 10px!important;
+    border-radius:9px!important;
+    font-size:12px!important;
+  }
+  #categoryContainer.video-fixed-category{
+    padding:7px 8px!important;
+    border-radius:0 0 12px 12px!important;
+    border-top:0!important;
+    background:rgba(243,244,246,.98)!important;
+    backdrop-filter:blur(8px);
+    box-shadow:0 6px 18px rgba(15,23,42,.16)!important;
+  }
+
+  /* On the ordering/menu screen the compact sticky toolbar now owns Search + Language. */
+  body:not(.customer-home-screen) header #headerMenuSearch,
+  body:not(.customer-home-screen) header #headerLanguageWrap{
+    display:none!important;
+  }
+
+  @media(max-width:640px){
+    #categoryContainer{padding:6px!important;border-radius:10px}
+    #categoryToolbarTopRow{gap:5px}
+    .category-toolbar-home{
+      width:40px;
+      min-height:38px;
+      padding:0;
+      font-size:0;
+    }
+    .category-toolbar-home span{display:none}
+    .category-toolbar-home::first-letter{font-size:17px}
+    #categoryDropdownButton{min-height:38px!important;padding:7px 9px!important;font-size:12px!important}
+    .category-toolbar-icon{width:38px;height:38px;flex-basis:38px}
+    #categoryQuickLang{height:38px!important;max-width:70px!important;font-size:10px!important;padding:0 5px!important}
+    #categoryGrid{margin-top:6px!important}
+    #categoryGrid button{min-height:36px!important;font-size:11px!important;padding:5px 9px!important}
+  }
+</style>
+
 <script id="video-style-category-scroll-fix-js">
 (function(){
   let categoryNaturalTop = 0;
@@ -4202,11 +4385,8 @@ function getMalaysiaSqlTimestamp(){
     const price=currentOrderType==='takeaway'&&item.takeaway_price!=null
       ?Number(item.takeaway_price):Number(item.dine_in_price||0);
     const outOfSchedule=item._out_of_schedule===true;
-    const scheduleBadge=outOfSchedule
-      ? `<div class="out-of-schedule-badge">⏰ Out of Schedule</div>`
-      : '';
     const orderAction=outOfSchedule
-      ? `<button type="button" class="out-of-schedule-action" disabled aria-disabled="true" title="Out of Schedule">Add to Cart</button>`
+      ? `<button type="button" class="out-of-schedule-action" disabled aria-disabled="true" title="Out of Schedule">⏰ Out of Schedule</button>`
       : quantityHtml(item.id,price);
     const itemName=getMenuDisplayName(item);
     const imgSrc=item.image_url||'images/logo.png';
@@ -4227,7 +4407,6 @@ function getMalaysiaSqlTimestamp(){
           )}
         </h3>
         ${soldText}
-        ${scheduleBadge}
         ${desc?`<p data-description-id="${escapeHtml(String(item.id))}"
           onclick="if(typeof openDescriptionDetail==='function')openDescriptionDetail('${escapeHtml(String(item.id))}')"
           title="Tap to view image and full description"
@@ -4254,7 +4433,7 @@ function getMalaysiaSqlTimestamp(){
     document.querySelectorAll(`#menuContainer [data-menu-item-id="${CSS.escape(String(id))}"] .menu-card-action`)
       .forEach(action=>{
         action.innerHTML=item._out_of_schedule===true
-          ? '<button type="button" class="out-of-schedule-action" disabled aria-disabled="true" title="Out of Schedule">Add to Cart</button>'
+          ? '<button type="button" class="out-of-schedule-action" disabled aria-disabled="true" title="Out of Schedule">⏰ Out of Schedule</button>'
           : quantityHtml(id,price);
       });
   }
@@ -4633,9 +4812,13 @@ function getMalaysiaSqlTimestamp(){
     const categories=allCategories();
 
     container.innerHTML=`
-      <div class="relative">
+      <div id="categoryToolbarTopRow">
+        <button type="button" id="categoryHomeBtn" onclick="showHome()"
+          class="category-toolbar-home" aria-label="Home" title="Home">🏠 <span data-i18n="home">Home</span></button>
+
+        <div class="relative category-toolbar-dropdown">
         <button id="categoryDropdownButton" type="button"
-          class="w-full sm:w-auto min-w-[230px] flex items-center justify-between gap-3 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm">
+          class="w-full flex items-center justify-between gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm">
           <span id="categoryDropdownLabel">${activeCategory
             ? dualCategoryNameHtml(
                 activeCategory,
@@ -4655,11 +4838,40 @@ function getMalaysiaSqlTimestamp(){
             )}
           </button>`).join('')}
         </div>
+        </div>
+
+        <div id="categoryStickySearchWrap" class="relative shrink-0">
+          <button type="button" id="categoryQuickSearchBtn"
+            class="category-toolbar-icon"
+            aria-label="Search menu" title="Search menu">🔍</button>
+
+          <div id="categoryStickySearchPanel"
+            class="hidden absolute right-0 top-full mt-2 z-[10050] w-[min(88vw,360px)] bg-white border border-slate-200 rounded-xl shadow-2xl p-2">
+            <input id="categoryStickySearchInput" type="search" autocomplete="off"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              placeholder="Search all menu items...">
+            <div id="categoryStickySearchSuggestions"
+              class="hidden mt-2 max-h-72 overflow-y-auto rounded-lg border border-slate-200 bg-white"></div>
+          </div>
+        </div>
+
+        <div class="category-quick-lang">
+          <select id="categoryQuickLang" aria-label="Change language" title="Change language">
+            <option value="en" ${currentLang==='en'?'selected':''}>EN</option>
+            <option value="en_us" ${currentLang==='en_us'?'selected':''}>US</option>
+            <option value="ms" ${currentLang==='ms'?'selected':''}>BM</option>
+            <option value="bn" ${currentLang==='bn'?'selected':''}>বাংলা</option>
+            <option value="hi" ${currentLang==='hi'?'selected':''}>हिंदी</option>
+            <option value="ta" ${currentLang==='ta'?'selected':''}>தமிழ்</option>
+            <option value="ar" ${currentLang==='ar'?'selected':''}>عربي</option>
+            <option value="zh" ${currentLang==='zh'?'selected':''}>中文</option>
+          </select>
+        </div>
       </div>
 
       <div id="categoryGrid">
-        <button type="button" data-grid-top="1" class="${!activeCategory?'bg-blue-600 text-white':'bg-white text-blue-700'} border border-blue-200 rounded-xl px-3 py-2 font-bold shadow-sm">${escapeHtml(topPopularLabel())}</button>
-        ${categories.map(cat=>`<button type="button" data-grid-category="${escapeHtml(cat)}" class="${activeCategory===cat?'bg-blue-600 text-white':'bg-white text-gray-800'} border border-gray-200 rounded-xl px-3 py-2 font-semibold shadow-sm hover:bg-blue-50">
+        <button type="button" data-grid-top="1" class="${!activeCategory?'bg-blue-600 text-white':'bg-white text-blue-700'} border border-blue-200 rounded-lg px-3 py-2 font-bold shadow-sm">${escapeHtml(topPopularLabel())}</button>
+        ${categories.map(cat=>`<button type="button" data-grid-category="${escapeHtml(cat)}" class="${activeCategory===cat?'bg-blue-600 text-white':'bg-white text-gray-800'} border border-gray-200 rounded-lg px-3 py-2 font-semibold shadow-sm hover:bg-blue-50">
           ${dualCategoryNameHtml(
               cat,
               'category-translated block',
@@ -4668,34 +4880,6 @@ function getMalaysiaSqlTimestamp(){
                 : 'category-original block mt-0.5 text-[10px] font-semibold text-slate-400'
           )}
         </button>`).join('')}
-      </div>
-
-      <div id="categoryStickySearchWrap" class="relative shrink-0">
-        <button type="button" id="categoryQuickSearchBtn"
-          class="flex items-center justify-center w-11 h-11 shrink-0 bg-white border border-slate-300 rounded-xl shadow-sm hover:bg-slate-50 text-slate-700 font-black"
-          aria-label="Search menu" title="Search menu">🔍</button>
-
-        <div id="categoryStickySearchPanel"
-          class="hidden absolute right-0 top-full mt-2 z-[10050] w-[min(88vw,360px)] bg-white border border-slate-200 rounded-xl shadow-2xl p-2">
-          <input id="categoryStickySearchInput" type="search" autocomplete="off"
-            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            placeholder="Search all menu items...">
-          <div id="categoryStickySearchSuggestions"
-            class="hidden mt-2 max-h-72 overflow-y-auto rounded-lg border border-slate-200 bg-white"></div>
-        </div>
-      </div>
-
-      <div class="category-quick-lang">
-        <select id="categoryQuickLang" aria-label="Change language" title="Change language">
-          <option value="en" ${currentLang==='en'?'selected':''}>EN</option>
-          <option value="en_us" ${currentLang==='en_us'?'selected':''}>US</option>
-          <option value="ms" ${currentLang==='ms'?'selected':''}>BM</option>
-          <option value="bn" ${currentLang==='bn'?'selected':''}>বাংলা</option>
-          <option value="hi" ${currentLang==='hi'?'selected':''}>हिंदी</option>
-          <option value="ta" ${currentLang==='ta'?'selected':''}>தமிழ்</option>
-          <option value="ar" ${currentLang==='ar'?'selected':''}>عربي</option>
-          <option value="zh" ${currentLang==='zh'?'selected':''}>中文</option>
-        </select>
       </div>`;
 
     updateCategoryDropdownWidth(categories);
@@ -4921,6 +5105,8 @@ function getMalaysiaSqlTimestamp(){
   }
 
   function updateActiveCategoryFromScroll(){
+    const orderViewNow=document.getElementById('orderView');
+    if(!orderViewNow || orderViewNow.classList.contains('hidden'))return;
     if(Date.now()<programmaticCategoryJumpUntil)return;
 
     const sections=[...document.querySelectorAll('#menuContainer [data-video-section]')];
@@ -5042,6 +5228,9 @@ function getMalaysiaSqlTimestamp(){
 
   window.openMenuOnlyView=function(type){
     currentOrderType = type==='takeaway' ? 'takeaway' : 'dine_in';
+    activeCategory = null;
+    const initialSearch=document.getElementById('menuSearchInput');
+    if(initialSearch)initialSearch.value='';
     cart=[];
     if(typeof saveCart==='function')saveCart();
 
@@ -5482,6 +5671,36 @@ fetchMenu=async function(){
   else renderTopPopular();
 };
 window.fetchMenu=fetchMenu;
+
+// FINAL DESCRIPTION LOADER: the scheduling fetchMenu override above becomes the final
+// menu loader, so descriptions must be loaded again around that final function.
+(function(){
+  const scheduledFetchMenu = window.fetchMenu;
+  if(typeof scheduledFetchMenu !== 'function') return;
+
+  window.fetchMenu = async function(){
+    if(typeof loadCustomerDescriptions === 'function'){
+      await loadCustomerDescriptions();
+    }
+
+    await scheduledFetchMenu.apply(this, arguments);
+
+    (window.menuItems || menuItems || []).forEach(item=>{
+      item.item_description = window.itemDescriptionMap?.[String(item.id)] || '';
+    });
+    (window.topSellingMenuItems || []).forEach(item=>{
+      item.item_description = window.itemDescriptionMap?.[String(item.id)] || '';
+    });
+
+    // Keep the professional continuous menu intact:
+    // Top 15 first, then every category below it. Descriptions are already attached above.
+    if(typeof renderContinuousMenu === 'function'){
+      renderContinuousMenu();
+    }else if(typeof renderTopPopular === 'function'){
+      renderTopPopular();
+    }
+  };
+})();
 </script>
 
 
