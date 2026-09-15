@@ -507,6 +507,39 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
   }
 }
 </style>
+<style id="permanent-header-language-fix">
+#headerLanguageWrap{display:block!important;visibility:visible!important;opacity:1!important;flex:0 0 auto!important}
+#langSelect{display:block!important}
+@media(max-width:640px){
+  #headerLanguageWrap{max-width:112px!important}
+  #langSelect{max-width:112px!important;width:auto!important;min-width:82px!important;padding-left:24px!important;padding-right:18px!important}
+}
+</style>
+<style id="header-language-icon-text-spacing-fix">
+#headerLanguageWrap{position:relative!important}
+#headerLanguageWrap > span{
+  left:10px!important;
+  z-index:2!important;
+  pointer-events:none!important;
+}
+#langSelect{
+  padding-left:36px!important;
+  padding-right:28px!important;
+  min-width:132px!important;
+  width:auto!important;
+}
+@media(max-width:640px){
+  #headerLanguageWrap{max-width:none!important}
+  #langSelect{
+    min-width:132px!important;
+    max-width:150px!important;
+    width:auto!important;
+    padding-left:36px!important;
+    padding-right:26px!important;
+    font-size:14px!important;
+  }
+}
+</style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans customer-home-screen">
 
@@ -3113,11 +3146,81 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
         }
 
         function tableSectionFromTable(table){const t=String(table||'').trim().toUpperCase();return t.startsWith('B')?'outdoor':t.startsWith('C')?'first_floor':'indoor';}
-        function fillTableSelect(selectEl,section,selected){if(!selectEl)return;const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';selectEl.innerHTML=Array.from({length:30},(_,i)=>`<option value="${prefix}${i+1}">${prefix}${i+1}</option>`).join('');if(selected)selectEl.value=String(selected).toUpperCase();}
-        function updateCheckoutTableDropdown(){const section=document.getElementById('checkoutSectionSelect')?.value||'indoor';const old=document.getElementById('checkoutTableSelect')?.value||'';fillTableSelect(document.getElementById('checkoutTableSelect'),section,tableSectionFromTable(old)===section?old:null);applyCheckoutTableSelection();}
+        function fillTableSelect(selectEl,section,selected){
+            if(!selectEl)return;
+            const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';
+            selectEl.innerHTML=Array.from({length:30},(_,i)=>`<option value="${prefix}${i+1}">${prefix}${i+1}</option>`).join('');
+            const wanted=String(selected||'').trim().toUpperCase();
+            if(wanted && Array.from(selectEl.options).some(o=>o.value===wanted)){
+                selectEl.value=wanted;
+            }else if(selectEl.options.length){
+                selectEl.selectedIndex=0;
+            }
+        }
+        function updateCheckoutTableDropdown(){
+            const secEl=document.getElementById('checkoutSectionSelect');
+            const tblEl=document.getElementById('checkoutTableSelect');
+            if(!secEl||!tblEl)return;
+            const section=secEl.value||'indoor';
+            const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';
+            tblEl.innerHTML='';
+            for(let i=1;i<=30;i++){
+                const opt=document.createElement('option');
+                opt.value=prefix+i;
+                opt.textContent=prefix+i;
+                tblEl.appendChild(opt);
+            }
+            tblEl.value=prefix+'1';
+            applyCheckoutTableSelection();
+        }
         function applyCheckoutTableSelection(){const section=document.getElementById('checkoutSectionSelect')?.value||'indoor';const table=document.getElementById('checkoutTableSelect')?.value||'';if(!table)return;const mainSection=document.getElementById('activeSectionSelect'),mainTable=document.getElementById('activeTableSelect');if(mainSection){mainSection.disabled=false;mainSection.value=section;}if(typeof updateActiveTableDropdown==='function')updateActiveTableDropdown();if(mainTable){mainTable.disabled=false;mainTable.value=table;}const label=document.getElementById('checkoutConfirmedTable'),summary=document.getElementById('summaryTableLocation');if(label)label.textContent=`TABLE ${table}`;if(summary)summary.textContent=`${section.toUpperCase()} - Table ${table}`;try{sessionStorage.setItem('hameeds_session_table_context',JSON.stringify({table,section,source:'manual',saved_at:new Date().toISOString()}));}catch(e){}}
 
+        function forceInitCheckoutTableNow(sectionWanted, tableWanted){
+            const secEl=document.getElementById('checkoutSectionSelect');
+            const tblEl=document.getElementById('checkoutTableSelect');
+            if(!secEl||!tblEl)return;
+            let section=sectionWanted || secEl.value || document.getElementById('activeSectionSelect')?.value || 'indoor';
+            let wanted=String(tableWanted || document.getElementById('activeTableSelect')?.value || qrTableContext?.table || '').trim().toUpperCase();
+            if(/^[ABC]\d{1,2}$/.test(wanted)) section=tableSectionFromTable(wanted);
+            secEl.value=section;
+            const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';
+            tblEl.replaceChildren(...Array.from({length:30},(_,i)=>{
+                const o=document.createElement('option'); o.value=prefix+(i+1); o.textContent=prefix+(i+1); return o;
+            }));
+            tblEl.value=(wanted.startsWith(prefix)&&Array.from(tblEl.options).some(o=>o.value===wanted))?wanted:prefix+'1';
+            const big=document.getElementById('checkoutConfirmedTable');
+            if(big)big.textContent='TABLE '+tblEl.value;
+        }
+
         function openCheckoutModal() {
+            // Checkout always mirrors the CURRENT main Dine-In selection.
+            if(currentOrderType==='dine_in'){
+                const ms=document.getElementById('activeSectionSelect');
+                const mt=document.getElementById('activeTableSelect');
+                const cs=document.getElementById('checkoutSectionSelect');
+                const ct=document.getElementById('checkoutTableSelect');
+                const section=ms?.value||'indoor';
+                const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';
+                if(mt && !mt.value){
+                    if(typeof updateActiveTableDropdown==='function')updateActiveTableDropdown();
+                    if(!mt.value && mt.options.length)mt.selectedIndex=0;
+                }
+                const chosen=mt?.value||prefix+'1';
+                if(cs)cs.value=section;
+                if(ct){
+                    ct.innerHTML='';
+                    for(let i=1;i<=30;i++){
+                        const o=document.createElement('option');
+                        o.value=prefix+i;o.textContent=prefix+i;ct.appendChild(o);
+                    }
+                    ct.value=chosen;
+                    if(!ct.value)ct.value=prefix+'1';
+                }
+                const big=document.getElementById('checkoutConfirmedTable');
+                if(big)big.textContent='TABLE '+(ct?.value||chosen);
+            }
+
+
             const savedGuest=(()=>{try{return JSON.parse(localStorage.getItem('hameeds_guest_customer')||'null')}catch(e){return null}})();
             const nameInput=document.getElementById('checkoutName');
             const phoneInput=document.getElementById('checkoutPhone');
@@ -3146,6 +3249,7 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
                     if(!checkoutTable.value && checkoutTable.options.length) checkoutTable.selectedIndex=0;
                 }
                 applyCheckoutTableSelection();
+                
             } else {
                 summaryType.innerText = 'Takeaway';
                 summaryLoc.innerText = 'TAKEAWAY COUNTER';
@@ -3171,7 +3275,53 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
                 </button>`;
             }).join('');
             
+
             document.getElementById('checkoutModal').classList.remove('hidden');
+
+            // FINAL FORCE INIT: populate the visible checkout table dropdown every time
+            // the checkout opens. Do not depend on a change event.
+            if(currentOrderType === 'dine_in'){
+                setTimeout(()=>{
+                    const secEl=document.getElementById('checkoutSectionSelect');
+                    const tblEl=document.getElementById('checkoutTableSelect');
+                    if(!secEl || !tblEl)return;
+
+                    let section=secEl.value || document.getElementById('activeSectionSelect')?.value || 'indoor';
+                    let wanted=String(document.getElementById('activeTableSelect')?.value || qrTableContext?.table || '').trim().toUpperCase();
+
+                    // Keep section consistent with a valid current/QR table.
+                    if(/^[ABC]\d{1,2}$/.test(wanted)){
+                        section=tableSectionFromTable(wanted);
+                        secEl.value=section;
+                    }
+
+                    const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';
+                    tblEl.innerHTML='';
+                    for(let i=1;i<=30;i++){
+                        const opt=document.createElement('option');
+                        opt.value=prefix+i;
+                        opt.textContent=prefix+i;
+                        tblEl.appendChild(opt);
+                    }
+
+                    if(wanted && wanted.startsWith(prefix) && Array.from(tblEl.options).some(o=>o.value===wanted)){
+                        tblEl.value=wanted;
+                    }else{
+                        tblEl.value=prefix+'1';
+                    }
+
+                    // Sync the large TABLE label and the actual order table.
+                    const selected=tblEl.value || prefix+'1';
+                    const big=document.getElementById('checkoutConfirmedTable');
+                    if(big)big.textContent='TABLE '+selected;
+                    const mainSec=document.getElementById('activeSectionSelect');
+                    const mainTbl=document.getElementById('activeTableSelect');
+                    if(mainSec){mainSec.disabled=false;mainSec.value=section;}
+                    if(typeof updateActiveTableDropdown==='function')updateActiveTableDropdown();
+                    if(mainTbl){mainTbl.disabled=false;mainTbl.value=selected;}
+                },0);
+            }
+
         }
 
         function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
@@ -3827,24 +3977,15 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
         }
 
         function updateLoginUI() {
-            const profileDiv = document.getElementById('sidebarProfile');
-            const btnText = document.getElementById('loginBtnText');
-            if(loggedInCustomer) {
-                const fullName = String(loggedInCustomer.full_name || 'Customer').trim();
-                const firstName = fullName.split(/\s+/)[0] || 'Customer';
-                btnText.removeAttribute('data-i18n');
-                btnText.innerText = `${firstName} • Logout`;
-                btnText.classList.remove('hidden');
-                profileDiv.classList.remove('hidden');
-                document.getElementById('profileName').innerText = fullName;
-                document.getElementById('profileEmail').innerText = loggedInCustomer.email || '';
-                document.getElementById('mainAuthBtn').title = `Logout ${fullName}`;
-            } else {
-                btnText.setAttribute('data-i18n','login');
-                btnText.innerText = translations[currentLang]?.login || 'Login';
-                profileDiv.classList.add('hidden');
-                document.getElementById('mainAuthBtn').title = 'Login';
+            // Customer login/register UI has been removed.
+            // Keep this legacy hook harmless because language/init code still calls it.
+            const authBtn = document.getElementById('mainAuthBtn');
+            const loginModal = document.getElementById('loginModal');
+            if (authBtn) {
+                authBtn.classList.add('hidden');
+                authBtn.setAttribute('aria-hidden','true');
             }
+            if (loginModal) loginModal.classList.add('hidden');
         }
 
         function openChat() { alert('Live chat feature coming soon!'); }
@@ -4035,19 +4176,60 @@ window.openCartModal = function(){
 };
 
 window.openCheckoutModal = function(){
-  if(loggedInCustomer){
-    document.getElementById('checkoutName').value=loggedInCustomer.full_name;
-    document.getElementById('checkoutPhone').value=loggedInCustomer.phone;
+  const savedGuest=(()=>{try{return JSON.parse(localStorage.getItem('hameeds_guest_customer')||'null')}catch(e){return null}})();
+  const nameInput=document.getElementById('checkoutName');
+  const phoneInput=document.getElementById('checkoutPhone');
+  if(savedGuest){
+    if(nameInput && !nameInput.value)nameInput.value=savedGuest.full_name||'';
+    if(phoneInput && !phoneInput.value)phoneInput.value=savedGuest.phone||'';
   }
-  const summaryType=document.getElementById('summaryOrderType'),summaryLoc=document.getElementById('summaryTableLocation');
-  if(currentOrderType==='dine_in'){
-    summaryType.innerText='Dine-In';
-    const section=document.getElementById('activeSectionSelect').value;
-    const table=document.getElementById('activeTableSelect').value;
-    summaryLoc.innerText=`${section.toUpperCase()} - Table ${table}`;
-  }else{summaryType.innerText='Takeaway';summaryLoc.innerText='TAKEAWAY COUNTER';}
 
-  const subtotal=cart.reduce((sum,i)=>sum+(i.price*i.quantity),0),tax=subtotal*.06,total=subtotal+tax;
+  const summaryType=document.getElementById('summaryOrderType');
+  const summaryLoc=document.getElementById('summaryTableLocation');
+  const confirmBox=document.getElementById('checkoutTableConfirmBox');
+
+  if(currentOrderType==='dine_in'){
+    const mainSection=document.getElementById('activeSectionSelect');
+    const mainTable=document.getElementById('activeTableSelect');
+    const checkoutSection=document.getElementById('checkoutSectionSelect');
+    const checkoutTable=document.getElementById('checkoutTableSelect');
+
+    const section=mainSection?.value||'indoor';
+    const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';
+
+    // The MAIN Dine-In selector is the single source of truth.
+    if(mainTable && !mainTable.value){
+      if(typeof updateActiveTableDropdown==='function')updateActiveTableDropdown();
+      if(mainTable.options.length)mainTable.selectedIndex=0;
+    }
+    const table=mainTable?.value||prefix+'1';
+
+    if(checkoutSection)checkoutSection.value=section;
+    if(checkoutTable){
+      checkoutTable.innerHTML='';
+      for(let i=1;i<=30;i++){
+        const opt=document.createElement('option');
+        opt.value=prefix+i;
+        opt.textContent=prefix+i;
+        checkoutTable.appendChild(opt);
+      }
+      checkoutTable.value=table;
+      if(!checkoutTable.value)checkoutTable.value=prefix+'1';
+    }
+
+    summaryType.innerText='Dine-In';
+    summaryLoc.innerText=`${section.toUpperCase()} - Table ${checkoutTable?.value||table}`;
+    const big=document.getElementById('checkoutConfirmedTable');
+    if(big)big.textContent=`TABLE ${checkoutTable?.value||table}`;
+    if(confirmBox){confirmBox.classList.remove('hidden');confirmBox.style.display='block';}
+  }else{
+    summaryType.innerText='Takeaway';
+    summaryLoc.innerText='TAKEAWAY COUNTER';
+    if(confirmBox){confirmBox.classList.add('hidden');confirmBox.style.display='none';}
+  }
+
+  const subtotal=cart.reduce((sum,i)=>sum+(i.price*i.quantity),0);
+  const tax=subtotal*.06,total=subtotal+tax;
   document.getElementById('modalSubtotal').innerText=`RM${subtotal.toFixed(2)}`;
   document.getElementById('modalTax').innerText=`RM${tax.toFixed(2)}`;
   document.getElementById('modalTotal').innerText=`RM${total.toFixed(2)}`;
@@ -4069,6 +4251,7 @@ window.openCheckoutModal = function(){
       </div>
     </div>`;
   }).join('');
+
   document.getElementById('checkoutModal').classList.remove('hidden');
 };
 
@@ -4555,10 +4738,15 @@ function getMalaysiaSqlTimestamp(){
     box-shadow:0 6px 18px rgba(15,23,42,.16)!important;
   }
 
-  /* On the ordering/menu screen the compact sticky toolbar now owns Search + Language. */
-  body:not(.customer-home-screen) header #headerMenuSearch,
-  body:not(.customer-home-screen) header #headerLanguageWrap{
+  /* Keep the top-header language selector permanently visible.
+     The category-toolbar language selector remains available as a second control. */
+  body:not(.customer-home-screen) header #headerMenuSearch{
     display:none!important;
+  }
+  header #headerLanguageWrap{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
   }
 
   @media(max-width:640px){
