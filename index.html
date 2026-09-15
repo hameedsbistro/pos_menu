@@ -468,6 +468,45 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
     display:none!important;
   }
 </style>
+
+<style id="checkout-compact-table-fix">
+#checkoutTableConfirmBox{padding:12px 16px!important;margin-bottom:12px!important;border-width:2px!important;border-radius:14px!important}
+#checkoutTableConfirmBox #checkoutConfirmedTable{font-size:34px!important;line-height:1.05!important;margin-top:4px!important}
+#checkoutTableConfirmBox select{min-height:50px!important;padding:8px 12px!important}
+@media(max-height:800px){
+  #checkoutTableConfirmBox{padding:8px 12px!important}
+  #checkoutTableConfirmBox #checkoutConfirmedTable{font-size:28px!important}
+  #checkoutTableConfirmBox select{min-height:44px!important;padding:6px 10px!important}
+}
+</style>
+
+<style id="checkout-pc-viewport-fix">
+@media (min-width: 769px){
+  #checkoutModal > div{
+    max-height:96vh!important;
+    height:auto!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+  }
+  #checkoutItemsList{
+    max-height:22vh!important;
+    min-height:70px!important;
+  }
+  #checkoutTableConfirmBox{
+    padding:8px 12px!important;
+    margin-bottom:8px!important;
+  }
+  #checkoutTableConfirmBox #checkoutConfirmedTable{
+    font-size:28px!important;
+    line-height:1!important;
+  }
+  #checkoutTableConfirmBox select{
+    min-height:42px!important;
+    padding:5px 10px!important;
+    font-size:18px!important;
+  }
+}
+</style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans customer-home-screen">
 
@@ -522,15 +561,10 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
                 </select>
                 <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-yellow-300">🌐</span>
             </div>
-            <!-- ডাইনামিক লগইন/প্রোফাইল বাটন -->
-            <button id="mainAuthBtn" onclick="handleAuthClick()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition flex items-center gap-1 text-sm font-semibold">
-                <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                <span id="loginBtnText" data-i18n="login">Login</span>
-            </button>
-            <!-- লাইভ চ্যাট বাটন -->
-            <button onclick="openChat()" class="p-2 bg-blue-800 rounded-lg hover:bg-blue-700 transition flex items-center gap-1 text-sm font-semibold" title="Live Chat">
-                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                <span class="hidden md:inline" data-i18n="liveChat">Live Chat</span>
+            <!-- Customer login removed: ordering is guest/phone based. -->
+            <button id="customerCallBellBtn" onclick="callCashierFromTable()" class="p-2 bg-amber-500 rounded-lg hover:bg-amber-400 transition flex items-center gap-1 text-sm font-extrabold text-slate-900 shadow" title="Call Cashier">
+                <span class="text-xl leading-none">🔔</span>
+                <span class="hidden md:inline">Call Cashier</span>
             </button>
         </div>
     </header>
@@ -542,7 +576,7 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
                 <h2 class="text-xl font-bold text-gray-800" data-i18n="menuAndProfile">Menu & Profile</h2>
                 <button onclick="toggleSidebar()" class="text-gray-500 hover:text-black font-bold text-xl">✕</button>
             </div>
-            <div id="sidebarProfile" class="mb-6 p-4 bg-gray-50 rounded-lg border hidden">
+            <div id="sidebarProfile" class="hidden">
                 <h3 class="font-bold text-gray-800" id="profileName">Guest</h3>
                 <p class="text-xs text-gray-500" id="profileEmail">-</p>
                 <button onclick="logoutCustomer()" class="mt-2 text-xs text-red-600 font-bold hover:underline" data-i18n="logout">Logout</button>
@@ -630,7 +664,15 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
             <div class="flex gap-2 mb-4">
                 <button onclick="showHome()" class="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-lg font-bold text-sm flex items-center gap-1">🏠 <span data-i18n="home">Home</span></button>
             </div>
-            <h2 class="text-2xl font-bold mb-4 text-gray-800" data-i18n="orderHistory">Order History</h2>
+            <h2 class="text-2xl font-bold mb-3 text-gray-800" data-i18n="orderHistory">Order History</h2>
+            <div class="bg-white border border-blue-200 rounded-xl p-4 mb-4 shadow-sm">
+                <label class="block text-sm font-extrabold text-gray-700 mb-2">Phone Number</label>
+                <div class="flex gap-2">
+                    <input id="historyPhoneInput" type="tel" inputmode="tel" autocomplete="tel" placeholder="Enter the phone number used for your order" class="flex-1 min-w-0 border-2 border-blue-200 rounded-xl px-4 py-3 text-base font-bold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="button" onclick="loadOrderHistoryByPhone()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 rounded-xl font-extrabold">View History</button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Orders are matched with the phone number entered during checkout.</p>
+            </div>
             <div id="orderHistoryContainer" class="space-y-4"></div>
         </div>
     </main>
@@ -691,20 +733,39 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
                 <div class="flex justify-between"><span>Table / Location:</span> <span id="summaryTableLocation">TAKEAWAY</span></div>
             </div>
 
-            <div id="checkoutItemsList" class="max-h-36 overflow-y-auto mb-4 border-b pb-2 space-y-2"></div>
+            <div id="checkoutItemsList" class="max-h-52 overflow-y-auto mb-4 border-b pb-2 space-y-2"></div>
             <div class="space-y-1 mb-4 text-sm text-gray-700">
                 <div class="flex justify-between"><span data-i18n="subtotal">Subtotal:</span> <span id="modalSubtotal">RM0.00</span></div>
                 <div class="flex justify-between"><span data-i18n="sstTax">SST Tax (6%):</span> <span id="modalTax">RM0.00</span></div>
                 <div class="flex justify-between font-bold text-lg text-black border-t pt-1"><span data-i18n="total">Total:</span> <span id="modalTotal">RM0.00</span></div>
             </div>
-            <div class="space-y-3 mb-6">
+
+            <div id="checkoutTableConfirmBox" class="mb-5 rounded-2xl border-4 border-red-500 bg-red-50 px-5 py-5 shadow-lg">
+                <div class="text-center text-red-700 text-xl md:text-2xl font-black uppercase">⚠️ CONFIRM YOUR TABLE</div>
+                <div id="checkoutConfirmedTable" class="mt-2 text-center text-4xl md:text-5xl font-black text-red-600">TABLE</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+                    <div>
+                        <label for="checkoutSectionSelect" class="block text-base md:text-lg font-black text-red-700 mb-2">TABLE SECTION</label>
+                        <select id="checkoutSectionSelect" onchange="updateCheckoutTableDropdown()" class="w-full border-3 border-red-500 bg-white rounded-xl px-4 py-4 text-xl md:text-2xl font-black text-gray-900">
+                            <option value="indoor">INDOOR (A)</option><option value="outdoor">OUTDOOR (B)</option><option value="first_floor">1ST FLOOR (C)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="checkoutTableSelect" class="block text-base md:text-lg font-black text-red-700 mb-2">TABLE NUMBER</label>
+                        <select id="checkoutTableSelect" onchange="applyCheckoutTableSelection()" class="w-full border-3 border-red-500 bg-white rounded-xl px-4 py-4 text-2xl md:text-3xl font-black text-red-700"></select>
+                    </div>
+                </div>
+                <div class="text-center text-sm md:text-base text-red-700 font-bold mt-3">You can change the section or table before placing the order.</div>
+            </div>
+
+            <div class="space-y-4 mb-6">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600" data-i18n="customerName">Customer Name</label>
-                    <input type="text" id="checkoutName" class="w-full border p-2 rounded-lg text-sm bg-gray-50" readonly>
+                    <label class="block text-base font-black text-gray-700 mb-1" data-i18n="customerName">Customer Name</label>
+                    <input type="text" id="checkoutName" autocomplete="name" class="w-full border-2 border-blue-300 p-4 rounded-xl text-xl font-bold bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600" data-i18n="phoneNumber">Phone Number</label>
-                    <input type="text" id="checkoutPhone" class="w-full border p-2 rounded-lg text-sm bg-gray-50" readonly>
+                    <label class="block text-base font-black text-gray-700 mb-1" data-i18n="phoneNumber">Phone Number</label>
+                    <input type="tel" id="checkoutPhone" inputmode="tel" autocomplete="tel" class="w-full border-2 border-blue-300 p-4 rounded-xl text-xl font-bold bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
             <div class="flex gap-3">
@@ -1700,9 +1761,28 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
                 if(n<1 || n>30) return null;
                 const prefix=raw.charAt(0);
                 const section=prefix==='B'?'outdoor':prefix==='C'?'first_floor':'indoor';
-                return {table:raw,section};
+                const ctx={table:raw,section,source:'qr',saved_at:new Date().toISOString()};
+                try{
+                    localStorage.removeItem('hameeds_qr_table_context');
+                    localStorage.removeItem('hameeds_selected_table');
+                    sessionStorage.setItem('hameeds_session_table_context',JSON.stringify(ctx));
+                }catch(e){}
+                return ctx;
             }catch(e){return null;}
         })();
+        function getRememberedQrTableContext(){
+            // A table is valid only for the current page/session.
+            // Never reuse yesterday's/localStorage QR table for a new direct visit.
+            if(qrTableContext)return {table:qrTableContext.table,section:qrTableContext.section,source:'qr'};
+            try{
+                const x=JSON.parse(sessionStorage.getItem('hameeds_session_table_context')||'null');
+                const raw=String(x?.table||'').trim().toUpperCase();
+                if(!/^[ABC]\d{1,2}$/.test(raw))return null;
+                const n=Number(raw.slice(1));if(n<1||n>30)return null;
+                const prefix=raw.charAt(0);
+                return {table:raw,section:prefix==='B'?'outdoor':prefix==='C'?'first_floor':'indoor',source:'session'};
+            }catch(e){return null;}
+        }
 
         function applyQrTableToDineIn(){
             if(!qrTableContext)return false;
@@ -1798,12 +1878,6 @@ function startOrder(type) {
         }
 
         async function showOrderHistory() {
-            if(!loggedInCustomer) {
-                alert('Please login first to view order history.');
-                openLoginModal();
-                return;
-            }
-
             setHeaderMenuSearchVisible(false);
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('orderView').classList.add('hidden');
@@ -1813,10 +1887,19 @@ function startOrder(type) {
             const container = document.getElementById('orderHistoryContainer');
             container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
 
+            const historyInput=document.getElementById('historyPhoneInput');
+            const savedGuest=(()=>{try{return JSON.parse(localStorage.getItem('hameeds_guest_customer')||'null')}catch(e){return null}})();
+            if(historyInput && !historyInput.value && savedGuest?.phone)historyInput.value=savedGuest.phone;
+            const phone=normalizeCustomerPhone(historyInput?.value||'');
+            if(!phone){
+                container.innerHTML='<p class="text-gray-500 bg-white border rounded-xl p-4">Enter the phone number used when placing your order, then press View History.</p>';
+                return;
+            }
+            if(historyInput)historyInput.value=phone;
             const { data, error } = await _supabase
                 .from('orders')
                 .select('*')
-                .eq('customer_id', loggedInCustomer.id)
+                .eq('customer_phone', phone)
                 .order('created_at', { ascending: false });
 
             if(error) {
@@ -3025,20 +3108,22 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
         }
 
         function proceedToCheckout() {
-            if(!loggedInCustomer) {
-                closeCartModal();
-                openLoginModal();
-                alert('Please login first to proceed with checkout.');
-                return;
-            }
             closeCartModal();
             openCheckoutModal();
         }
 
+        function tableSectionFromTable(table){const t=String(table||'').trim().toUpperCase();return t.startsWith('B')?'outdoor':t.startsWith('C')?'first_floor':'indoor';}
+        function fillTableSelect(selectEl,section,selected){if(!selectEl)return;const prefix=section==='outdoor'?'B':section==='first_floor'?'C':'A';selectEl.innerHTML=Array.from({length:30},(_,i)=>`<option value="${prefix}${i+1}">${prefix}${i+1}</option>`).join('');if(selected)selectEl.value=String(selected).toUpperCase();}
+        function updateCheckoutTableDropdown(){const section=document.getElementById('checkoutSectionSelect')?.value||'indoor';const old=document.getElementById('checkoutTableSelect')?.value||'';fillTableSelect(document.getElementById('checkoutTableSelect'),section,tableSectionFromTable(old)===section?old:null);applyCheckoutTableSelection();}
+        function applyCheckoutTableSelection(){const section=document.getElementById('checkoutSectionSelect')?.value||'indoor';const table=document.getElementById('checkoutTableSelect')?.value||'';if(!table)return;const mainSection=document.getElementById('activeSectionSelect'),mainTable=document.getElementById('activeTableSelect');if(mainSection){mainSection.disabled=false;mainSection.value=section;}if(typeof updateActiveTableDropdown==='function')updateActiveTableDropdown();if(mainTable){mainTable.disabled=false;mainTable.value=table;}const label=document.getElementById('checkoutConfirmedTable'),summary=document.getElementById('summaryTableLocation');if(label)label.textContent=`TABLE ${table}`;if(summary)summary.textContent=`${section.toUpperCase()} - Table ${table}`;try{sessionStorage.setItem('hameeds_session_table_context',JSON.stringify({table,section,source:'manual',saved_at:new Date().toISOString()}));}catch(e){}}
+
         function openCheckoutModal() {
-            if(loggedInCustomer) {
-                document.getElementById('checkoutName').value = loggedInCustomer.full_name;
-                document.getElementById('checkoutPhone').value = loggedInCustomer.phone;
+            const savedGuest=(()=>{try{return JSON.parse(localStorage.getItem('hameeds_guest_customer')||'null')}catch(e){return null}})();
+            const nameInput=document.getElementById('checkoutName');
+            const phoneInput=document.getElementById('checkoutPhone');
+            if(savedGuest){
+                if(nameInput && !nameInput.value) nameInput.value=savedGuest.full_name||'';
+                if(phoneInput && !phoneInput.value) phoneInput.value=savedGuest.phone||'';
             }
 
             const summaryType = document.getElementById('summaryOrderType');
@@ -3049,9 +3134,23 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
                 const section = document.getElementById('activeSectionSelect').value;
                 const table = document.getElementById('activeTableSelect').value;
                 summaryLoc.innerText = `${section.toUpperCase()} - Table ${table}`;
+                const confirmBox=document.getElementById('checkoutTableConfirmBox');
+                const confirmTable=document.getElementById('checkoutConfirmedTable');
+                if(confirmBox){confirmBox.classList.remove('hidden');confirmBox.style.display='block';}
+                if(confirmTable)confirmTable.textContent=`TABLE ${table}`;
+                const checkoutSection=document.getElementById('checkoutSectionSelect'),checkoutTable=document.getElementById('checkoutTableSelect');
+                if(checkoutSection)checkoutSection.value=section;
+                fillTableSelect(checkoutTable,section,table);
+                if(checkoutTable){
+                    checkoutTable.value=table;
+                    if(!checkoutTable.value && checkoutTable.options.length) checkoutTable.selectedIndex=0;
+                }
+                applyCheckoutTableSelection();
             } else {
                 summaryType.innerText = 'Takeaway';
                 summaryLoc.innerText = 'TAKEAWAY COUNTER';
+                const confirmBox=document.getElementById('checkoutTableConfirmBox');
+                if(confirmBox){confirmBox.classList.add('hidden');confirmBox.style.display='none';}
             }
 
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
@@ -3067,7 +3166,7 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
                 let name = getMenuDisplayName(i);
                 const modifierText = [...(i.modifiers || []), i.modifierNote || ''].filter(Boolean).join(', ');
                 return `<button type="button" onclick="openModifierModal(${index})" class="w-full text-left border-b py-2 hover:bg-blue-50 rounded-lg px-2">
-                    <div class="flex justify-between text-sm"><span class="font-semibold">${escapeHtml(name)} x ${i.quantity}</span><span>RM${(i.price*i.quantity).toFixed(2)}</span></div>
+                    <div class="flex justify-between gap-3 text-base md:text-lg"><span class="font-extrabold text-gray-900">${escapeHtml(name)} × ${i.quantity}</span><span class="font-black text-blue-700 whitespace-nowrap">RM${(i.price*i.quantity).toFixed(2)}</span></div>
                     ${modifierText ? `<div class="text-xs text-blue-700 mt-1">${escapeHtml(modifierText)}</div>` : `<div class="text-xs text-gray-400 mt-1">Tap to modify</div>`}
                 </button>`;
             }).join('');
@@ -3284,6 +3383,153 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
             return null;
         }
 
+        function normalizeCustomerPhone(value){
+            return String(value||'').trim().replace(/[\s()-]/g,'');
+        }
+
+        async function ensureGuestCustomer(fullName,phone){
+            const cleanName=String(fullName||'').trim();
+            const cleanPhone=normalizeCustomerPhone(phone);
+            if(!cleanName||!cleanPhone)return null;
+            let q=await _supabase.from('customers').select('*').eq('phone',cleanPhone).limit(1);
+            let row=(q.data||[])[0]||null;
+            if(row){
+                if(String(row.full_name||'')!==cleanName){
+                    const u=await _supabase.from('customers').update({full_name:cleanName}).eq('id',row.id).select().maybeSingle();
+                    if(!u.error&&u.data)row=u.data;
+                }
+            }else{
+                let ins=await _supabase.from('customers').insert([{full_name:cleanName,phone:cleanPhone}]).select().single();
+                if(ins.error){
+                    // Compatibility fallback if this older customers table requires email/password.
+                    const digits=cleanPhone.replace(/\D/g,'')||Date.now();
+                    ins=await _supabase.from('customers').insert([{full_name:cleanName,phone:cleanPhone,email:`guest_${digits}@hameeds.local`,password:`guest-${digits}`}]).select().single();
+                }
+                if(ins.error)throw ins.error;
+                row=ins.data;
+            }
+            localStorage.setItem('hameeds_guest_customer',JSON.stringify({id:row?.id??null,full_name:cleanName,phone:cleanPhone}));
+            return row;
+        }
+
+        async function loadOrderHistoryByPhone(){
+            return showOrderHistory();
+        }
+
+        function openBellTableSelector(){
+            let modal=document.getElementById('bellTableSelectorModal');
+            if(!modal){
+                modal=document.createElement('div');
+                modal.id='bellTableSelectorModal';
+                modal.className='fixed inset-0 z-[10020] bg-black/60 flex items-center justify-center p-4';
+                modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div><h3 class="text-xl font-black text-gray-900">🔔 Select Your Table</h3><p class="text-sm text-gray-500 mt-1">Your previous order is complete. Select your current table.</p></div>
+                        <button type="button" onclick="closeBellTableSelector()" class="w-9 h-9 rounded-full bg-gray-100 font-black">×</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-5">
+                        <select id="bellSectionSelect" onchange="updateBellTableDropdown()" class="border-2 border-amber-400 rounded-xl px-3 py-3 font-black">
+                            <option value="indoor">Indoor (A)</option><option value="outdoor">Outdoor (B)</option><option value="first_floor">First Floor (C)</option>
+                        </select>
+                        <select id="bellTableSelect" class="border-2 border-amber-500 rounded-xl px-3 py-3 text-xl font-black"></select>
+                    </div>
+                    <button type="button" onclick="confirmBellTableAndCall()" class="mt-4 w-full bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl py-3 text-lg font-black">🔔 CALL CASHIER</button>
+                </div>`;
+                document.body.appendChild(modal);
+            }else modal.classList.remove('hidden');
+            const section=document.getElementById('activeSectionSelect')?.value||'indoor';
+            const table=document.getElementById('activeTableSelect')?.value||'';
+            document.getElementById('bellSectionSelect').value=section;
+            fillTableSelect(document.getElementById('bellTableSelect'),section,table);
+        }
+        function closeBellTableSelector(){document.getElementById('bellTableSelectorModal')?.classList.add('hidden')}
+        function updateBellTableDropdown(){
+            const s=document.getElementById('bellSectionSelect')?.value||'indoor';
+            fillTableSelect(document.getElementById('bellTableSelect'),s,null);
+        }
+        async function confirmBellTableAndCall(){
+            const section=document.getElementById('bellSectionSelect')?.value||'indoor';
+            const table=document.getElementById('bellTableSelect')?.value||'';
+            if(!table){alert('Please select your table number.');return;}
+            closeBellTableSelector();
+            await sendCashierCallForTable(table,section);
+        }
+        async function sendCashierCallForTable(table,section){
+            const saved=(()=>{try{return JSON.parse(localStorage.getItem('hameeds_guest_customer')||'null')}catch(e){return null}})();
+            const btn=document.getElementById('customerCallBellBtn');
+            if(btn?.dataset.sending==='1')return;
+            if(btn)btn.dataset.sending='1';
+            try{
+                const {error}=await _supabase.from('customer_calls').insert([{
+                    table_id:table,section:section,
+                    customer_name:saved?.full_name||null,
+                    customer_phone:saved?.phone||null,status:'pending'
+                }]);
+                if(error)throw error;
+                alert(`🔔 Cashier has been called from Table ${table}.`);
+            }catch(e){
+                alert('Unable to call cashier. Please make sure the Customer Call SQL has been run.');
+                console.error('Customer call failed:',e);
+            }finally{
+                if(btn)setTimeout(()=>{btn.dataset.sending='0'},2500);
+            }
+        }
+
+        function normalizeCustomerPhoneForBell(v){
+            return String(v||'').replace(/[^\d+]/g,'').trim();
+        }
+
+        async function getLatestActiveCustomerOrderForBell(){
+            let saved=null;
+            try{saved=JSON.parse(localStorage.getItem('hameeds_guest_customer')||'null')}catch(e){}
+            const phone=normalizeCustomerPhoneForBell(
+                saved?.phone || document.getElementById('checkoutPhone')?.value || ''
+            );
+            if(!phone)return null;
+
+            // Fetch the customer's recent dine-in orders and decide locally.
+            // "completed" and cancelled/rejected/paid-final states are no longer active.
+            const {data,error}=await _supabase
+                .from('orders')
+                .select('id,table_id,section,status,payment_status,created_at,customer_phone,order_type')
+                .eq('customer_phone',phone)
+                .eq('order_type','dine_in')
+                .order('created_at',{ascending:false})
+                .limit(20);
+            if(error)throw error;
+
+            const finished=new Set(['completed','complete','cancelled','canceled','rejected','void','voided']);
+            return (data||[]).find(o=>{
+                const st=String(o.status||'').toLowerCase().trim();
+                return o.table_id && !finished.has(st);
+            }) || null;
+        }
+
+        async function callCashierFromTable(){
+            const btn=document.getElementById('customerCallBellBtn');
+            if(btn?.dataset.lookup==='1')return;
+            if(btn)btn.dataset.lookup='1';
+            try{
+                // Rule: latest unfinished customer order wins. This prevents an old QR/table
+                // from sending a call after the customer has ordered from a newer table.
+                const activeOrder=await getLatestActiveCustomerOrderForBell();
+                if(activeOrder){
+                    await sendCashierCallForTable(activeOrder.table_id,activeOrder.section||tableSectionFromTable(activeOrder.table_id));
+                    return;
+                }
+
+                // No active order: do NOT reuse yesterday's QR/session table.
+                // Ask the customer for the current table.
+                openBellTableSelector();
+            }catch(e){
+                console.error('Active order lookup failed:',e);
+                // Safe fallback: ask rather than sending to a possibly stale table.
+                openBellTableSelector();
+            }finally{
+                if(btn)btn.dataset.lookup='0';
+            }
+        }
+
         async function submitOrder() {
             const placeOrderBtn = document.querySelector('#checkoutModal button[onclick="submitOrder()"]');
             if (placeOrderBtn?.dataset.submitting === '1') return;
@@ -3293,8 +3539,29 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
                 placeOrderBtn.classList.add('opacity-60','cursor-not-allowed');
             }
 
-            const name = document.getElementById('checkoutName').value;
-            const phone = document.getElementById('checkoutPhone').value;
+            const name = String(document.getElementById('checkoutName').value||'').trim();
+            const phone = normalizeCustomerPhone(document.getElementById('checkoutPhone').value);
+
+            if(!name){
+                alert('Please enter your name.');
+                document.getElementById('checkoutName')?.focus();
+                if(placeOrderBtn){placeOrderBtn.dataset.submitting='0';placeOrderBtn.disabled=false;placeOrderBtn.classList.remove('opacity-60','cursor-not-allowed');}
+                return;
+            }
+            if(!phone || phone.replace(/\D/g,'').length<7){
+                alert('Please enter a valid phone number.');
+                document.getElementById('checkoutPhone')?.focus();
+                if(placeOrderBtn){placeOrderBtn.dataset.submitting='0';placeOrderBtn.disabled=false;placeOrderBtn.classList.remove('opacity-60','cursor-not-allowed');}
+                return;
+            }
+
+            let guestCustomer=null;
+            try{guestCustomer=await ensureGuestCustomer(name,phone)}catch(e){
+                console.error('Customer save failed:',e);
+                alert('Customer name/phone could not be saved. Please try again.');
+                if(placeOrderBtn){placeOrderBtn.dataset.submitting='0';placeOrderBtn.disabled=false;placeOrderBtn.classList.remove('opacity-60','cursor-not-allowed');}
+                return;
+            }
 
             if (!cart.length) {
                 alert('Your cart is empty.');
@@ -3306,20 +3573,6 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
                 return;
             }
 
-            // Prevent orders_customer_fkey errors caused by an old/stale customer ID
-            // saved in localStorage after the customers table/data has changed.
-            if (loggedInCustomer) {
-                const validCustomer = await resolveValidCustomerBeforeOrder();
-                if (!validCustomer) {
-                    loggedInCustomer = null;
-                    localStorage.removeItem('hameeds_customer');
-                    updateLoginUI();
-                    alert('Your saved login is no longer valid. Please login again, then place the order.');
-                    closeCheckoutModal();
-                    openLoginModal();
-                    return;
-                }
-            }
             // ADD MORE ITEM MODE: append only the new cart items to an already accepted order.
             if (appendToExistingOrderId) {
                 if (!cart.length) {
@@ -3404,8 +3657,14 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
             let tableId = 'TAKEAWAY-' + Math.floor(1000 + Math.random() * 9000);
 
             if(currentOrderType === 'dine_in') {
-                section = document.getElementById('activeSectionSelect').value;
-                tableId = document.getElementById('activeTableSelect').value;
+                applyCheckoutTableSelection();
+                section = document.getElementById('checkoutSectionSelect')?.value || document.getElementById('activeSectionSelect').value;
+                tableId = document.getElementById('checkoutTableSelect')?.value || document.getElementById('activeTableSelect').value;
+                if(!tableId){
+                    alert('Please select your table number.');
+                    if(placeOrderBtn){placeOrderBtn.dataset.submitting='0';placeOrderBtn.disabled=false;placeOrderBtn.classList.remove('opacity-60','cursor-not-allowed');}
+                    return;
+                }
             }
 
             const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
@@ -3413,7 +3672,7 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
             const total = subtotal + tax;
 
             const orderPayload = {
-                customer_id: loggedInCustomer?.id ?? null,
+                customer_id: guestCustomer?.id ?? null,
                 customer_name: name,
                 customer_phone: phone,
                 order_type: currentOrderType,
@@ -5756,3 +6015,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 </body>
 </html>
+
+<style id="guest-checkout-final-style">
+#mainAuthBtn,#loginModal{display:none!important}
+#checkoutModal #checkoutItemsList button{font-size:1.05rem}
+@media(min-width:768px){#checkoutModal>div{max-width:42rem!important}#checkoutModal #checkoutItemsList button{padding:.8rem .7rem!important}}
+</style>
