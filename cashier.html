@@ -6345,16 +6345,127 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script id="cashier-customer-call-bell-final">
 (function(){
   let activeCustomerCall=null,callAudioCtx=null,callBeepTimer=null,customerCallChannel=null;
-  function callBeep(){try{callAudioCtx=callAudioCtx||new (window.AudioContext||window.webkitAudioContext)();if(callAudioCtx.state==='suspended')callAudioCtx.resume();const o=callAudioCtx.createOscillator(),g=callAudioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.18;o.connect(g);g.connect(callAudioCtx.destination);o.start();setTimeout(()=>{try{o.stop()}catch(e){}},220)}catch(e){}}
-  function stopCallSound(){if(callBeepTimer){clearInterval(callBeepTimer);callBeepTimer=null}}
-  function startCallSound(){stopCallSound();callBeep();setTimeout(callBeep,320);setTimeout(callBeep,640);callBeepTimer=setInterval(()=>{callBeep();setTimeout(callBeep,320);setTimeout(callBeep,640)},3500)}
-  window.showCustomerCallPopup=function(row){if(!row||String(row.status||'pending').toLowerCase()!=='pending')return;activeCustomerCall=row;const table=String(row.table_id||'N/A');document.getElementById('customerCallTable').textContent=`TABLE ${table}`;document.getElementById('customerCallMessage').textContent=`Customer at Table ${table} is calling / knocking.`;const bits=[];if(row.customer_name)bits.push(row.customer_name);if(row.customer_phone)bits.push(row.customer_phone);document.getElementById('customerCallMeta').textContent=bits.join(' • ');document.getElementById('customerCallPopup').classList.remove('hidden');startCallSound()};
-  window.acknowledgeCustomerCall=async function(){stopCallSound();document.getElementById('customerCallPopup').classList.add('hidden');if(!activeCustomerCall?.id)return;try{await _supabase.from('customer_calls').update({status:'acknowledged',acknowledged_at:new Date().toISOString()}).eq('id',activeCustomerCall.id)}catch(e){console.warn('Customer call acknowledge failed',e)}activeCustomerCall=null};
-  async function loadLatestPendingCustomerCall(){try{const {data,error}=await _supabase.from('customer_calls').select('*').eq('status','pending').order('created_at',{ascending:false}).limit(1);if(!error&&data&&data[0])showCustomerCallPopup(data[0])}catch(e){}}
-  function setupCustomerCallRealtime(){try{if(customerCallChannel)return;customerCallChannel=_supabase.channel('cashier:customer_calls').on('postgres_changes',{event:'INSERT',schema:'public',table:'customer_calls'},payload=>{if(payload?.new)showCustomerCallPopup(payload.new)}).subscribe();loadLatestPendingCustomerCall()}catch(e){console.warn('Customer call realtime unavailable',e)}}
-  document.addEventListener('click',()=>{try{callAudioCtx=callAudioCtx||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}},{once:true});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setupCustomerCallRealtime);else setupCustomerCallRealtime();
-  setInterval(loadLatestPendingCustomerCall,10000);
+  let lastShownCallId=null,pollBusy=false;
+
+  // Very short beep: 90ms. One alert = exactly 3 short beeps.
+  function callBeep(){
+    try{
+      callAudioCtx=callAudioCtx||new (window.AudioContext||window.webkitAudioContext)();
+      if(callAudioCtx.state==='suspended')callAudioCtx.resume();
+      const o=callAudioCtx.createOscillator(),g=callAudioCtx.createGain();
+      o.type='sine'; o.frequency.value=880; g.gain.value=.16;
+      o.connect(g); g.connect(callAudioCtx.destination);
+      o.start();
+      setTimeout(()=>{try{o.stop()}catch(e){}},90);
+    }catch(e){}
+  }
+
+  function stopCallSound(){
+    if(callBeepTimer){clearTimeout(callBeepTimer);callBeepTimer=null;}
+  }
+
+  function startCallSound(){
+    stopCallSound();
+    // Exactly 3 short beeps; no long repeating beep cycle.
+    callBeep();
+    setTimeout(callBeep,150);
+    setTimeout(callBeep,300);
+  }
+
+  window.showCustomerCallPopup=function(row,force=false){
+    if(!row||String(row.status||'pending').toLowerCase()!=='pending')return;
+    const id=String(row.id??'');
+    // Realtime + fast poll can see the same row; do not replay it twice.
+    if(!force && id && id===lastShownCallId && activeCustomerCall)return;
+    lastShownCallId=id||lastShownCallId;
+    activeCustomerCall=row;
+
+    const table=String(row.table_id||'N/A');
+    const tableEl=document.getElementById('customerCallTable');
+    const msgEl=document.getElementById('customerCallMessage');
+    const metaEl=document.getElementById('customerCallMeta');
+    const popup=document.getElementById('customerCallPopup');
+    if(tableEl)tableEl.textContent=`TABLE ${table}`;
+    if(msgEl)msgEl.textContent=`Customer at Table ${table} is calling / knocking.`;
+    const bits=[];
+    if(row.customer_name)bits.push(row.customer_name);
+    if(row.customer_phone)bits.push(row.customer_phone);
+    if(metaEl)metaEl.textContent=bits.join(' • ');
+    if(popup)popup.classList.remove('hidden');
+    startCallSound();
+  };
+
+  window.acknowledgeCustomerCall=async function(){
+    stopCallSound();
+    const popup=document.getElementById('customerCallPopup');
+    if(popup)popup.classList.add('hidden');
+    const id=activeCustomerCall?.id;
+    activeCustomerCall=null;
+    if(!id)return;
+    try{
+      await _supabase.from('customer_calls')
+        .update({status:'acknowledged',acknowledged_at:new Date().toISOString()})
+        .eq('id',id);
+    }catch(e){console.warn('Customer call acknowledge failed',e)}
+  };
+
+  async function loadLatestPendingCustomerCall(){
+    if(pollBusy)return;
+    pollBusy=true;
+    try{
+      const {data,error}=await _supabase.from('customer_calls')
+        .select('*')
+        .eq('status','pending')
+        .order('created_at',{ascending:false})
+        .limit(1);
+      if(!error&&data&&data[0]){
+        const row=data[0];
+        if(String(row.id??'')!==String(lastShownCallId??''))showCustomerCallPopup(row);
+      }
+    }catch(e){} finally { pollBusy=false; }
+  }
+
+  function setupCustomerCallRealtime(){
+    try{
+      if(customerCallChannel)return;
+      customerCallChannel=_supabase
+        .channel('cashier:customer_calls:fast')
+        .on('postgres_changes',
+          {event:'INSERT',schema:'public',table:'customer_calls'},
+          payload=>{if(payload?.new)showCustomerCallPopup(payload.new,true)}
+        )
+        .subscribe(status=>{
+          // As soon as realtime is subscribed, immediately reconcile pending calls.
+          if(status==='SUBSCRIBED')loadLatestPendingCustomerCall();
+        });
+      loadLatestPendingCustomerCall();
+    }catch(e){
+      console.warn('Customer call realtime unavailable',e);
+      loadLatestPendingCustomerCall();
+    }
+  }
+
+  // Prepare audio on first cashier interaction (browser autoplay requirement).
+  document.addEventListener('pointerdown',()=>{
+    try{
+      callAudioCtx=callAudioCtx||new (window.AudioContext||window.webkitAudioContext)();
+      if(callAudioCtx.state==='suspended')callAudioCtx.resume();
+    }catch(e){}
+  },{once:true});
+
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',setupCustomerCallRealtime);
+  else
+    setupCustomerCallRealtime();
+
+  // Fast fallback: old file waited up to 10 seconds. Now max fallback wait ~1 second.
+  setInterval(loadLatestPendingCustomerCall,1000);
+
+  // When tab/app returns to foreground, check immediately instead of waiting for timer.
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden)loadLatestPendingCustomerCall();
+  });
+  window.addEventListener('focus',loadLatestPendingCustomerCall);
 })();
 </script>
 </body>
