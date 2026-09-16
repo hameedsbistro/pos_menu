@@ -6655,6 +6655,149 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
   });
 })();
 </script>
+
+<style id="absolute-final-category-two-row-layout">
+/* FINAL MOBILE CATEGORY PANEL: Row 1 = Home + Language + Search; Row 2 = Dropdown + horizontal categories. */
+@media (max-width:640px){
+  #categoryContainer{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:7px!important;
+    padding:8px!important;
+    overflow:visible!important;
+  }
+  #categoryToolbarTopRow{
+    display:flex!important;
+    width:100%!important;
+    align-items:center!important;
+    gap:7px!important;
+    order:1!important;
+  }
+  #categoryHomeBtn{
+    display:inline-flex!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    padding:0!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+  #categoryHomeBtn span{display:none!important;}
+  #categoryToolbarTopRow .category-quick-lang{
+    display:block!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    order:2!important;
+  }
+  #categoryQuickLang{
+    display:block!important;
+    width:100%!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0 10px!important;
+    border:1px solid #cbd5e1!important;
+    border-radius:11px!important;
+    background:#fff!important;
+    font-weight:800!important;
+  }
+  #categoryStickySearchWrap{
+    display:block!important;
+    position:relative!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    order:3!important;
+  }
+  #categoryQuickSearchBtn{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+  #categoryToolbarTopRow .category-toolbar-dropdown{display:none!important;}
+
+  #categorySecondRow{
+    display:flex!important;
+    width:100%!important;
+    min-width:0!important;
+    align-items:center!important;
+    gap:7px!important;
+    order:2!important;
+  }
+  #categorySecondRow .category-toolbar-dropdown{
+    display:block!important;
+    flex:0 0 40vw!important;
+    width:40vw!important;
+    max-width:40vw!important;
+    min-width:150px!important;
+  }
+  #categoryDropdownButton{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:48px!important;
+    padding:7px 9px!important;
+  }
+  #categoryDropdownLabel{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  #categoryGrid{
+    display:flex!important;
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    white-space:nowrap!important;
+    gap:5px!important;
+    padding:3px 2px 8px!important;
+  }
+  #categoryGrid::-webkit-scrollbar{height:7px!important;display:block!important;}
+
+  /* Search belongs to the panel/top controls, never to the keyboard viewport. */
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel{
+    position:absolute!important;
+    top:calc(100% + 6px)!important;
+    right:0!important;
+    left:auto!important;
+    bottom:auto!important;
+    width:min(82vw,360px)!important;
+    max-width:calc(100vw - 32px)!important;
+    margin:0!important;
+    z-index:10150!important;
+    transform:none!important;
+  }
+}
+</style>
+<script id="absolute-final-category-two-row-layout-js">
+(function(){
+  function arrangeCategoryRows(){
+    if(window.innerWidth>640)return;
+    var container=document.getElementById('categoryContainer');
+    var top=document.getElementById('categoryToolbarTopRow');
+    var grid=document.getElementById('categoryGrid');
+    if(!container||!top||!grid)return;
+    var dropdown=top.querySelector('.category-toolbar-dropdown');
+    var lang=top.querySelector('.category-quick-lang') || container.querySelector('.category-quick-lang');
+    var search=top.querySelector('#categoryStickySearchWrap') || container.querySelector('#categoryStickySearchWrap');
+    var home=top.querySelector('#categoryHomeBtn') || container.querySelector('#categoryHomeBtn');
+    if(home && home.parentNode!==top)top.appendChild(home);
+    if(lang && lang.parentNode!==top)top.appendChild(lang);
+    if(search && search.parentNode!==top)top.appendChild(search);
+    var row2=document.getElementById('categorySecondRow');
+    if(!row2){row2=document.createElement('div');row2.id='categorySecondRow';container.insertBefore(row2,grid);}
+    if(dropdown && dropdown.parentNode!==row2)row2.insertBefore(dropdown,row2.firstChild);
+    if(grid.parentNode!==row2)row2.appendChild(grid);
+  }
+  function run(){arrangeCategoryRows();setTimeout(arrangeCategoryRows,30);setTimeout(arrangeCategoryRows,180);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+  var target=document.getElementById('categoryContainer');
+  if(target)new MutationObserver(function(){requestAnimationFrame(arrangeCategoryRows)}).observe(target,{childList:true});
+  window.addEventListener('resize',arrangeCategoryRows,{passive:true});
+})();
+</script>
 </body>
 </html>
 
@@ -6782,6 +6925,101 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',placeSearchDirectlyUnderCategory,{passive:true});
     window.visualViewport.addEventListener('scroll',placeSearchDirectlyUnderCategory,{passive:true});
+  }
+})();
+</script>
+
+
+<style id="absolute-final-search-inside-category-panel-fix">
+/* FINAL: the mobile search field is physically part of the sticky category panel.
+   It must never be positioned relative to the keyboard / visual viewport. */
+@media (max-width:640px){
+  #categoryContainer{
+    flex-wrap:wrap!important;
+    align-content:flex-start!important;
+    padding:9px!important;
+    row-gap:7px!important;
+    overflow:visible!important;
+  }
+  #categoryContainer.video-fixed-category{
+    flex-wrap:wrap!important;
+    align-content:flex-start!important;
+    padding:9px!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  /* Make the wrapper transparent to flex layout: search button stays in top row,
+     search panel becomes its own full-width second row inside categoryContainer. */
+  #categoryStickySearchWrap{
+    display:contents!important;
+  }
+  #categoryQuickSearchBtn{
+    order:5!important;
+    flex:0 0 40px!important;
+  }
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel{
+    position:static!important;
+    inset:auto!important;
+    top:auto!important;
+    left:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    order:20!important;
+    flex:0 0 100%!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:7px!important;
+    box-sizing:border-box!important;
+    z-index:auto!important;
+    max-height:none!important;
+  }
+  #categoryStickySearchPanel.hidden{display:none!important;}
+  #categoryStickySearchPanel:not(.hidden){display:block!important;}
+  #categoryStickySearchInput{
+    display:block!important;
+    width:100%!important;
+    min-height:44px!important;
+    margin:0!important;
+    font-size:16px!important; /* prevents mobile browser zoom */
+    box-sizing:border-box!important;
+  }
+  #categoryStickySearchSuggestions{
+    position:relative!important;
+    width:100%!important;
+    max-height:180px!important;
+    overflow-y:auto!important;
+  }
+}
+</style>
+<script id="absolute-final-search-inside-category-panel-js">
+(function(){
+  function clearOldSearchPosition(){
+    if(window.innerWidth>640)return;
+    var p=document.getElementById('categoryStickySearchPanel');
+    if(!p)return;
+    ['top','left','right','bottom','width','max-height','position','margin','transform'].forEach(function(k){
+      p.style.removeProperty(k);
+    });
+  }
+  document.addEventListener('click',function(e){
+    if(e.target && (e.target.id==='categoryQuickSearchBtn' || (e.target.closest && e.target.closest('#categoryQuickSearchBtn')))){
+      requestAnimationFrame(clearOldSearchPosition);
+      setTimeout(clearOldSearchPosition,50);
+      setTimeout(clearOldSearchPosition,250);
+    }
+  },true);
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      clearOldSearchPosition();
+    }
+  },true);
+  window.addEventListener('resize',clearOldSearchPosition,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',clearOldSearchPosition,{passive:true});
+    window.visualViewport.addEventListener('scroll',clearOldSearchPosition,{passive:true});
   }
 })();
 </script>
