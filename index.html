@@ -6730,3 +6730,58 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
   #homeTop15SlideStage,#homeTop15SlideImage{height:340px!important;min-height:340px!important;max-height:none!important;aspect-ratio:auto!important;}
 }
 </style>
+
+<style id="final-mobile-search-directly-under-category-css">
+@media(max-width:640px){
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel{
+    position:fixed!important;
+    margin:0!important;
+    z-index:10150!important;
+    max-height:calc(100dvh - var(--hameeds-search-top,120px) - 8px)!important;
+  }
+}
+</style>
+<script id="final-mobile-search-directly-under-category-js">
+(function(){
+  function placeSearchDirectlyUnderCategory(){
+    if(window.innerWidth>640)return;
+    var cat=document.getElementById('categoryContainer');
+    var panel=document.getElementById('categoryStickySearchPanel');
+    if(!cat||!panel||panel.classList.contains('hidden'))return;
+    var r=cat.getBoundingClientRect();
+    var vv=window.visualViewport;
+    var viewportLeft=vv ? (vv.offsetLeft||0) : 0;
+    var viewportWidth=vv ? vv.width : window.innerWidth;
+    var gap=6;
+    var top=Math.round(r.bottom+gap);
+    var left=Math.max(viewportLeft+8,Math.round(r.left));
+    var rightEdge=Math.min(viewportLeft+viewportWidth-8,Math.round(r.right));
+    var width=Math.max(180,rightEdge-left);
+    panel.style.setProperty('top',top+'px','important');
+    panel.style.setProperty('left',left+'px','important');
+    panel.style.setProperty('right','auto','important');
+    panel.style.setProperty('width',width+'px','important');
+    document.documentElement.style.setProperty('--hameeds-search-top',top+'px');
+  }
+  function schedulePlace(){
+    placeSearchDirectlyUnderCategory();
+    setTimeout(placeSearchDirectlyUnderCategory,40);
+    setTimeout(placeSearchDirectlyUnderCategory,160);
+    setTimeout(placeSearchDirectlyUnderCategory,320);
+  }
+  document.addEventListener('click',function(e){
+    if(e.target && (e.target.id==='categoryQuickSearchBtn'||e.target.closest&&e.target.closest('#categoryQuickSearchBtn'))){
+      setTimeout(schedulePlace,0);
+    }
+  },true);
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput')schedulePlace();
+  });
+  window.addEventListener('resize',placeSearchDirectlyUnderCategory,{passive:true});
+  window.addEventListener('scroll',placeSearchDirectlyUnderCategory,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',placeSearchDirectlyUnderCategory,{passive:true});
+    window.visualViewport.addEventListener('scroll',placeSearchDirectlyUnderCategory,{passive:true});
+  }
+})();
+</script>
