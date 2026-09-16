@@ -169,10 +169,26 @@
   }
 
   .qr-scan-text{
-    font-size:3.2mm;
+    font-size:2.8mm;
     font-weight:900;
     line-height:1;
-    margin-top:1.15mm;
+    margin-top:.75mm;
+    white-space:nowrap;
+  }
+
+  .qr-ordering-system{
+    font-size:2.45mm;
+    font-weight:900;
+    line-height:1;
+    margin-top:.55mm;
+    white-space:nowrap;
+  }
+
+  .qr-bell-instruction{
+    font-size:2.05mm;
+    font-weight:700;
+    line-height:1;
+    margin-top:.45mm;
     white-space:nowrap;
   }
 
@@ -194,14 +210,14 @@
     align-items:center;
     justify-content:center;
     gap:1.5mm;
-    margin-top:.4mm;
+    margin-top:1.6mm;
     padding:0 1.5mm;
   }
 
   .qr-table-number{
     font-family:Arial Black,Impact,sans-serif;
-    font-size:10.2mm;
-    line-height:.82;
+    font-size:9.4mm;
+    line-height:.95;
     font-weight:900;
     letter-spacing:-.35mm;
     text-align:center;
@@ -525,6 +541,16 @@
         </div>
 
         <div class="card p-4">
+          <div class="mb-4">
+            <label class="text-xs font-black">Customer Website URL</label>
+            <div class="mt-1 flex gap-2">
+              <input id="qrWebsiteUrl" type="text" inputmode="url" autocomplete="url"
+                     placeholder="https://yourwebsite.com/"
+                     oninput="saveQrWebsiteUrl(); renderAdminTableQr();"
+                     class="w-full border rounded-xl px-3 py-3" />
+            </div>
+            <p class="mt-1 text-xs text-slate-500">Enter the website you want the table QR codes to open. The selected table and section will be added automatically.</p>
+          </div>
           <div class="grid md:grid-cols-4 gap-3 items-end">
             <div>
               <label class="text-xs font-black">Area</label>
@@ -558,7 +584,9 @@
               </div>
             </div>
 
+            <div class="qr-ordering-system">QR Ordering System</div>
             <div class="qr-scan-text">Scan to view menu</div>
+            <div class="qr-bell-instruction">Press the bell button to call waiter</div>
             <div class="qr-divider-small">◆━━━━━━◆</div>
             <div class="qr-table-label">Table Number</div>
 
@@ -844,7 +872,7 @@ async function toggleCustomerOrdering(){
   }
 }
 
-function showSection(name){document.querySelectorAll('.section').forEach(x=>x.classList.add('hiddenx'));document.getElementById('section-'+name).classList.remove('hiddenx');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('nav-active'));const n=document.querySelector('.nav[data-section="'+name+'"]');if(n)n.classList.add('nav-active');if(name==='summary')loadSummary();if(name==='menu')loadMenu();if(name==='category-management')loadCategoryManagement();if(name==='modifiers')loadModifierManagement();if(name==='table-qr'){refreshQrTableOptions();renderAdminTableQr();}if(name==='reports')loadReportDate();if(name==='order-history')loadAdminOrderHistory();if(name==='attendance'){loadStaffDropdown();loadStaffAttendance()}if(name==='staff')loadStaff();if(name==='kitchen-display')loadKitchenSections();if(name==='settings'){initializeEmailSettings();loadCustomerOrderingSetting()}}
+function showSection(name){document.querySelectorAll('.section').forEach(x=>x.classList.add('hiddenx'));document.getElementById('section-'+name).classList.remove('hiddenx');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('nav-active'));const n=document.querySelector('.nav[data-section="'+name+'"]');if(n)n.classList.add('nav-active');if(name==='summary')loadSummary();if(name==='menu')loadMenu();if(name==='category-management')loadCategoryManagement();if(name==='modifiers')loadModifierManagement();if(name==='table-qr'){initQrWebsiteUrl();refreshQrTableOptions();renderAdminTableQr();}if(name==='reports')loadReportDate();if(name==='order-history')loadAdminOrderHistory();if(name==='attendance'){loadStaffDropdown();loadStaffAttendance()}if(name==='staff')loadStaff();if(name==='kitchen-display')loadKitchenSections();if(name==='settings'){initializeEmailSettings();loadCustomerOrderingSetting()}}
 document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>showSection(b.dataset.section)));document.getElementById('loginForm').addEventListener('submit',login);document.getElementById('staffForm').addEventListener('submit',addStaff);
 
 async function loadKitchenSections(){
@@ -2365,7 +2393,39 @@ function printAdminOrderHistory(){
 
 
 <script id="admin-table-qr-print-final">
-const HAMEEDS_CUSTOMER_URL='https://hameedsbistro.vercel.app/';
+const DEFAULT_HAMEEDS_CUSTOMER_URL='https://hameedsbistro.netlify.app/';
+
+function normalizeQrWebsiteUrl(value){
+  let v=String(value||'').trim();
+  if(!v)v=DEFAULT_HAMEEDS_CUSTOMER_URL;
+  if(!/^https?:\/\//i.test(v))v='https://'+v;
+  try{
+    const u=new URL(v);
+    return u.toString();
+  }catch(e){
+    return DEFAULT_HAMEEDS_CUSTOMER_URL;
+  }
+}
+
+function getQrWebsiteUrl(){
+  const input=document.getElementById('qrWebsiteUrl');
+  const saved=localStorage.getItem('hameeds_qr_website_url')||DEFAULT_HAMEEDS_CUSTOMER_URL;
+  return normalizeQrWebsiteUrl(input?.value||saved);
+}
+
+function saveQrWebsiteUrl(){
+  const input=document.getElementById('qrWebsiteUrl');
+  if(!input)return;
+  const raw=String(input.value||'').trim();
+  if(raw)localStorage.setItem('hameeds_qr_website_url',raw);
+  else localStorage.removeItem('hameeds_qr_website_url');
+}
+
+function initQrWebsiteUrl(){
+  const input=document.getElementById('qrWebsiteUrl');
+  if(!input)return;
+  input.value=localStorage.getItem('hameeds_qr_website_url')||DEFAULT_HAMEEDS_CUSTOMER_URL;
+}
 
 function qrAreaSection(prefix){
   return prefix==='B'?'outdoor':prefix==='C'?'first_floor':'indoor';
@@ -2391,7 +2451,7 @@ function selectedQrTable(){
 
 function tableQrUrl(table){
   const section=qrAreaSection(table.charAt(0));
-  const u=new URL(HAMEEDS_CUSTOMER_URL);
+  const u=new URL(getQrWebsiteUrl());
   u.searchParams.set('table',table);
   u.searchParams.set('section',section);
   return u.toString();
@@ -2495,28 +2555,34 @@ function printAdminTableQr(){
 
     ctx.fillStyle='#000';
 
-    ctx.font='900 27px Georgia,"Times New Roman",serif';
-    ctx.fillText('Scan to view menu',W/2,416);
+    ctx.font='900 21px Arial,Helvetica,sans-serif';
+    ctx.fillText('QR Ordering System',W/2,406);
+
+    ctx.font='900 24px Georgia,"Times New Roman",serif';
+    ctx.fillText('Scan to view menu',W/2,430);
+
+    ctx.font='700 17px Arial,Helvetica,sans-serif';
+    ctx.fillText('Press the bell button to call waiter',W/2,451);
 
     ctx.lineWidth=2;
     ctx.beginPath();
-    ctx.moveTo(118,435); ctx.lineTo(282,435); ctx.stroke();
-    ctx.fillRect(111,432,6,6);
-    ctx.fillRect(283,432,6,6);
+    ctx.moveTo(118,465); ctx.lineTo(282,465); ctx.stroke();
+    ctx.fillRect(111,462,6,6);
+    ctx.fillRect(283,462,6,6);
 
-    ctx.font='700 24px Georgia,"Times New Roman",serif';
-    ctx.fillText('Table Number',W/2,466);
+    ctx.font='700 22px Georgia,"Times New Roman",serif';
+    ctx.fillText('Table Number',W/2,486);
 
     // Table number: keep it fully on the LEFT side so it can never overlap
     // the No Smoking symbol. Font becomes slightly smaller for 3-character tables
     // such as A10 / B25 / C30.
     ctx.textAlign='center';
-    const tableFontSize = String(table).length >= 3 ? 76 : 92;
+    const tableFontSize = String(table).length >= 3 ? 70 : 84;
     ctx.font=`900 ${tableFontSize}px Arial Black,Impact,sans-serif`;
-    ctx.fillText(table,145,553);
+    ctx.fillText(table,145,570);
 
     // No-smoking symbol: fixed on the RIGHT side with a smaller safe radius.
-    const sx=322, sy=515, sr=34;
+    const sx=322, sy=519, sr=34;
     ctx.lineWidth=6;
     ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(sx-24,sy+24); ctx.lineTo(sx+24,sy-24); ctx.stroke();
@@ -2573,11 +2639,12 @@ function printAdminTableQr(){
           }
           img{
             display:block!important;
-            width:50mm!important;
-            height:77.5mm!important;
-            margin:0!important;
+            width:48mm!important;
+            height:75.5mm!important;
+            margin:1mm auto!important;
             padding:0!important;
             object-fit:fill!important;
+            box-sizing:border-box!important;
           }
         </style>
       </head>
