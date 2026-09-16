@@ -3923,7 +3923,7 @@ main{background:transparent!important;}
                 return;
             }
 
-            alert('Order placed successfully! Pending Cashier verification.');
+            showRestaurantOrderSuccess('Order placed successfully! Pending Cashier verification.');
             cart = [];
             saveCart();
             updateCartBar();
@@ -8648,5 +8648,172 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
 })();
 </script>
 
+
+
+<!-- Final branded order-success popup: replaces the browser native "This page says" alert only. -->
+<style id="restaurant-order-success-popup-style">
+  #restaurantOrderSuccessModal{z-index:30000}
+  #restaurantOrderSuccessModal .ros-card{
+    width:min(92vw,420px);background:#fff;border-radius:22px;overflow:hidden;
+    box-shadow:0 24px 70px rgba(15,23,42,.32);border:1px solid rgba(37,99,235,.18)
+  }
+  #restaurantOrderSuccessModal .ros-head{
+    background:linear-gradient(135deg,#075fc8,#176fe3);color:#fff;padding:18px 20px;
+    display:flex;align-items:center;gap:12px
+  }
+  #restaurantOrderSuccessModal .ros-logo{width:48px;height:48px;border-radius:50%;object-fit:contain;background:#fff;padding:3px;flex:0 0 48px}
+  #restaurantOrderSuccessModal .ros-title{font-size:18px;line-height:1.2;font-weight:900;margin:0}
+  #restaurantOrderSuccessModal .ros-body{padding:22px 20px 20px;text-align:center}
+  #restaurantOrderSuccessModal .ros-check{width:62px;height:62px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;margin:0 auto 12px}
+  #restaurantOrderSuccessModal .ros-message{font-size:16px;line-height:1.45;font-weight:700;color:#1f2937;margin:0 0 18px}
+  #restaurantOrderSuccessModal .ros-ok{width:100%;border:0;border-radius:14px;background:#059669;color:#fff;padding:12px 16px;font-size:15px;font-weight:900;cursor:pointer}
+  #restaurantOrderSuccessModal .ros-ok:active{transform:scale(.99)}
+</style>
+
+<div id="restaurantOrderSuccessModal" class="hidden fixed inset-0 bg-black/55 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="restaurantOrderSuccessTitle">
+  <div class="ros-card">
+    <div class="ros-head">
+      <img src="images/logo.png" alt="Logo" class="ros-logo" onerror="this.style.display='none'">
+      <h3 id="restaurantOrderSuccessTitle" class="ros-title">Restoran Hameeds Bistro</h3>
+    </div>
+    <div class="ros-body">
+      <div class="ros-check">✓</div>
+      <p id="restaurantOrderSuccessMessage" class="ros-message">Order placed successfully! Pending Cashier verification.</p>
+      <button type="button" class="ros-ok" onclick="closeRestaurantOrderSuccess()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script id="restaurant-order-success-popup-script">
+(function(){
+  function getRestaurantName(){
+    const headerName=document.querySelector('header h1');
+    const fromHeader=(headerName&&headerName.textContent||'').trim();
+    const fromTitle=(document.title||'').trim();
+    return fromHeader||fromTitle||'Restoran Hameeds Bistro';
+  }
+  window.showRestaurantOrderSuccess=function(message){
+    const modal=document.getElementById('restaurantOrderSuccessModal');
+    const title=document.getElementById('restaurantOrderSuccessTitle');
+    const msg=document.getElementById('restaurantOrderSuccessMessage');
+    if(title) title.textContent=getRestaurantName();
+    if(msg) msg.textContent=message||'Order placed successfully!';
+    if(modal){
+      modal.classList.remove('hidden');
+      requestAnimationFrame(()=>{const b=modal.querySelector('.ros-ok'); if(b) b.focus({preventScroll:true});});
+    }
+  };
+  window.closeRestaurantOrderSuccess=function(){
+    const modal=document.getElementById('restaurantOrderSuccessModal');
+    if(modal) modal.classList.add('hidden');
+  };
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape') closeRestaurantOrderSuccess();
+  });
+})();
+</script>
+
+
+<!-- FINAL: hide the floating cart bar only while the Checkout form is open. -->
+<style id="checkout-hides-cart-bar-final-style">
+  body.checkout-modal-open #cartBar{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+</style>
+<script id="checkout-hides-cart-bar-final-script">
+(function(){
+  'use strict';
+
+  function cartQty(){
+    try{
+      var items=(typeof cart!=='undefined' && Array.isArray(cart))?cart:[];
+      return items.reduce(function(total,item){
+        return total + Number(item && item.quantity || 0);
+      },0);
+    }catch(e){ return 0; }
+  }
+
+  function checkoutIsOpen(){
+    var modal=document.getElementById('checkoutModal');
+    return !!(modal && !modal.classList.contains('hidden'));
+  }
+
+  function syncCheckoutCartVisibility(){
+    var modal=document.getElementById('checkoutModal');
+    var bar=document.getElementById('cartBar');
+    if(!modal || !bar) return;
+
+    var isOpen=!modal.classList.contains('hidden');
+    document.body.classList.toggle('checkout-modal-open',isOpen);
+
+    if(isOpen){
+      /* Checkout is on screen: the floating cart bar must never cover the form/place-order button. */
+      bar.classList.add('hidden');
+    }else{
+      /* Checkout closed/back: show the cart again only when items still exist. */
+      if(typeof updateCartBar==='function'){
+        try{ updateCartBar(); }catch(e){}
+      }
+      bar.classList.toggle('hidden',cartQty()<=0);
+    }
+  }
+
+  function install(){
+    var modal=document.getElementById('checkoutModal');
+    if(!modal) return;
+
+    /* Observe every way the existing code opens/closes Checkout, including submit/success flows. */
+    var observer=new MutationObserver(function(mutations){
+      for(var i=0;i<mutations.length;i++){
+        if(mutations[i].attributeName==='class'){
+          syncCheckoutCartVisibility();
+          break;
+        }
+      }
+    });
+    observer.observe(modal,{attributes:true,attributeFilter:['class']});
+
+    /* Final wrappers prevent even a brief flash of the cart when opening Checkout. */
+    if(typeof window.openCheckoutModal==='function' && !window.openCheckoutModal.__cartHideWrapped){
+      var originalOpen=window.openCheckoutModal;
+      var wrappedOpen=function(){
+        document.body.classList.add('checkout-modal-open');
+        var bar=document.getElementById('cartBar');
+        if(bar) bar.classList.add('hidden');
+        var result=originalOpen.apply(this,arguments);
+        queueMicrotask(syncCheckoutCartVisibility);
+        return result;
+      };
+      wrappedOpen.__cartHideWrapped=true;
+      window.openCheckoutModal=wrappedOpen;
+    }
+
+    if(typeof window.closeCheckoutModal==='function' && !window.closeCheckoutModal.__cartHideWrapped){
+      var originalClose=window.closeCheckoutModal;
+      var wrappedClose=function(){
+        var result=originalClose.apply(this,arguments);
+        document.body.classList.remove('checkout-modal-open');
+        queueMicrotask(syncCheckoutCartVisibility);
+        return result;
+      };
+      wrappedClose.__cartHideWrapped=true;
+      window.closeCheckoutModal=wrappedClose;
+    }
+
+    syncCheckoutCartVisibility();
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',install,{once:true});
+  }else{
+    install();
+  }
+
+  window.addEventListener('pageshow',function(){setTimeout(syncCheckoutCartVisibility,0);});
+})();
+</script>
 </body>
 </html>
