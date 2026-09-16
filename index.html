@@ -6560,6 +6560,24 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
     const section=document.getElementById('activeSectionSelect');
     const table=document.getElementById('activeTableSelect');
     if(!section||!table)return;
+
+    /* QR STRONG FIX: QR table must win over every A1/default-table fallback.
+       The old late startOrder timer was resetting the visible dropdown to A1
+       even though the QR badge correctly showed (for example) A19. */
+    if(qrTableContext){
+      section.value=qrTableContext.section;
+      if(typeof updateActiveTableDropdown==='function') updateActiveTableDropdown();
+      table.value=qrTableContext.table;
+      const badge=document.getElementById('qrTableLockBadge');
+      if(badge){
+        badge.textContent=`📱 QR TABLE: ${qrTableContext.table}`;
+        badge.classList.remove('hidden');
+      }
+      section.disabled=true;
+      table.disabled=true;
+      return;
+    }
+
     if(!section.value)section.value='indoor';
     const prefix=section.value==='outdoor'?'B':(section.value==='first_floor'?'C':'A');
     const wanted=(forceA1 && prefix==='A')?'A1':(table.value||prefix+'1');
