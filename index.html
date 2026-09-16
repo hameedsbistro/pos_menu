@@ -7023,3 +7023,129 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
   }
 })();
 </script>
+
+
+<style id="absolute-final-mobile-keyboard-panel-lock-css">
+@media(max-width:640px){
+  body.hameeds-search-keyboard-open #categoryContainer{
+    position:fixed!important;
+    top:var(--hameeds-kb-top,0px)!important;
+    left:var(--hameeds-kb-left,8px)!important;
+    width:var(--hameeds-kb-width,calc(100vw - 16px))!important;
+    max-width:var(--hameeds-kb-width,calc(100vw - 16px))!important;
+    right:auto!important;
+    bottom:auto!important;
+    z-index:2147483000!important;
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    transform:none!important;
+    overflow:visible!important;
+  }
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+    position:static!important;
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    inset:auto!important;
+    transform:none!important;
+    margin:0!important;
+  }
+}
+</style>
+<script id="absolute-final-mobile-keyboard-panel-lock-js">
+(function(){
+  var savedScrollY=0;
+  function mobile(){return window.innerWidth<=640;}
+  function panel(){return document.getElementById('categoryContainer');}
+  function searchInput(){return document.getElementById('categoryStickySearchInput');}
+  function lockPanel(){
+    if(!mobile())return;
+    var c=panel(); if(!c)return;
+    var r=c.getBoundingClientRect();
+    var vv=window.visualViewport;
+    var top=vv ? Math.max(0,Math.round(vv.offsetTop||0)) : 0;
+    var vleft=vv ? Math.round(vv.offsetLeft||0) : 0;
+    var vw=vv ? Math.round(vv.width||window.innerWidth) : window.innerWidth;
+    var left=Math.max(vleft+8, Math.round(r.left));
+    var maxw=Math.max(260, vw-16);
+    var width=Math.min(Math.round(r.width||maxw),maxw);
+    if(left+width>vleft+vw-8) left=Math.max(vleft+8,vleft+vw-8-width);
+    document.documentElement.style.setProperty('--hameeds-kb-top',top+'px');
+    document.documentElement.style.setProperty('--hameeds-kb-left',left+'px');
+    document.documentElement.style.setProperty('--hameeds-kb-width',width+'px');
+    document.body.classList.add('hameeds-search-keyboard-open');
+  }
+  function unlockPanel(){
+    document.body.classList.remove('hameeds-search-keyboard-open');
+  }
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      savedScrollY=window.scrollY||0;
+      lockPanel();
+      setTimeout(lockPanel,40);setTimeout(lockPanel,180);setTimeout(lockPanel,400);
+    }
+  },true);
+  document.addEventListener('focusout',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      setTimeout(function(){
+        if(document.activeElement!==searchInput()) unlockPanel();
+      },120);
+    }
+  },true);
+  function resync(){if(document.body.classList.contains('hameeds-search-keyboard-open'))lockPanel();}
+  window.addEventListener('resize',resync,{passive:true});
+  window.addEventListener('scroll',resync,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',resync,{passive:true});
+    window.visualViewport.addEventListener('scroll',resync,{passive:true});
+  }
+})();
+</script>
+
+<style id="absolute-final-search-dropdown-overlay-height-fix">
+/* Keep the category/search panel height stable while search suggestions open.
+   Suggestions float below the input and scroll inside their own box. */
+@media(max-width:640px){
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+    position:relative!important;
+    overflow:visible!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+  }
+
+  #categoryStickySearchSuggestions,
+  #categoryStickySearchSuggestions.hidden{
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    margin:0!important;
+  }
+
+  #categoryStickySearchSuggestions:not(.hidden){
+    display:block!important;
+    position:absolute!important;
+    top:calc(100% + 6px)!important;
+    bottom:auto!important;
+    max-height:min(220px,34dvh)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    z-index:2147483640!important;
+    background:#fff!important;
+    border:1px solid #cbd5e1!important;
+    border-radius:10px!important;
+    box-shadow:0 14px 30px rgba(15,23,42,.22)!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  /* Results must never increase the outer sticky panel height. */
+  #categoryContainer,
+  #categoryContainer.video-fixed-category,
+  body.hameeds-search-keyboard-open #categoryContainer{
+    align-content:flex-start!important;
+  }
+}
+</style>
