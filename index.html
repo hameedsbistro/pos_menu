@@ -1943,7 +1943,7 @@ function startOrder(type) {
             document.getElementById('homeView').classList.add('hidden');
             document.getElementById('orderView').classList.add('hidden');
             document.getElementById('historyView').classList.remove('hidden');
-            document.getElementById('cartBar').classList.add('hidden');
+            updateCartBar();
 
             const container = document.getElementById('orderHistoryContainer');
             container.innerHTML = '<p class="text-gray-500">Loading history...</p>';
@@ -5710,7 +5710,7 @@ function getMalaysiaSqlTimestamp(){
     document.body.classList.toggle('customer-menu-only',!enabled);
 
     if(!enabled){
-      if(cartBar)cartBar.classList.add('hidden');
+      if(typeof updateCartBar==='function') updateCartBar();
       if(tableBox)tableBox.classList.add('hidden');
       // Keep the selected dining method visible; it determines dine-in/takeaway price.
       if(orderType)orderType.textContent=currentOrderType==='takeaway'?'Takeaway':'Dine-In';
@@ -6655,8 +6655,332 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
   });
 })();
 </script>
-</body>
-</html>
+
+<style id="absolute-final-category-two-row-layout">
+/* FINAL MOBILE CATEGORY PANEL: Row 1 = Home + Language + Search; Row 2 = Dropdown + horizontal categories. */
+@media (max-width:640px){
+  #categoryContainer{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:7px!important;
+    padding:8px!important;
+    overflow:visible!important;
+  }
+  #categoryToolbarTopRow{
+    display:flex!important;
+    width:100%!important;
+    align-items:center!important;
+    gap:7px!important;
+    order:1!important;
+  }
+  #categoryHomeBtn{
+    display:inline-flex!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    padding:0!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+  #categoryHomeBtn span{display:none!important;}
+  #categoryToolbarTopRow .category-quick-lang{
+    display:block!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    order:2!important;
+  }
+  #categoryQuickLang{
+    display:block!important;
+    width:100%!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0 10px!important;
+    border:1px solid #cbd5e1!important;
+    border-radius:11px!important;
+    background:#fff!important;
+    font-weight:800!important;
+  }
+  #categoryStickySearchWrap{
+    display:block!important;
+    position:relative!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    order:3!important;
+  }
+  #categoryQuickSearchBtn{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+  #categoryToolbarTopRow .category-toolbar-dropdown{display:none!important;}
+
+  #categorySecondRow{
+    display:flex!important;
+    width:100%!important;
+    min-width:0!important;
+    align-items:center!important;
+    gap:7px!important;
+    order:2!important;
+  }
+  #categorySecondRow .category-toolbar-dropdown{
+    display:block!important;
+    flex:0 0 40vw!important;
+    width:40vw!important;
+    max-width:40vw!important;
+    min-width:150px!important;
+  }
+  #categoryDropdownButton{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    min-height:48px!important;
+    padding:7px 9px!important;
+  }
+  #categoryDropdownLabel{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+  #categoryGrid{
+    display:flex!important;
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    white-space:nowrap!important;
+    gap:5px!important;
+    padding:3px 2px 8px!important;
+  }
+  #categoryGrid::-webkit-scrollbar{height:7px!important;display:block!important;}
+
+  /* Search belongs to the panel/top controls, never to the keyboard viewport. */
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel{
+    position:absolute!important;
+    top:calc(100% + 6px)!important;
+    right:0!important;
+    left:auto!important;
+    bottom:auto!important;
+    width:min(82vw,360px)!important;
+    max-width:calc(100vw - 32px)!important;
+    margin:0!important;
+    z-index:10150!important;
+    transform:none!important;
+  }
+}
+</style>
+<script id="absolute-final-category-two-row-layout-js">
+(function(){
+  function arrangeCategoryRows(){
+    if(window.innerWidth>640)return;
+    var container=document.getElementById('categoryContainer');
+    var top=document.getElementById('categoryToolbarTopRow');
+    var grid=document.getElementById('categoryGrid');
+    if(!container||!top||!grid)return;
+    var dropdown=top.querySelector('.category-toolbar-dropdown');
+    var lang=top.querySelector('.category-quick-lang') || container.querySelector('.category-quick-lang');
+    var search=top.querySelector('#categoryStickySearchWrap') || container.querySelector('#categoryStickySearchWrap');
+    var home=top.querySelector('#categoryHomeBtn') || container.querySelector('#categoryHomeBtn');
+    if(home && home.parentNode!==top)top.appendChild(home);
+    if(lang && lang.parentNode!==top)top.appendChild(lang);
+    if(search && search.parentNode!==top)top.appendChild(search);
+    var row2=document.getElementById('categorySecondRow');
+    if(!row2){row2=document.createElement('div');row2.id='categorySecondRow';container.insertBefore(row2,grid);}
+    if(dropdown && dropdown.parentNode!==row2)row2.insertBefore(dropdown,row2.firstChild);
+    if(grid.parentNode!==row2)row2.appendChild(grid);
+  }
+  function run(){arrangeCategoryRows();setTimeout(arrangeCategoryRows,30);setTimeout(arrangeCategoryRows,180);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+  var target=document.getElementById('categoryContainer');
+  if(target)new MutationObserver(function(){requestAnimationFrame(arrangeCategoryRows)}).observe(target,{childList:true});
+  window.addEventListener('resize',arrangeCategoryRows,{passive:true});
+})();
+</script>
+
+
+<!-- ===== FINAL FIX: CART ONLY WITH ITEMS + MOBILE SEARCH FILLS TOP ROW ===== -->
+<style id="final-cart-visibility-mobile-search-fill">
+/* IMPORTANT: the yellow cart bar must stay completely hidden when cart is empty.
+   Earlier final styling used display:flex!important, which overrode Tailwind .hidden. */
+#cartBar.hidden{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+#cartBar:not(.hidden){
+  display:flex!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+
+/* Mobile top row: Home | Language | Search.
+   Search always consumes ALL remaining panel width and never drops/wraps. */
+@media(max-width:640px){
+  #categoryContainer,
+  #categoryContainer.video-fixed-category,
+  body.hameeds-search-keyboard-open #categoryContainer{
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    padding:8px!important;
+    overflow:visible!important;
+  }
+
+  #categoryToolbarTopRow{
+    display:grid!important;
+    grid-template-columns:44px 84px minmax(0,1fr)!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    align-items:center!important;
+    gap:7px!important;
+    flex-wrap:nowrap!important;
+    overflow:visible!important;
+  }
+
+  #categoryHomeBtn{
+    grid-column:1!important;
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:46px!important;
+    min-height:46px!important;
+    padding:0!important;
+  }
+
+  #categoryToolbarTopRow .category-quick-lang,
+  #categoryContainer .category-quick-lang,
+  #categoryContainer.video-fixed-category .category-quick-lang{
+    grid-column:2!important;
+    width:84px!important;
+    min-width:84px!important;
+    max-width:84px!important;
+    margin:0!important;
+  }
+
+  #categoryQuickLang,
+  #categoryContainer.video-fixed-category #categoryQuickLang{
+    width:84px!important;
+    min-width:84px!important;
+    max-width:84px!important;
+    height:46px!important;
+    min-height:46px!important;
+    padding:0 7px!important;
+    font-size:11px!important;
+  }
+
+  #categoryStickySearchWrap{
+    grid-column:3!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    display:block!important;
+    position:relative!important;
+    overflow:visible!important;
+  }
+
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+    display:block!important;
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:46px!important;
+    min-height:46px!important;
+    max-height:46px!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
+    overflow:visible!important;
+  }
+
+  #categoryStickySearchInput{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:46px!important;
+    min-height:46px!important;
+    max-height:46px!important;
+    padding:0 10px 0 38px!important;
+    font-size:16px!important;
+    border-radius:12px!important;
+    box-sizing:border-box!important;
+  }
+  #categoryStickySearchInput::placeholder{
+    font-size:13px!important;
+  }
+  #categoryStickySearchPanel::before{
+    left:11px!important;
+    font-size:15px!important;
+  }
+
+  /* Suggestions remain overlayed below search and never change category-panel height. */
+  #categoryStickySearchSuggestions:not(.hidden){
+    position:absolute!important;
+    top:calc(100% + 6px)!important;
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    max-height:min(220px,31dvh)!important;
+    overflow-y:auto!important;
+    z-index:2147483641!important;
+  }
+}
+
+@media(max-width:380px){
+  #categoryToolbarTopRow{
+    grid-template-columns:40px 72px minmax(0,1fr)!important;
+    gap:5px!important;
+  }
+  #categoryHomeBtn{
+    width:40px!important;min-width:40px!important;max-width:40px!important;
+    height:44px!important;min-height:44px!important;
+  }
+  #categoryToolbarTopRow .category-quick-lang,
+  #categoryContainer .category-quick-lang,
+  #categoryContainer.video-fixed-category .category-quick-lang,
+  #categoryQuickLang,
+  #categoryContainer.video-fixed-category #categoryQuickLang{
+    width:72px!important;min-width:72px!important;max-width:72px!important;
+  }
+  #categoryQuickLang,
+  #categoryContainer.video-fixed-category #categoryQuickLang{
+    height:44px!important;min-height:44px!important;font-size:10px!important;
+  }
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel,
+  #categoryStickySearchInput{
+    height:44px!important;min-height:44px!important;max-height:44px!important;
+  }
+  #categoryStickySearchInput::placeholder{font-size:12px!important;}
+}
+</style>
+<script id="final-cart-visibility-guard">
+(function(){
+  'use strict';
+  function syncCartVisibility(){
+    var bar=document.getElementById('cartBar');
+    if(!bar)return;
+    var items=(typeof cart!=='undefined' && Array.isArray(cart))?cart:[];
+    var qty=items.reduce(function(n,item){return n+Number(item&&item.quantity||0)},0);
+    bar.classList.toggle('hidden',qty<=0);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(syncCartVisibility,0);});
+  else setTimeout(syncCartVisibility,0);
+
+  /* Existing updateCartBar remains the source of truth; this guard only preserves empty-cart hiding. */
+  document.addEventListener('click',function(){setTimeout(syncCartVisibility,40);},true);
+})();
+</script>
+
 
 <style id="guest-checkout-final-style">
 #mainAuthBtn,#loginModal{display:none!important}
@@ -6785,3 +7109,1544 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
   }
 })();
 </script>
+
+
+<style id="absolute-final-search-inside-category-panel-fix">
+/* FINAL: the mobile search field is physically part of the sticky category panel.
+   It must never be positioned relative to the keyboard / visual viewport. */
+@media (max-width:640px){
+  #categoryContainer{
+    flex-wrap:wrap!important;
+    align-content:flex-start!important;
+    padding:9px!important;
+    row-gap:7px!important;
+    overflow:visible!important;
+  }
+  #categoryContainer.video-fixed-category{
+    flex-wrap:wrap!important;
+    align-content:flex-start!important;
+    padding:9px!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  /* Make the wrapper transparent to flex layout: search button stays in top row,
+     search panel becomes its own full-width second row inside categoryContainer. */
+  #categoryStickySearchWrap{
+    display:contents!important;
+  }
+  #categoryQuickSearchBtn{
+    order:5!important;
+    flex:0 0 40px!important;
+  }
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel{
+    position:static!important;
+    inset:auto!important;
+    top:auto!important;
+    left:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    order:20!important;
+    flex:0 0 100%!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:7px!important;
+    box-sizing:border-box!important;
+    z-index:auto!important;
+    max-height:none!important;
+  }
+  #categoryStickySearchPanel.hidden{display:none!important;}
+  #categoryStickySearchPanel:not(.hidden){display:block!important;}
+  #categoryStickySearchInput{
+    display:block!important;
+    width:100%!important;
+    min-height:44px!important;
+    margin:0!important;
+    font-size:16px!important; /* prevents mobile browser zoom */
+    box-sizing:border-box!important;
+  }
+  #categoryStickySearchSuggestions{
+    position:relative!important;
+    width:100%!important;
+    max-height:180px!important;
+    overflow-y:auto!important;
+  }
+}
+</style>
+<script id="absolute-final-search-inside-category-panel-js">
+(function(){
+  function clearOldSearchPosition(){
+    if(window.innerWidth>640)return;
+    var p=document.getElementById('categoryStickySearchPanel');
+    if(!p)return;
+    ['top','left','right','bottom','width','max-height','position','margin','transform'].forEach(function(k){
+      p.style.removeProperty(k);
+    });
+  }
+  document.addEventListener('click',function(e){
+    if(e.target && (e.target.id==='categoryQuickSearchBtn' || (e.target.closest && e.target.closest('#categoryQuickSearchBtn')))){
+      requestAnimationFrame(clearOldSearchPosition);
+      setTimeout(clearOldSearchPosition,50);
+      setTimeout(clearOldSearchPosition,250);
+    }
+  },true);
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      clearOldSearchPosition();
+    }
+  },true);
+  window.addEventListener('resize',clearOldSearchPosition,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',clearOldSearchPosition,{passive:true});
+    window.visualViewport.addEventListener('scroll',clearOldSearchPosition,{passive:true});
+  }
+})();
+</script>
+
+
+<style id="absolute-final-mobile-keyboard-panel-lock-css">
+@media(max-width:640px){
+  body.hameeds-search-keyboard-open #categoryContainer{
+    position:fixed!important;
+    top:var(--hameeds-kb-top,0px)!important;
+    left:var(--hameeds-kb-left,8px)!important;
+    width:var(--hameeds-kb-width,calc(100vw - 16px))!important;
+    max-width:var(--hameeds-kb-width,calc(100vw - 16px))!important;
+    right:auto!important;
+    bottom:auto!important;
+    z-index:2147483000!important;
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    transform:none!important;
+    overflow:visible!important;
+  }
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+    position:static!important;
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    inset:auto!important;
+    transform:none!important;
+    margin:0!important;
+  }
+}
+</style>
+<script id="absolute-final-mobile-keyboard-panel-lock-js">
+(function(){
+  var savedScrollY=0;
+  function mobile(){return window.innerWidth<=640;}
+  function panel(){return document.getElementById('categoryContainer');}
+  function searchInput(){return document.getElementById('categoryStickySearchInput');}
+  function lockPanel(){
+    if(!mobile())return;
+    var c=panel(); if(!c)return;
+    var r=c.getBoundingClientRect();
+    var vv=window.visualViewport;
+    var top=vv ? Math.max(0,Math.round(vv.offsetTop||0)) : 0;
+    var vleft=vv ? Math.round(vv.offsetLeft||0) : 0;
+    var vw=vv ? Math.round(vv.width||window.innerWidth) : window.innerWidth;
+    var left=Math.max(vleft+8, Math.round(r.left));
+    var maxw=Math.max(260, vw-16);
+    var width=Math.min(Math.round(r.width||maxw),maxw);
+    if(left+width>vleft+vw-8) left=Math.max(vleft+8,vleft+vw-8-width);
+    document.documentElement.style.setProperty('--hameeds-kb-top',top+'px');
+    document.documentElement.style.setProperty('--hameeds-kb-left',left+'px');
+    document.documentElement.style.setProperty('--hameeds-kb-width',width+'px');
+    document.body.classList.add('hameeds-search-keyboard-open');
+  }
+  function unlockPanel(){
+    document.body.classList.remove('hameeds-search-keyboard-open');
+  }
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      savedScrollY=window.scrollY||0;
+      lockPanel();
+      setTimeout(lockPanel,40);setTimeout(lockPanel,180);setTimeout(lockPanel,400);
+    }
+  },true);
+  document.addEventListener('focusout',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      setTimeout(function(){
+        if(document.activeElement!==searchInput()) unlockPanel();
+      },120);
+    }
+  },true);
+  function resync(){if(document.body.classList.contains('hameeds-search-keyboard-open'))lockPanel();}
+  window.addEventListener('resize',resync,{passive:true});
+  window.addEventListener('scroll',resync,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',resync,{passive:true});
+    window.visualViewport.addEventListener('scroll',resync,{passive:true});
+  }
+})();
+</script>
+
+<style id="absolute-final-search-dropdown-overlay-height-fix">
+/* Keep the category/search panel height stable while search suggestions open.
+   Suggestions float below the input and scroll inside their own box. */
+@media(max-width:640px){
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+    position:relative!important;
+    overflow:visible!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+  }
+
+  #categoryStickySearchSuggestions,
+  #categoryStickySearchSuggestions.hidden{
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    margin:0!important;
+  }
+
+  #categoryStickySearchSuggestions:not(.hidden){
+    display:block!important;
+    position:absolute!important;
+    top:calc(100% + 6px)!important;
+    bottom:auto!important;
+    max-height:min(220px,34dvh)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    z-index:2147483640!important;
+    background:#fff!important;
+    border:1px solid #cbd5e1!important;
+    border-radius:10px!important;
+    box-shadow:0 14px 30px rgba(15,23,42,.22)!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  /* Results must never increase the outer sticky panel height. */
+  #categoryContainer,
+  #categoryContainer.video-fixed-category,
+  body.hameeds-search-keyboard-open #categoryContainer{
+    align-content:flex-start!important;
+  }
+}
+</style>
+
+
+<!-- ===== FINAL PROFESSIONAL CATEGORY / SEARCH PANEL + CART POSITION ===== -->
+<style id="final-professional-category-search-cart-v1">
+:root{
+  --hb-blue:#0b67d1;
+  --hb-blue-dark:#074da7;
+  --hb-ink:#0f172a;
+  --hb-line:#dbe7f4;
+  --hb-soft:#f5f9ff;
+}
+
+/* One clean professional panel on BOTH desktop and mobile. */
+#categoryContainer{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:10px!important;
+  overflow:visible!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.995),rgba(247,251,255,.995))!important;
+  border:1px solid var(--hb-line)!important;
+  border-radius:16px!important;
+  box-shadow:0 10px 28px rgba(15,23,42,.13)!important;
+  backdrop-filter:blur(10px)!important;
+  box-sizing:border-box!important;
+}
+#categoryContainer.video-fixed-category{
+  overflow:visible!important;
+  border-radius:16px!important;
+  box-shadow:0 12px 32px rgba(15,23,42,.18)!important;
+}
+
+/* Top row = Home + Language + permanent Search box. */
+#categoryToolbarTopRow{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  order:1!important;
+}
+#categoryHomeBtn{
+  order:1!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 auto!important;
+  min-height:44px!important;
+  padding:0 14px!important;
+  border:1px solid #b9d5f5!important;
+  border-radius:12px!important;
+  background:#edf6ff!important;
+  color:#0759b8!important;
+  font-weight:900!important;
+  box-shadow:none!important;
+}
+#categoryHomeBtn:hover{background:#dceeff!important}
+#categoryToolbarTopRow .category-quick-lang,
+#categoryContainer .category-quick-lang,
+#categoryContainer.video-fixed-category .category-quick-lang{
+  order:2!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  min-width:0!important;
+}
+#categoryQuickLang,
+#categoryContainer.video-fixed-category #categoryQuickLang{
+  display:block!important;
+  width:122px!important;
+  max-width:122px!important;
+  height:44px!important;
+  min-height:44px!important;
+  padding:0 12px!important;
+  border:1px solid #c9d7e8!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#17467e!important;
+  font-size:12px!important;
+  font-weight:900!important;
+  outline:none!important;
+  box-shadow:0 2px 7px rgba(15,23,42,.05)!important;
+}
+
+/* Old pop-up Search button is no longer needed: the search field is always visible. */
+#categoryStickySearchWrap{
+  order:3!important;
+  display:block!important;
+  position:relative!important;
+  flex:1 1 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  margin:0!important;
+}
+#categoryQuickSearchBtn{display:none!important}
+#categoryStickySearchPanel,
+#categoryContainer.video-fixed-category #categoryStickySearchPanel,
+body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+  display:block!important;
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  width:100%!important;
+  max-width:none!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  border:0!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  z-index:10120!important;
+  box-sizing:border-box!important;
+}
+#categoryStickySearchPanel::before{
+  content:'🔎';
+  position:absolute;
+  left:13px;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:2;
+  pointer-events:none;
+  font-size:15px;
+}
+#categoryStickySearchInput{
+  display:block!important;
+  width:100%!important;
+  height:44px!important;
+  min-height:44px!important;
+  margin:0!important;
+  padding:0 38px 0 40px!important;
+  border:1px solid #b9cce2!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:var(--hb-ink)!important;
+  font-size:15px!important;
+  font-weight:700!important;
+  outline:none!important;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,.03),0 2px 8px rgba(15,23,42,.05)!important;
+  box-sizing:border-box!important;
+}
+#categoryStickySearchInput::placeholder{color:#7b8ba1!important;font-weight:600!important}
+#categoryStickySearchInput:focus{
+  border-color:#3b82f6!important;
+  box-shadow:0 0 0 3px rgba(59,130,246,.14),0 3px 10px rgba(15,23,42,.06)!important;
+}
+
+/* Results FLOAT. They never participate in panel height. */
+#categoryStickySearchSuggestions:not(.hidden){
+  display:block!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:calc(100% + 7px)!important;
+  bottom:auto!important;
+  width:100%!important;
+  max-height:min(300px,40vh)!important;
+  margin:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  z-index:2147483640!important;
+  background:#fff!important;
+  border:1px solid #d6e0ec!important;
+  border-radius:13px!important;
+  box-shadow:0 18px 38px rgba(15,23,42,.24)!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+#categoryStickySearchSuggestions button{
+  min-height:48px!important;
+  padding:9px 11px!important;
+  border-bottom:1px solid #eef2f7!important;
+  background:#fff!important;
+}
+#categoryStickySearchSuggestions button:last-child{border-bottom:0!important}
+#categoryStickySearchSuggestions button:hover{background:#f3f8ff!important}
+
+/* Second row = Category dropdown + horizontal category strip. */
+#categorySecondRow{
+  order:2!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+#categorySecondRow .category-toolbar-dropdown{
+  display:block!important;
+  flex:0 0 245px!important;
+  width:245px!important;
+  max-width:245px!important;
+  min-width:0!important;
+  position:relative!important;
+}
+#categoryDropdownButton{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:46px!important;
+  padding:7px 11px!important;
+  border:0!important;
+  border-radius:12px!important;
+  background:linear-gradient(135deg,#1672dc,#0757b9)!important;
+  color:#fff!important;
+  box-shadow:0 5px 13px rgba(7,87,185,.20)!important;
+}
+#categoryDropdownMenu{
+  margin-top:7px!important;
+  border-radius:13px!important;
+  border:1px solid #d6e0ec!important;
+  box-shadow:0 18px 38px rgba(15,23,42,.22)!important;
+}
+#categoryGrid{
+  display:flex!important;
+  flex:1 1 0!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  gap:6px!important;
+  padding:2px 2px 7px!important;
+  white-space:nowrap!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:#73a8e5 #e7f0fb!important;
+}
+#categoryGrid::-webkit-scrollbar{display:block!important;height:6px!important}
+#categoryGrid::-webkit-scrollbar-track{background:#e7f0fb!important;border-radius:999px!important}
+#categoryGrid::-webkit-scrollbar-thumb{background:#73a8e5!important;border-radius:999px!important}
+#categoryGrid button{
+  flex:0 0 auto!important;
+  min-height:39px!important;
+  padding:6px 10px!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+
+/* Cancel every old keyboard-position rule. Keep the same panel in the viewport. */
+body.hameeds-search-keyboard-open #categoryContainer{
+  top:6px!important;
+  left:8px!important;
+  right:8px!important;
+  bottom:auto!important;
+  width:auto!important;
+  max-width:none!important;
+  transform:none!important;
+  overflow:visible!important;
+}
+
+/* Professional floating cart: lifted away from Netlify's lower-corner control. */
+#cartBar{
+  left:50%!important;
+  right:auto!important;
+  bottom:22px!important;
+  width:min(760px,calc(100vw - 40px))!important;
+  max-width:760px!important;
+  transform:translateX(-50%)!important;
+  padding:11px 13px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-radius:18px!important;
+  background:linear-gradient(135deg,#075fc8,#063f9f)!important;
+  box-shadow:0 14px 35px rgba(3,51,120,.34)!important;
+  z-index:10040!important;
+}
+#cartBar>button{
+  min-height:46px!important;
+  padding:0 17px!important;
+  border-radius:12px!important;
+  white-space:nowrap!important;
+}
+#cartBar>button span{display:inline!important}
+#menuContainer{padding-bottom:115px!important}
+
+@media(max-width:640px){
+  #categoryContainer,
+  #categoryContainer.video-fixed-category{
+    gap:7px!important;
+    padding:8px!important;
+    border-radius:14px!important;
+  }
+  #categoryToolbarTopRow{gap:6px!important}
+  #categoryHomeBtn{
+    flex:0 0 42px!important;
+    width:42px!important;
+    min-width:42px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0!important;
+  }
+  #categoryHomeBtn span{display:none!important}
+  #categoryToolbarTopRow .category-quick-lang,
+  #categoryContainer .category-quick-lang,
+  #categoryContainer.video-fixed-category .category-quick-lang{
+    flex:0 0 86px!important;
+    width:86px!important;
+  }
+  #categoryQuickLang,
+  #categoryContainer.video-fixed-category #categoryQuickLang{
+    width:86px!important;
+    max-width:86px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0 7px!important;
+    font-size:11px!important;
+  }
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+    height:42px!important;
+    min-height:42px!important;
+    max-height:42px!important;
+  }
+  #categoryStickySearchInput{
+    height:42px!important;
+    min-height:42px!important;
+    font-size:16px!important; /* stops iOS/Android zoom */
+    padding-left:37px!important;
+    padding-right:10px!important;
+  }
+  #categoryStickySearchPanel::before{left:12px!important;font-size:14px!important}
+  #categoryStickySearchSuggestions:not(.hidden){
+    max-height:min(230px,32dvh)!important;
+    border-radius:12px!important;
+  }
+  #categorySecondRow{gap:6px!important}
+  #categorySecondRow .category-toolbar-dropdown{
+    flex:0 0 39vw!important;
+    width:39vw!important;
+    max-width:39vw!important;
+    min-width:132px!important;
+  }
+  #categoryDropdownButton{min-height:44px!important;padding:6px 8px!important}
+  #categoryGrid{gap:5px!important;padding-bottom:7px!important}
+  #categoryGrid button{min-height:36px!important;padding:5px 8px!important;font-size:11px!important}
+
+  /* Lift cart clear of Netlify's bottom-right control and phone safe area. */
+  #cartBar{
+    left:9px!important;
+    right:9px!important;
+    bottom:max(78px,calc(env(safe-area-inset-bottom) + 66px))!important;
+    width:auto!important;
+    max-width:none!important;
+    transform:none!important;
+    padding:9px 10px!important;
+    border-radius:16px!important;
+    gap:8px!important;
+  }
+  #cartBar>div{min-width:0!important;gap:7px!important}
+  #cartCount{font-size:11px!important;padding:5px 8px!important}
+  #cartSubtotal{font-size:16px!important}
+  #cartBar>button{min-height:43px!important;padding:0 11px!important;font-size:12px!important}
+  #cartBar>button span{display:inline!important}
+  #menuContainer{padding-bottom:170px!important}
+}
+@media(max-width:370px){
+  #categoryToolbarTopRow .category-quick-lang,
+  #categoryContainer .category-quick-lang{flex-basis:74px!important;width:74px!important}
+  #categoryQuickLang{width:74px!important;max-width:74px!important;padding:0 5px!important;font-size:10px!important}
+  #categorySecondRow .category-toolbar-dropdown{flex-basis:42vw!important;width:42vw!important;max-width:42vw!important;min-width:124px!important}
+  #cartBar>button span{display:none!important}
+}
+</style>
+<script id="final-professional-category-search-cart-v1-js">
+(function(){
+  function arrangeProfessionalPanel(){
+    var container=document.getElementById('categoryContainer');
+    var top=document.getElementById('categoryToolbarTopRow');
+    var grid=document.getElementById('categoryGrid');
+    if(!container||!top||!grid)return;
+
+    var home=container.querySelector('#categoryHomeBtn');
+    var lang=container.querySelector('.category-quick-lang');
+    var search=container.querySelector('#categoryStickySearchWrap');
+    var dropdown=container.querySelector('.category-toolbar-dropdown');
+
+    if(home && home.parentNode!==top) top.appendChild(home);
+    if(lang && lang.parentNode!==top) top.appendChild(lang);
+    if(search && search.parentNode!==top) top.appendChild(search);
+
+    var row2=document.getElementById('categorySecondRow');
+    if(!row2){
+      row2=document.createElement('div');
+      row2.id='categorySecondRow';
+      container.appendChild(row2);
+    }
+    if(dropdown && dropdown.parentNode!==row2) row2.insertBefore(dropdown,row2.firstChild);
+    if(grid.parentNode!==row2) row2.appendChild(grid);
+
+    /* Search is permanent; old popup/keyboard modes are intentionally disabled. */
+    var panel=document.getElementById('categoryStickySearchPanel');
+    if(panel) panel.classList.remove('hidden');
+    document.body.classList.remove('hameeds-search-keyboard-open');
+  }
+
+  function run(){
+    arrangeProfessionalPanel();
+    setTimeout(arrangeProfessionalPanel,40);
+    setTimeout(arrangeProfessionalPanel,180);
+    setTimeout(arrangeProfessionalPanel,600);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+
+  var observer=new MutationObserver(function(){requestAnimationFrame(arrangeProfessionalPanel)});
+  document.addEventListener('DOMContentLoaded',function(){
+    var c=document.getElementById('categoryContainer');
+    if(c)observer.observe(c,{childList:true,subtree:false});
+  });
+  window.addEventListener('resize',arrangeProfessionalPanel,{passive:true});
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      document.body.classList.remove('hameeds-search-keyboard-open');
+      arrangeProfessionalPanel();
+    }
+  },true);
+})();
+</script>
+
+<!-- ===== ABSOLUTE FINAL: SEARCH LOCKED IN TOP ROW + LIGHT CATEGORY PANEL + FULL CART BUTTON ===== -->
+<style id="absolute-final-search-top-cart-full-v2">
+/* Softer, cleaner category panel */
+#categoryContainer,
+#categoryContainer.video-fixed-category,
+body.hameeds-search-keyboard-open #categoryContainer{
+  background:linear-gradient(180deg,#f7fbff 0%,#eef7ff 100%)!important;
+  border:1px solid #cfe4f8!important;
+  box-shadow:0 8px 22px rgba(28,90,150,.13)!important;
+  overflow:visible!important;
+}
+
+/* TOP ROW MUST NEVER WRAP: Home | Language | Search */
+#categoryToolbarTopRow{
+  display:grid!important;
+  grid-template-columns:auto 122px minmax(220px,1fr)!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+}
+#categoryHomeBtn{grid-column:1!important;min-width:46px!important;}
+#categoryToolbarTopRow .category-quick-lang,
+#categoryContainer .category-quick-lang,
+#categoryContainer.video-fixed-category .category-quick-lang{
+  grid-column:2!important;
+  display:block!important;
+  width:122px!important;
+  min-width:0!important;
+  max-width:122px!important;
+}
+#categoryQuickLang,
+#categoryContainer.video-fixed-category #categoryQuickLang{
+  width:100%!important;
+  max-width:100%!important;
+}
+#categoryStickySearchWrap{
+  grid-column:3!important;
+  display:block!important;
+  position:relative!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  flex:none!important;
+}
+#categoryQuickSearchBtn{display:none!important;}
+
+/* Search input is physically docked beside Language. Never float near keyboard. */
+#categoryStickySearchPanel,
+#categoryContainer.video-fixed-category #categoryStickySearchPanel,
+body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+  display:block!important;
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:46px!important;
+  min-height:46px!important;
+  max-height:46px!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  z-index:10150!important;
+}
+#categoryStickySearchInput{
+  width:100%!important;
+  min-width:0!important;
+  height:46px!important;
+  min-height:46px!important;
+  max-height:46px!important;
+  margin:0!important;
+  padding:0 14px 0 42px!important;
+  border:1.5px solid #b9d5ef!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  color:#0f2942!important;
+  font-size:15px!important;
+  font-weight:700!important;
+  box-shadow:0 3px 10px rgba(15,76,130,.08)!important;
+  box-sizing:border-box!important;
+}
+#categoryStickySearchPanel::before{
+  content:'🔎'!important;
+  position:absolute!important;
+  left:13px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  z-index:2!important;
+  pointer-events:none!important;
+}
+
+/* Search results float BELOW the search field and never change panel height. */
+#categoryStickySearchSuggestions:not(.hidden){
+  display:block!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:calc(100% + 7px)!important;
+  bottom:auto!important;
+  width:100%!important;
+  max-height:min(280px,38vh)!important;
+  margin:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  background:#fff!important;
+  border:1px solid #d4e2ef!important;
+  border-radius:13px!important;
+  box-shadow:0 18px 38px rgba(15,23,42,.24)!important;
+  z-index:2147483641!important;
+}
+
+/* Second row remains Category Dropdown + category scroller */
+#categorySecondRow{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+
+/* ENTIRE cart bar becomes one large yellow checkout button. */
+#cartBar{
+  left:50%!important;
+  right:auto!important;
+  bottom:22px!important;
+  width:min(760px,calc(100vw - 40px))!important;
+  max-width:760px!important;
+  min-height:64px!important;
+  transform:translateX(-50%)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  padding:10px 14px!important;
+  border:2px solid #e7b900!important;
+  border-radius:18px!important;
+  background:linear-gradient(135deg,#ffe12b 0%,#ffd000 100%)!important;
+  color:#10233f!important;
+  box-shadow:0 13px 30px rgba(98,73,0,.25)!important;
+  cursor:pointer!important;
+  z-index:10040!important;
+}
+#cartBar>div{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  color:#10233f!important;
+}
+#cartCount{
+  background:#0b67d1!important;
+  color:#fff!important;
+  border:0!important;
+  white-space:nowrap!important;
+}
+#cartBar .text-yellow-300,
+#cartBar [data-i18n="subtotal"]{color:#5b4a00!important;}
+#cartSubtotal{color:#0b3f83!important;font-weight:950!important;}
+#cartBar>button{
+  flex:0 0 auto!important;
+  min-height:46px!important;
+  padding:0 14px!important;
+  border:0!important;
+  border-left:2px solid rgba(16,35,63,.16)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#10233f!important;
+  box-shadow:none!important;
+  font-weight:950!important;
+  white-space:nowrap!important;
+}
+#cartBar>button span{display:inline!important;}
+
+@media(max-width:640px){
+  #categoryContainer,
+  #categoryContainer.video-fixed-category,
+  body.hameeds-search-keyboard-open #categoryContainer{
+    padding:8px!important;
+    gap:7px!important;
+    border-radius:14px!important;
+  }
+  #categoryToolbarTopRow{
+    grid-template-columns:42px 86px minmax(0,1fr)!important;
+    gap:6px!important;
+  }
+  #categoryHomeBtn{
+    width:42px!important;
+    min-width:42px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0!important;
+  }
+  #categoryHomeBtn span{display:none!important;}
+  #categoryToolbarTopRow .category-quick-lang,
+  #categoryContainer .category-quick-lang,
+  #categoryContainer.video-fixed-category .category-quick-lang{
+    width:86px!important;
+    max-width:86px!important;
+  }
+  #categoryQuickLang,
+  #categoryContainer.video-fixed-category #categoryQuickLang{
+    width:86px!important;
+    max-width:86px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0 7px!important;
+    font-size:11px!important;
+  }
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+    height:42px!important;
+    min-height:42px!important;
+    max-height:42px!important;
+  }
+  #categoryStickySearchInput{
+    height:42px!important;
+    min-height:42px!important;
+    max-height:42px!important;
+    padding-left:37px!important;
+    padding-right:8px!important;
+    font-size:16px!important;
+  }
+  #categoryStickySearchInput::placeholder{font-size:14px!important;}
+  #categoryStickySearchPanel::before{left:11px!important;font-size:14px!important;}
+  #categoryStickySearchSuggestions:not(.hidden){
+    max-height:min(220px,31dvh)!important;
+  }
+  #categorySecondRow .category-toolbar-dropdown{
+    flex:0 0 38vw!important;
+    width:38vw!important;
+    max-width:38vw!important;
+    min-width:128px!important;
+  }
+
+  #cartBar{
+    left:8px!important;
+    right:8px!important;
+    bottom:max(78px,calc(env(safe-area-inset-bottom) + 66px))!important;
+    width:auto!important;
+    max-width:none!important;
+    min-height:58px!important;
+    transform:none!important;
+    padding:8px 10px!important;
+    gap:8px!important;
+    border-radius:16px!important;
+  }
+  #cartBar>div{gap:6px!important;}
+  #cartCount{font-size:11px!important;padding:5px 8px!important;}
+  #cartSubtotal{font-size:16px!important;}
+  #cartBar>button{
+    min-height:40px!important;
+    padding:0 8px!important;
+    font-size:11px!important;
+  }
+  #cartBar>button span{display:inline!important;}
+}
+@media(max-width:390px){
+  #categoryToolbarTopRow{grid-template-columns:40px 76px minmax(0,1fr)!important;gap:5px!important;}
+  #categoryHomeBtn{width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;}
+  #categoryToolbarTopRow .category-quick-lang,
+  #categoryContainer .category-quick-lang,
+  #categoryContainer.video-fixed-category .category-quick-lang{width:76px!important;max-width:76px!important;}
+  #categoryQuickLang,#categoryContainer.video-fixed-category #categoryQuickLang{width:76px!important;max-width:76px!important;font-size:10px!important;}
+  #categoryStickySearchInput::placeholder{font-size:12px!important;}
+  #cartBar{gap:5px!important;padding:7px 8px!important;}
+  #cartBar>button{padding:0 6px!important;font-size:10px!important;}
+}
+</style>
+<script id="absolute-final-search-top-cart-full-v2-js">
+(function(){
+  'use strict';
+  var styleObserver=null;
+  var styleLock=false;
+
+  function getParts(){
+    return {
+      c:document.getElementById('categoryContainer'),
+      top:document.getElementById('categoryToolbarTopRow'),
+      home:document.getElementById('categoryHomeBtn'),
+      lang:document.querySelector('#categoryContainer .category-quick-lang'),
+      search:document.getElementById('categoryStickySearchWrap'),
+      panel:document.getElementById('categoryStickySearchPanel'),
+      grid:document.getElementById('categoryGrid')
+    };
+  }
+
+  function hardDockSearch(){
+    var p=getParts();
+    if(!p.c||!p.top||!p.search||!p.panel)return;
+
+    if(p.home && p.home.parentNode!==p.top) p.top.appendChild(p.home);
+    if(p.lang && p.lang.parentNode!==p.top) p.top.appendChild(p.lang);
+    if(p.search.parentNode!==p.top) p.top.appendChild(p.search);
+
+    /* Defeat older keyboard/floating scripts that write inline !important positions. */
+    var s=p.panel.style;
+    s.setProperty('display','block','important');
+    s.setProperty('position','relative','important');
+    s.setProperty('top','auto','important');
+    s.setProperty('left','auto','important');
+    s.setProperty('right','auto','important');
+    s.setProperty('bottom','auto','important');
+    s.setProperty('inset','auto','important');
+    s.setProperty('transform','none','important');
+    s.setProperty('width','100%','important');
+    s.setProperty('max-width','none','important');
+    s.setProperty('height',window.innerWidth<=640?'42px':'46px','important');
+    s.setProperty('min-height',window.innerWidth<=640?'42px':'46px','important');
+    s.setProperty('max-height',window.innerWidth<=640?'42px':'46px','important');
+    s.setProperty('margin','0','important');
+    s.setProperty('padding','0','important');
+    s.setProperty('overflow','visible','important');
+
+    document.body.classList.remove('hameeds-search-keyboard-open');
+  }
+
+  function scheduleDock(){
+    hardDockSearch();
+    [0,50,120,220,360,600].forEach(function(ms){setTimeout(hardDockSearch,ms)});
+  }
+
+  function attachStyleGuard(){
+    var p=getParts().panel;
+    if(!p)return;
+    if(styleObserver)styleObserver.disconnect();
+    styleObserver=new MutationObserver(function(){
+      if(styleLock)return;
+      styleLock=true;
+      requestAnimationFrame(function(){
+        if(styleObserver)styleObserver.disconnect();
+        hardDockSearch();
+        if(styleObserver && p.isConnected) styleObserver.observe(p,{attributes:true,attributeFilter:['style','class']});
+        styleLock=false;
+      });
+    });
+    styleObserver.observe(p,{attributes:true,attributeFilter:['style','class']});
+  }
+
+  function init(){
+    scheduleDock();
+    setTimeout(attachStyleGuard,700);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput') scheduleDock();
+  },true);
+  document.addEventListener('input',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput') hardDockSearch();
+  },true);
+  window.addEventListener('resize',scheduleDock,{passive:true});
+  window.addEventListener('scroll',hardDockSearch,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',scheduleDock,{passive:true});
+    window.visualViewport.addEventListener('scroll',hardDockSearch,{passive:true});
+  }
+
+  /* Re-attach after category re-render. */
+  var rootObserver=new MutationObserver(function(muts){
+    for(var i=0;i<muts.length;i++){
+      if(muts[i].type==='childList'){
+        scheduleDock();
+        setTimeout(attachStyleGuard,80);
+        break;
+      }
+    }
+  });
+  document.addEventListener('DOMContentLoaded',function(){
+    var c=document.getElementById('categoryContainer');
+    if(c)rootObserver.observe(c,{childList:true,subtree:false});
+  });
+})();
+</script>
+
+
+<!-- ===== ABSOLUTE FINAL: CART VISIBILITY + FLUID RESPONSIVE SEARCH ===== -->
+<style id="absolute-final-cart-search-fluid-v3">
+/* Cart rule: 0 items = invisible. 1+ items = visible on Home, Menu, History, and all normal views. */
+#cartBar.hidden{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+body #cartBar:not(.hidden){
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+
+/* Category panel always follows its own available width. */
+#categoryContainer,
+#categoryContainer.video-fixed-category,
+body.hameeds-search-keyboard-open #categoryContainer{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+
+/* FIRST ROW = Home | Language | Search.
+   Search gets every remaining pixel. No fixed search width, no wrapping, no dropping below. */
+#categoryToolbarTopRow{
+  display:grid!important;
+  grid-template-columns:48px clamp(105px,14vw,150px) minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+}
+#categoryHomeBtn{
+  grid-column:1!important;
+  width:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  margin:0!important;
+}
+#categoryToolbarTopRow .category-quick-lang,
+#categoryContainer .category-quick-lang,
+#categoryContainer.video-fixed-category .category-quick-lang{
+  grid-column:2!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+}
+#categoryQuickLang,
+#categoryContainer.video-fixed-category #categoryQuickLang{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+}
+#categoryStickySearchWrap{
+  grid-column:3!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  display:block!important;
+  position:relative!important;
+  overflow:visible!important;
+}
+#categoryStickySearchPanel,
+#categoryContainer.video-fixed-category #categoryStickySearchPanel,
+body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+  display:block!important;
+  position:relative!important;
+  inset:auto!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  transform:none!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+}
+#categoryStickySearchInput{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+}
+
+/* Suggestions are an overlay. They NEVER increase the category panel height. */
+#categoryStickySearchSuggestions:not(.hidden){
+  display:block!important;
+  position:absolute!important;
+  top:calc(100% + 6px)!important;
+  left:0!important;
+  right:0!important;
+  bottom:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  max-height:min(260px,34dvh)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  margin:0!important;
+  z-index:2147483641!important;
+}
+
+/* SECOND ROW = Category dropdown + horizontal category scroller. */
+#categorySecondRow{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+#categorySecondRow #categoryGrid{
+  flex:1 1 auto!important;
+  min-width:0!important;
+}
+
+/* Phone: the whole panel becomes narrower, so the search box shrinks proportionally with it. */
+@media(max-width:640px){
+  #categoryContainer,
+  #categoryContainer.video-fixed-category,
+  body.hameeds-search-keyboard-open #categoryContainer{
+    padding:8px!important;
+  }
+  #categoryToolbarTopRow{
+    grid-template-columns:42px clamp(72px,22vw,96px) minmax(0,1fr)!important;
+    gap:6px!important;
+  }
+  #categoryHomeBtn{
+    width:42px!important;
+    min-width:42px!important;
+    max-width:42px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+  }
+  #categoryHomeBtn span{display:none!important;}
+  #categoryQuickLang,
+  #categoryContainer.video-fixed-category #categoryQuickLang{
+    height:44px!important;
+    min-height:44px!important;
+    padding:0 7px!important;
+    font-size:11px!important;
+  }
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel,
+  #categoryStickySearchInput{
+    height:44px!important;
+    min-height:44px!important;
+    max-height:44px!important;
+  }
+  #categoryStickySearchInput{
+    padding-left:36px!important;
+    padding-right:8px!important;
+    font-size:16px!important;
+  }
+  #categoryStickySearchInput::placeholder{
+    font-size:clamp(10px,3.1vw,13px)!important;
+  }
+  #categorySecondRow .category-toolbar-dropdown{
+    flex:0 0 clamp(128px,38vw,210px)!important;
+    width:clamp(128px,38vw,210px)!important;
+    min-width:128px!important;
+    max-width:210px!important;
+  }
+  #categoryStickySearchSuggestions:not(.hidden){
+    max-height:min(220px,30dvh)!important;
+  }
+}
+
+@media(max-width:380px){
+  #categoryToolbarTopRow{
+    grid-template-columns:40px clamp(68px,21vw,80px) minmax(0,1fr)!important;
+    gap:5px!important;
+  }
+  #categoryHomeBtn{
+    width:40px!important;
+    min-width:40px!important;
+    max-width:40px!important;
+    height:42px!important;
+    min-height:42px!important;
+  }
+  #categoryQuickLang,
+  #categoryContainer.video-fixed-category #categoryQuickLang,
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel,
+  #categoryStickySearchInput{
+    height:42px!important;
+    min-height:42px!important;
+    max-height:42px!important;
+  }
+  #categoryQuickLang{font-size:10px!important;}
+  #categoryStickySearchInput::placeholder{font-size:10px!important;}
+}
+</style>
+<script id="absolute-final-cart-visibility-v3">
+(function(){
+  'use strict';
+  function qty(){
+    try{
+      var items=(typeof cart!=='undefined' && Array.isArray(cart))?cart:[];
+      return items.reduce(function(n,item){return n+Number(item&&item.quantity||0)},0);
+    }catch(e){return 0;}
+  }
+  function sync(){
+    var bar=document.getElementById('cartBar');
+    if(!bar)return;
+    bar.classList.toggle('hidden',qty()<=0);
+  }
+  window.hameedsSyncCartBarEverywhere=sync;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){ if(typeof updateCartBar==='function')updateCartBar(); sync(); },0);});
+  else setTimeout(function(){ if(typeof updateCartBar==='function')updateCartBar(); sync(); },0);
+
+  document.addEventListener('click',function(){setTimeout(sync,60);},true);
+  window.addEventListener('pageshow',function(){setTimeout(function(){ if(typeof updateCartBar==='function')updateCartBar(); sync(); },20);});
+})();
+</script>
+
+<!-- ===== TRUE FINAL: SEARCH FOLLOWS ACTUAL PANEL WIDTH + HOME BUTTON FIX ===== -->
+<style id="true-final-panel-responsive-search-home-v1">
+/* Top row follows the CATEGORY PANEL width itself, not the browser width. */
+#categoryToolbarTopRow{
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+#categoryHomeBtn{
+  flex:0 0 96px!important;
+  width:96px!important;
+  min-width:96px!important;
+  max-width:96px!important;
+  height:46px!important;
+  min-height:46px!important;
+  padding:0 12px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+#categoryHomeBtn span{
+  display:inline!important;
+  white-space:nowrap!important;
+}
+#categoryToolbarTopRow .category-quick-lang,
+#categoryContainer .category-quick-lang,
+#categoryContainer.video-fixed-category .category-quick-lang{
+  flex:0 0 128px!important;
+  width:128px!important;
+  min-width:128px!important;
+  max-width:128px!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+}
+#categoryQuickLang,
+#categoryContainer.video-fixed-category #categoryQuickLang{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:46px!important;
+  min-height:46px!important;
+  box-sizing:border-box!important;
+}
+#categoryStickySearchWrap{
+  flex:1 1 0!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  justify-self:stretch!important;
+  align-self:stretch!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+#categoryStickySearchPanel,
+#categoryContainer.video-fixed-category #categoryStickySearchPanel,
+body.hameeds-search-keyboard-open #categoryStickySearchPanel{
+  position:relative!important;
+  inset:auto!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:46px!important;
+  min-height:46px!important;
+  max-height:46px!important;
+  margin:0!important;
+  transform:none!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+#categoryStickySearchInput{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:46px!important;
+  min-height:46px!important;
+  box-sizing:border-box!important;
+  text-overflow:ellipsis!important;
+}
+/* Search results remain an overlay and never change the top-row/panel width or height. */
+#categoryStickySearchSuggestions:not(.hidden){
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:calc(100% + 7px)!important;
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+
+/* Compact layout is based on the real panel width; JS below also enforces it exactly. */
+#categoryContainer.hb-panel-compact #categoryHomeBtn{
+  flex-basis:58px!important;
+  width:58px!important;
+  min-width:58px!important;
+  max-width:58px!important;
+  padding:0!important;
+}
+#categoryContainer.hb-panel-compact #categoryHomeBtn span{display:none!important;}
+#categoryContainer.hb-panel-compact .category-quick-lang{
+  flex-basis:116px!important;
+  width:116px!important;
+  min-width:116px!important;
+  max-width:116px!important;
+}
+#categoryContainer.hb-panel-tiny #categoryHomeBtn{
+  flex-basis:50px!important;
+  width:50px!important;
+  min-width:50px!important;
+  max-width:50px!important;
+}
+#categoryContainer.hb-panel-tiny .category-quick-lang{
+  flex-basis:92px!important;
+  width:92px!important;
+  min-width:92px!important;
+  max-width:92px!important;
+}
+#categoryContainer.hb-panel-tiny #categoryQuickLang{font-size:10px!important;padding-left:6px!important;padding-right:18px!important;}
+#categoryContainer.hb-panel-compact #categoryStickySearchInput,
+#categoryContainer.hb-panel-tiny #categoryStickySearchInput{font-size:16px!important;}
+
+@media(max-width:640px){
+  #categoryToolbarTopRow{gap:6px!important;}
+  #categoryHomeBtn{
+    flex-basis:58px!important;width:58px!important;min-width:58px!important;max-width:58px!important;
+    height:46px!important;min-height:46px!important;padding:0!important;
+  }
+  #categoryHomeBtn span{display:none!important;}
+  #categoryToolbarTopRow .category-quick-lang,
+  #categoryContainer .category-quick-lang,
+  #categoryContainer.video-fixed-category .category-quick-lang{
+    flex-basis:116px!important;width:116px!important;min-width:116px!important;max-width:116px!important;
+  }
+  #categoryQuickLang,#categoryContainer.video-fixed-category #categoryQuickLang{height:46px!important;min-height:46px!important;font-size:12px!important;}
+  #categoryStickySearchPanel,
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel,
+  body.hameeds-search-keyboard-open #categoryStickySearchPanel,
+  #categoryStickySearchInput{height:46px!important;min-height:46px!important;max-height:46px!important;}
+}
+</style>
+<script id="true-final-panel-responsive-search-home-v1-js">
+(function(){
+  'use strict';
+  var ro=null, raf=0;
+
+  function setImp(el,prop,val){ if(el) el.style.setProperty(prop,val,'important'); }
+
+  function fitTopRowToPanel(){
+    var c=document.getElementById('categoryContainer');
+    var top=document.getElementById('categoryToolbarTopRow');
+    var home=document.getElementById('categoryHomeBtn');
+    var homeText=home?home.querySelector('span'):null;
+    var langWrap=c?c.querySelector('.category-quick-lang'):null;
+    var lang=document.getElementById('categoryQuickLang');
+    var wrap=document.getElementById('categoryStickySearchWrap');
+    var panel=document.getElementById('categoryStickySearchPanel');
+    var input=document.getElementById('categoryStickySearchInput');
+    if(!c||!top||!home||!langWrap||!wrap||!panel||!input)return;
+
+    /* Always keep the three controls physically in this row. */
+    if(home.parentNode!==top) top.appendChild(home);
+    if(langWrap.parentNode!==top) top.appendChild(langWrap);
+    if(wrap.parentNode!==top) top.appendChild(wrap);
+
+    var cs=getComputedStyle(c);
+    var inner=Math.max(0,c.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0));
+    var compact=inner<620;
+    var tiny=inner<390;
+    c.classList.toggle('hb-panel-compact',compact);
+    c.classList.toggle('hb-panel-tiny',tiny);
+
+    var gap=tiny?5:(compact?6:8);
+    var homeW=tiny?50:(compact?58:96);
+    var langW=tiny?92:(compact?116:128);
+    var searchW=Math.floor(inner-homeW-langW-gap*2);
+
+    /* Preserve a useful Search field on extremely narrow panels. */
+    if(searchW<118){
+      var need=118-searchW;
+      var takeLang=Math.min(need,Math.max(0,langW-78));
+      langW-=takeLang; need-=takeLang;
+      if(need>0){ homeW=Math.max(46,homeW-need); }
+      searchW=Math.max(0,Math.floor(inner-homeW-langW-gap*2));
+    }
+
+    setImp(top,'display','flex');
+    setImp(top,'flex-wrap','nowrap');
+    setImp(top,'width','100%');
+    setImp(top,'max-width','100%');
+    setImp(top,'gap',gap+'px');
+
+    setImp(home,'flex','0 0 '+homeW+'px');
+    setImp(home,'width',homeW+'px');
+    setImp(home,'min-width',homeW+'px');
+    setImp(home,'max-width',homeW+'px');
+    setImp(home,'height','46px');
+    if(homeText) setImp(homeText,'display',compact?'none':'inline');
+
+    setImp(langWrap,'flex','0 0 '+langW+'px');
+    setImp(langWrap,'width',langW+'px');
+    setImp(langWrap,'min-width',langW+'px');
+    setImp(langWrap,'max-width',langW+'px');
+    setImp(lang,'width','100%');
+    setImp(lang,'max-width','100%');
+    setImp(lang,'height','46px');
+
+    /* This is the important part: Search receives every remaining pixel of the panel. */
+    setImp(wrap,'flex','0 0 '+searchW+'px');
+    setImp(wrap,'width',searchW+'px');
+    setImp(wrap,'min-width','0');
+    setImp(wrap,'max-width',searchW+'px');
+    setImp(panel,'position','relative');
+    setImp(panel,'inset','auto');
+    setImp(panel,'top','auto');
+    setImp(panel,'left','auto');
+    setImp(panel,'right','auto');
+    setImp(panel,'bottom','auto');
+    setImp(panel,'transform','none');
+    setImp(panel,'width','100%');
+    setImp(panel,'min-width','0');
+    setImp(panel,'max-width','100%');
+    setImp(panel,'height','46px');
+    setImp(input,'width','100%');
+    setImp(input,'min-width','0');
+    setImp(input,'max-width','100%');
+    setImp(input,'height','46px');
+
+    input.placeholder=searchW<185?'Search...':'Search all menu items...';
+  }
+
+  function schedule(){
+    if(raf) cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(function(){raf=0;fitTopRowToPanel();});
+    setTimeout(fitTopRowToPanel,50);
+    setTimeout(fitTopRowToPanel,180);
+  }
+
+  function attach(){
+    var c=document.getElementById('categoryContainer');
+    if(!c)return;
+    if(ro)ro.disconnect();
+    if('ResizeObserver' in window){ ro=new ResizeObserver(schedule); ro.observe(c); }
+    schedule();
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){attach();setTimeout(attach,500);});
+  else {attach();setTimeout(attach,500);}
+  window.addEventListener('resize',schedule,{passive:true});
+  window.addEventListener('orientationchange',schedule,{passive:true});
+  window.addEventListener('scroll',schedule,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',schedule,{passive:true});
+    window.visualViewport.addEventListener('scroll',schedule,{passive:true});
+  }
+  document.addEventListener('focusin',function(e){if(e.target&&e.target.id==='categoryStickySearchInput')schedule();},true);
+  document.addEventListener('input',function(e){if(e.target&&e.target.id==='categoryStickySearchInput')schedule();},true);
+
+  /* Category rerenders rebuild the controls; re-fit immediately. */
+  var mo=new MutationObserver(function(){schedule();});
+  document.addEventListener('DOMContentLoaded',function(){
+    var c=document.getElementById('categoryContainer');
+    if(c)mo.observe(c,{childList:true,subtree:false});
+  });
+})();
+</script>
+
+</body>
+</html>
