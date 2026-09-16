@@ -6608,6 +6608,53 @@ body > header .hameeds-header-action,#headerLanguageWrap{flex:0 0 auto!important
   }
 })();
 </script>
+
+<style id="mobile-keyboard-sticky-category-strong-fix">
+/* Keep the sticky category/search toolbar inside the PHONE visual viewport when the keyboard opens. */
+#categoryContainer.video-fixed-category{top:var(--hameeds-visual-top,0px)!important;}
+@media(max-width:640px){
+  #categoryContainer.video-fixed-category{
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  #categoryContainer.video-fixed-category #categoryStickySearchPanel{
+    position:fixed!important;
+    left:10px!important;
+    right:10px!important;
+    width:auto!important;
+    top:calc(var(--hameeds-visual-top,0px) + var(--hameeds-category-height,58px) + 6px)!important;
+    margin:0!important;
+    z-index:10080!important;
+  }
+}
+</style>
+<script id="mobile-keyboard-sticky-category-strong-fix-js">
+(function(){
+  function syncStickyToVisualViewport(){
+    const vv=window.visualViewport;
+    const top=vv ? Math.max(0,Math.round(vv.offsetTop||0)) : 0;
+    document.documentElement.style.setProperty('--hameeds-visual-top',top+'px');
+    const cat=document.getElementById('categoryContainer');
+    if(cat){
+      document.documentElement.style.setProperty('--hameeds-category-height',Math.ceil(cat.getBoundingClientRect().height||58)+'px');
+    }
+  }
+  syncStickyToVisualViewport();
+  window.addEventListener('resize',syncStickyToVisualViewport,{passive:true});
+  window.addEventListener('scroll',syncStickyToVisualViewport,{passive:true});
+  if(window.visualViewport){
+    visualViewport.addEventListener('resize',syncStickyToVisualViewport,{passive:true});
+    visualViewport.addEventListener('scroll',syncStickyToVisualViewport,{passive:true});
+  }
+  document.addEventListener('focusin',function(e){
+    if(e.target && e.target.id==='categoryStickySearchInput'){
+      syncStickyToVisualViewport();
+      setTimeout(syncStickyToVisualViewport,60);
+      setTimeout(syncStickyToVisualViewport,250);
+    }
+  });
+})();
+</script>
 </body>
 </html>
 
