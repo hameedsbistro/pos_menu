@@ -1935,6 +1935,10 @@ openPosSystemModalWithOrder(orderId, totalAmount);
                                 <span class="font-bold text-sm text-gray-900">Order #${o.id}</span>
                                 <p class="text-gray-500">Table: ${o.table_id || 'N/A'} | RM${Number(o.total_amount || 0).toFixed(2)}</p>
                             </div>
+                            <div class="min-w-[190px] px-3 text-left leading-tight">
+                                <p class="font-semibold text-gray-800">${o.customer_name || 'N/A'}</p>
+                                <p class="mt-1 text-gray-500">${o.customer_phone || 'N/A'}</p>
+                            </div>
                             <div class="flex gap-2">
                                 <button onclick='openOrderDetailsById(${o.id}, "incoming")' class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">Open</button>
                                 <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium">Decline</button>
@@ -5002,7 +5006,12 @@ window.openCloseReportPrintWindow = function(type,date,shiftNo,snapshot,user){
         <div class="flex justify-between items-center gap-2"><div>
           <span class="font-bold text-sm">NEW ORDER #${o.id}</span>
           <p class="text-gray-500">Table: ${esc(o.table_id||'N/A')} | RM${Number(o.total_amount||0).toFixed(2)}</p>
-        </div><div class="flex gap-2">
+        </div>
+        <div class="min-w-[190px] px-3 text-left leading-tight">
+          <p class="font-semibold text-gray-800">${esc(o.customer_name || 'N/A')}</p>
+          <p class="mt-1 text-gray-500">${esc(o.customer_phone || 'N/A')}</p>
+        </div>
+        <div class="flex gap-2">
           <button onclick='openOrderDetailsById(${o.id},"incoming")' class="bg-emerald-600 text-white px-3 py-1 rounded-lg">Open</button>
           <button onclick='promptDeclineOrder(${o.id})' class="bg-red-500 text-white px-3 py-1 rounded-lg">Decline</button>
         </div></div>
