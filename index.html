@@ -3660,7 +3660,7 @@ main{background:transparent!important;}
                     customer_phone:saved?.phone||null,status:'pending'
                 }]);
                 if(error)throw error;
-                alert(`🔔 Cashier has been called from Table ${table}.`);
+                showRestaurantBellSuccess(table);
             }catch(e){
                 alert('Unable to call cashier. Please make sure the Customer Call SQL has been run.');
                 console.error('Customer call failed:',e);
@@ -8815,5 +8815,186 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
   window.addEventListener('pageshow',function(){setTimeout(syncCheckoutCartVisibility,0);});
 })();
 </script>
+
+<!-- FINAL: branded waiter/cashier-call success popup + cart bar hidden while Cart OR Checkout modal is open. -->
+<style id="restaurant-bell-success-popup-style">
+  #restaurantBellSuccessModal{z-index:30010}
+  #restaurantBellSuccessModal .rbs-card{
+    width:min(92vw,420px);background:#fff;border-radius:22px;overflow:hidden;
+    box-shadow:0 24px 70px rgba(15,23,42,.34);border:1px solid rgba(37,99,235,.18)
+  }
+  #restaurantBellSuccessModal .rbs-head{
+    background:linear-gradient(135deg,#075fc8,#176fe3);color:#fff;padding:18px 20px;
+    display:flex;align-items:center;gap:12px
+  }
+  #restaurantBellSuccessModal .rbs-logo{
+    width:48px;height:48px;border-radius:50%;object-fit:contain;background:#fff;padding:3px;flex:0 0 48px
+  }
+  #restaurantBellSuccessModal .rbs-title{font-size:18px;line-height:1.2;font-weight:900;margin:0}
+  #restaurantBellSuccessModal .rbs-body{padding:22px 20px 20px;text-align:center}
+  #restaurantBellSuccessModal .rbs-bell{
+    width:64px;height:64px;border-radius:50%;background:#fef3c7;color:#b45309;
+    display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 12px
+  }
+  #restaurantBellSuccessModal .rbs-message{
+    font-size:16px;line-height:1.5;font-weight:800;color:#1f2937;margin:0 0 18px
+  }
+  #restaurantBellSuccessModal .rbs-ok{
+    width:100%;border:0;border-radius:14px;background:#059669;color:#fff;
+    padding:12px 16px;font-size:15px;font-weight:900;cursor:pointer
+  }
+
+  body.cart-modal-open #cartBar,
+  body.checkout-modal-open #cartBar{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+</style>
+
+<div id="restaurantBellSuccessModal"
+     class="hidden fixed inset-0 bg-black/55 flex items-center justify-center p-4"
+     role="dialog" aria-modal="true" aria-labelledby="restaurantBellSuccessTitle">
+  <div class="rbs-card">
+    <div class="rbs-head">
+      <img src="images/logo.png" alt="Logo" class="rbs-logo" onerror="this.style.display='none'">
+      <h3 id="restaurantBellSuccessTitle" class="rbs-title">Restoran Hameeds Bistro</h3>
+    </div>
+    <div class="rbs-body">
+      <div class="rbs-bell">🔔</div>
+      <p id="restaurantBellSuccessMessage" class="rbs-message">Your waiter has been called.</p>
+      <button type="button" class="rbs-ok" onclick="closeRestaurantBellSuccess()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script id="final-cart-modal-hide-and-branded-bell-popup">
+(function(){
+  'use strict';
+
+  function getRestaurantName(){
+    var h=document.querySelector('header h1');
+    var fromHeader=(h && h.textContent || '').trim();
+    var fromTitle=(document.title || '').trim();
+    return fromHeader || fromTitle || 'Restoran Hameeds Bistro';
+  }
+
+  window.showRestaurantBellSuccess=function(table){
+    var modal=document.getElementById('restaurantBellSuccessModal');
+    var title=document.getElementById('restaurantBellSuccessTitle');
+    var msg=document.getElementById('restaurantBellSuccessMessage');
+    if(title) title.textContent=getRestaurantName();
+    if(msg) msg.textContent='Cashier has been called from Table '+String(table||'').trim()+'.';
+    if(modal){
+      modal.classList.remove('hidden');
+      requestAnimationFrame(function(){
+        var b=modal.querySelector('.rbs-ok');
+        if(b) try{ b.focus({preventScroll:true}); }catch(e){ b.focus(); }
+      });
+    }
+  };
+
+  window.closeRestaurantBellSuccess=function(){
+    var modal=document.getElementById('restaurantBellSuccessModal');
+    if(modal) modal.classList.add('hidden');
+  };
+
+  function cartQty(){
+    try{
+      var items=(typeof cart!=='undefined' && Array.isArray(cart)) ? cart : [];
+      return items.reduce(function(n,i){ return n + Number(i && i.quantity || 0); },0);
+    }catch(e){ return 0; }
+  }
+
+  function modalOpen(id){
+    var el=document.getElementById(id);
+    return !!(el && !el.classList.contains('hidden'));
+  }
+
+  function syncCartBarForModals(){
+    var bar=document.getElementById('cartBar');
+    if(!bar) return;
+    var cartOpen=modalOpen('cartModal');
+    var checkoutOpen=modalOpen('checkoutModal');
+
+    document.body.classList.toggle('cart-modal-open',cartOpen);
+    document.body.classList.toggle('checkout-modal-open',checkoutOpen);
+
+    if(cartOpen || checkoutOpen){
+      bar.classList.add('hidden');
+      return;
+    }
+
+    if(cartQty()>0){
+      bar.classList.remove('hidden');
+      if(typeof updateCartBar==='function'){
+        try{ updateCartBar(); }catch(e){}
+      }
+    }else{
+      bar.classList.add('hidden');
+    }
+  }
+
+  function install(){
+    var bar=document.getElementById('cartBar');
+
+    /* Hide immediately on the same tap that opens the Cart modal. */
+    if(typeof window.openCartModal==='function' && !window.openCartModal.__modalCartHideFinal){
+      var openCartOriginal=window.openCartModal;
+      var openCartWrapped=function(){
+        document.body.classList.add('cart-modal-open');
+        if(bar) bar.classList.add('hidden');
+        var result=openCartOriginal.apply(this,arguments);
+        queueMicrotask(syncCartBarForModals);
+        return result;
+      };
+      openCartWrapped.__modalCartHideFinal=true;
+      window.openCartModal=openCartWrapped;
+    }
+
+    if(typeof window.closeCartModal==='function' && !window.closeCartModal.__modalCartHideFinal){
+      var closeCartOriginal=window.closeCartModal;
+      var closeCartWrapped=function(){
+        var result=closeCartOriginal.apply(this,arguments);
+        document.body.classList.remove('cart-modal-open');
+        setTimeout(syncCartBarForModals,0);
+        return result;
+      };
+      closeCartWrapped.__modalCartHideFinal=true;
+      window.closeCartModal=closeCartWrapped;
+    }
+
+    /* Keep the existing Checkout behavior, but make both modals authoritative. */
+    ['cartModal','checkoutModal'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(!el) return;
+      new MutationObserver(function(mutations){
+        for(var i=0;i<mutations.length;i++){
+          if(mutations[i].attributeName==='class'){
+            syncCartBarForModals();
+            break;
+          }
+        }
+      }).observe(el,{attributes:true,attributeFilter:['class']});
+    });
+
+    syncCartBarForModals();
+  }
+
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape') closeRestaurantBellSuccess();
+  });
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',install,{once:true});
+  }else{
+    install();
+  }
+
+  window.addEventListener('pageshow',function(){setTimeout(syncCartBarForModals,0);});
+})();
+</script>
+
 </body>
 </html>
