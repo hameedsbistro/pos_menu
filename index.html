@@ -8996,5 +8996,494 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
 })();
 </script>
 
+
+
+<style id="final-history-add-more-and-identity-style">
+/* Final Order History action layout: keep Add More accessible while details scroll. */
+#historyOrderDetailActions{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:80!important;
+  background:rgba(255,255,255,.98)!important;
+  border-top:1px solid #dbeafe!important;
+  box-shadow:0 -10px 28px rgba(15,23,42,.14)!important;
+  backdrop-filter:blur(8px);
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+#historyOrderDetailActions .history-add-more-fixed{
+  flex:1 1 320px!important;
+  min-height:58px!important;
+  font-size:16px!important;
+  font-weight:900!important;
+  border-radius:14px!important;
+  box-shadow:0 8px 20px rgba(37,99,235,.24)!important;
+}
+#historyOrderDetailActions .history-detail-close{
+  flex:0 0 auto!important;
+  min-height:48px!important;
+}
+.history-list-actions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+}
+@media(max-width:640px){
+  #historyOrderDetailModal{padding:0!important;align-items:stretch!important;}
+  #historyOrderDetailModal>div{
+    width:100%!important;
+    max-width:none!important;
+    max-height:100dvh!important;
+    min-height:100dvh!important;
+    border-radius:0!important;
+  }
+  #historyOrderDetailActions{
+    width:100%!important;
+    padding:10px 12px calc(12px + env(safe-area-inset-bottom))!important;
+    flex-direction:column!important;
+  }
+  #historyOrderDetailActions .history-add-more-fixed{
+    width:100%!important;
+    flex:0 0 auto!important;
+    min-height:66px!important;
+    font-size:18px!important;
+  }
+  #historyOrderDetailActions .history-detail-close,
+  #historyOrderDetailActions .history-download-receipt{
+    width:100%!important;
+    min-height:48px!important;
+  }
+  .history-list-actions{
+    width:100%!important;
+    justify-content:flex-start!important;
+  }
+  .history-list-actions button{
+    min-height:42px!important;
+    padding-left:14px!important;
+    padding-right:14px!important;
+  }
+}
+</style>
+
+<script id="final-order-history-add-more-identity-merge">
+(function(){
+  'use strict';
+
+  function normName(v){
+    return String(v||'').trim().replace(/\s+/g,' ').toLocaleLowerCase();
+  }
+  function normPhone(v){
+    try{return normalizeCustomerPhone(v);}catch(e){return String(v||'').trim();}
+  }
+  function lower(v){return String(v||'').trim().toLowerCase();}
+
+  window.isCancelledCustomerOrder=function(order){
+    const s=lower(order?.status);
+    const p=lower(order?.payment_status);
+    const cancelled=new Set(['cancelled','canceled','declined','rejected','void','voided','refunded']);
+    return cancelled.has(s)||cancelled.has(p);
+  };
+
+  window.isAddMoreEligibleCustomerOrder=function(order){
+    if(!order) return false;
+    if(window.isCancelledCustomerOrder(order)) return false;
+    const s=lower(order.status);
+    const p=lower(order.payment_status);
+    const paid=new Set(['paid','completed','complete','settled']);
+    const finalStatus=new Set(['completed','complete','closed','delivered','served']);
+    if(paid.has(p)) return false;
+    if(finalStatus.has(s)) return false;
+    return true;
+  };
+
+  /* ORDER HISTORY LIST: View + Add More on every open/unpaid order. */
+  window.showOrderHistory=async function(){
+    setHeaderMenuSearchVisible(false);
+    document.getElementById('homeView').classList.add('hidden');
+    document.getElementById('orderView').classList.add('hidden');
+    document.getElementById('historyView').classList.remove('hidden');
+    updateCartBar();
+
+    const container=document.getElementById('orderHistoryContainer');
+    container.innerHTML='<p class="text-gray-500">Loading history...</p>';
+    const historyInput=document.getElementById('historyPhoneInput');
+    const savedGuest=(()=>{try{return JSON.parse(localStorage.getItem('hameeds_guest_customer')||'null')}catch(e){return null}})();
+    if(historyInput && !historyInput.value && savedGuest?.phone) historyInput.value=savedGuest.phone;
+    const phone=normPhone(historyInput?.value||'');
+    if(!phone){
+      container.innerHTML='<p class="text-gray-500 bg-white border rounded-xl p-4">Enter the phone number used when placing your order, then press View History.</p>';
+      return;
+    }
+    if(historyInput) historyInput.value=phone;
+
+    const {data,error}=await _supabase.from('orders').select('*').eq('customer_phone',phone).order('created_at',{ascending:false});
+    if(error){
+      console.error('History Fetch Error:',error);
+      container.innerHTML=`<p class="text-red-500">Error loading history: ${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    historyOrderCache=new Map((data||[]).map(o=>[String(o.id),o]));
+    if(!data?.length){container.innerHTML='<p class="text-gray-500">No past orders found.</p>';return;}
+
+    container.innerHTML=data.map(o=>{
+      const completed=isCompletedCustomerOrder(o);
+      const canAdd=window.isAddMoreEligibleCustomerOrder(o);
+      return `<div class="history-order-card bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex items-center flex-wrap gap-2 mb-1">
+              <p class="font-bold text-gray-800">Order ID: #${o.id}</p>
+              <span class="history-status-pill ${historyStatusClasses(o)}">${escapeHtml(o.status||'Pending')}</span>
+            </div>
+            <p class="text-xs text-gray-500">Type: ${escapeHtml((o.order_type||'').toUpperCase())} | Table/Loc: ${escapeHtml(o.table_id||o.table_no||'N/A')}</p>
+            <p class="text-xs text-gray-400 mt-1">${o.created_at?new Date(o.created_at).toLocaleString():''}</p>
+          </div>
+          <div class="sm:text-right shrink-0">
+            <p class="font-bold text-lg text-blue-600 mb-2">RM${Number(o.total_amount||0).toFixed(2)}</p>
+            <div class="history-list-actions">
+              <button type="button" onclick="viewCustomerOrder(${Number(o.id)})" class="bg-gray-800 hover:bg-gray-900 text-white px-3 py-2 rounded-lg text-xs font-bold">View</button>
+              ${canAdd?`<button type="button" onclick="addMoreItemsToCustomerOrder(${Number(o.id)})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold">Add More Item</button>`:''}
+              ${completed?`<button type="button" onclick="downloadCustomerReceipt(${Number(o.id)})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold">Download Receipt</button>`:''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  /* DETAIL MODAL: keep Add More as a large fixed/sticky footer action. */
+  const previousViewCustomerOrder=window.viewCustomerOrder;
+  window.viewCustomerOrder=async function(orderId){
+    await previousViewCustomerOrder.apply(this,arguments);
+    let order=historyOrderCache?.get?.(String(orderId))||null;
+    if(!order){
+      const r=await _supabase.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
+      order=r.data||null;
+    }
+    if(!order) return;
+    const actions=document.getElementById('historyOrderDetailActions');
+    if(!actions) return;
+    const completed=isCompletedCustomerOrder(order);
+    const canAdd=window.isAddMoreEligibleCustomerOrder(order);
+    actions.innerHTML=`
+      ${canAdd?`<button type="button" onclick="addMoreItemsToCustomerOrder(${Number(order.id)})" class="history-add-more-fixed bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl">＋ Add More Item</button>`:''}
+      ${completed?`<button type="button" onclick="downloadCustomerReceipt(${Number(order.id)})" class="history-download-receipt bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-bold">Download Receipt</button>`:''}
+      <button type="button" onclick="closeHistoryOrderDetail()" class="history-detail-close bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-3 rounded-xl font-bold">Close</button>`;
+  };
+
+  /* Add More can be opened for any order that is still open, unpaid and not cancelled. */
+  window.addMoreItemsToCustomerOrder=async function(orderId){
+    try{
+      const {data:order,error}=await _supabase.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
+      if(error||!order) throw error||new Error('Order not found.');
+      if(!window.isAddMoreEligibleCustomerOrder(order)){
+        alert('Add More Item is not available after payment, cancellation or order completion.');
+        return;
+      }
+      appendToExistingOrderId=Number(orderId);
+      cart=[];
+      saveCart();
+      updateCartBar();
+      closeHistoryOrderDetail();
+
+      currentOrderType=String(order.order_type||'').toLowerCase().includes('take')?'takeaway':'dine_in';
+      document.getElementById('homeView').classList.add('hidden');
+      document.getElementById('historyView').classList.add('hidden');
+      document.getElementById('orderView').classList.remove('hidden');
+      document.getElementById('selectedOrderType').innerText=currentOrderType==='dine_in'?'Dine-In':'Takeaway';
+
+      if(currentOrderType==='dine_in'){
+        document.getElementById('tableChangeContainer').classList.remove('hidden');
+        const table=String(order.table_id||'').split('/')[0].trim();
+        const prefix=table.charAt(0).toUpperCase();
+        const section=prefix==='B'?'outdoor':prefix==='C'?'first_floor':'indoor';
+        document.getElementById('activeSectionSelect').value=section;
+        updateActiveTableDropdown();
+        document.getElementById('activeTableSelect').value=table;
+        document.getElementById('activeSectionSelect').disabled=true;
+        document.getElementById('activeTableSelect').disabled=true;
+      }else{
+        document.getElementById('tableChangeContainer').classList.add('hidden');
+      }
+      await fetchMenu();
+      alert(`Add items to Order #${orderId}. Only the new items will be added to this existing order.`);
+    }catch(e){
+      alert('Unable to open this order for Add More Item: '+(e.message||e));
+    }
+  };
+
+  async function findLatestMatchingOpenOrder(name,phone){
+    const normalizedName=normName(name);
+    const normalizedPhone=normPhone(phone);
+    if(!normalizedName||!normalizedPhone) return null;
+    const {data,error}=await _supabase.from('orders').select('*')
+      .eq('customer_phone',normalizedPhone)
+      .order('created_at',{ascending:false})
+      .limit(30);
+    if(error){console.warn('Matching active order lookup failed:',error);return null;}
+    return (data||[]).find(o=>normName(o.customer_name)===normalizedName && window.isAddMoreEligibleCustomerOrder(o))||null;
+  }
+
+  async function directAppendToPendingOrder(order,name){
+    const rows=cart.map(i=>({
+      order_id:Number(order.id),
+      menu_item_id:i.id,
+      quantity:Number(i.quantity||1),
+      price:Number(i.price||0),
+      added_by_name:name||order.customer_name||'Customer',
+      added_at:new Date().toISOString(),
+      modifiers:[
+        ...((i.modifierDetails&&i.modifierDetails.length)?i.modifierDetails.map(m=>({text:m.text,price:Number(m.price||0)})):(i.modifiers||[]).map(text=>({text,price:0}))),
+        ...(i.modifierNote?[{text:i.modifierNote,price:0}]:[])
+      ]
+    }));
+    let {error}=await _supabase.from('order_items').insert(rows);
+    if(error){
+      const fallback=cart.map(i=>({
+        order_id:Number(order.id),menu_item_id:i.id,quantity:Number(i.quantity||1),price:Number(i.price||0),
+        added_by_name:name||order.customer_name||'Customer',added_at:new Date().toISOString(),
+        modifier_notes:[...(i.modifiers||[]),i.modifierNote||''].filter(Boolean).join(', ')||null
+      }));
+      const retry=await _supabase.from('order_items').insert(fallback);
+      error=retry.error;
+    }
+    if(error) throw error;
+    const totals=await _supabase.from('order_items').select('price,quantity').eq('order_id',Number(order.id));
+    if(!totals.error){
+      const subtotal=(totals.data||[]).reduce((s,i)=>s+Number(i.price||0)*Number(i.quantity||0),0);
+      const sst=Math.round(subtotal*.06*100)/100;
+      const total=Math.round((subtotal+sst)*100)/100;
+      await _supabase.from('orders').update({subtotal:subtotal,sst_tax:sst,total_amount:total}).eq('id',Number(order.id));
+    }
+  }
+
+  async function sendAddRequestToOpenOrder(order,name,phone){
+    let guest=null;
+    try{guest=await ensureGuestCustomer(name,phone);}catch(e){console.warn('Customer save during add-more:',e);}
+    const requestItems=cart.map(i=>({
+      menu_item_id:i.id,
+      item_name:getOriginalItemName(i),
+      quantity:Number(i.quantity||1),
+      price:Number(i.price||0),
+      modifiers:(i.modifierDetails&&i.modifierDetails.length)
+        ? i.modifierDetails.map(m=>({text:m.text,price:Number(m.price||0)}))
+        : (i.modifiers||[]).map(text=>({text,price:0})),
+      modifierNote:i.modifierNote||''
+    }));
+    const payload={
+      order_id:Number(order.id),
+      customer_id:guest?.id??order.customer_id??null,
+      table_id:order.table_id||order.table_no||'N/A',
+      items:requestItems,
+      status:'pending'
+    };
+    const {error}=await _supabase.from('order_item_add_requests').insert([payload]);
+    if(error) throw error;
+  }
+
+  function finishExistingOrderAdd(orderId,message){
+    cart=[];
+    saveCart();
+    updateCartBar();
+    closeCheckoutModal();
+    resetAppendOrderMode();
+    if(typeof showRestaurantOrderSuccess==='function') showRestaurantOrderSuccess(message);
+    else alert(message);
+    setTimeout(()=>{try{showOrderHistory();}catch(e){}},0);
+  }
+
+  /* SAME NAME + SAME PHONE: attach new items to the latest still-open order.
+     If either name or phone differs, the previous submit flow creates a new order unchanged. */
+  const previousSubmitOrder=window.submitOrder;
+  window.submitOrder=async function(){
+    const btn=document.querySelector('#checkoutModal button[onclick="submitOrder()"]');
+    if(btn?.dataset.identityMerging==='1') return;
+
+    const name=String(document.getElementById('checkoutName')?.value||'').trim();
+    const phone=normPhone(document.getElementById('checkoutPhone')?.value||'');
+
+    let target=null;
+    if(appendToExistingOrderId){
+      const r=await _supabase.from('orders').select('*').eq('id',Number(appendToExistingOrderId)).maybeSingle();
+      if(r.data && window.isAddMoreEligibleCustomerOrder(r.data)) target=r.data;
+    }else if(name && phone && cart.length){
+      target=await findLatestMatchingOpenOrder(name,phone);
+      if(target) appendToExistingOrderId=Number(target.id);
+    }
+
+    if(!target) return previousSubmitOrder.apply(this,arguments);
+    if(!cart.length){alert('Please add at least one item.');return;}
+
+    if(btn){btn.dataset.identityMerging='1';btn.disabled=true;btn.classList.add('opacity-60','cursor-not-allowed');}
+    try{
+      const status=lower(target.status);
+      if(status==='pending' || status==='new'){
+        await directAppendToPendingOrder(target,name);
+        finishExistingOrderAdd(target.id,`Items added successfully to your existing Order #${target.id}.`);
+      }else{
+        await sendAddRequestToOpenOrder(target,name,phone);
+        finishExistingOrderAdd(target.id,`New items sent for approval for your existing Order #${target.id}.`);
+      }
+    }catch(e){
+      console.error('Existing order add failed:',e);
+      alert('New items could not be added to the existing order: '+(e?.message||e));
+    }finally{
+      if(btn){btn.dataset.identityMerging='0';btn.disabled=false;btn.classList.remove('opacity-60','cursor-not-allowed');}
+    }
+  };
+})();
+</script>
+
+
+<!-- FINAL: Order History detail never covered by cart + clean 80mm one-page receipt. -->
+<style id="history-detail-cart-hide-final">
+  body.history-detail-modal-open #cartBar{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+</style>
+
+<script id="history-detail-cart-hide-final-script">
+(function(){
+  'use strict';
+
+  function cartQty(){
+    try{
+      var items=(typeof cart!=='undefined' && Array.isArray(cart))?cart:[];
+      return items.reduce(function(n,i){return n+Number(i&&i.quantity||0);},0);
+    }catch(e){return 0;}
+  }
+
+  function syncHistoryDetailCart(){
+    var modal=document.getElementById('historyOrderDetailModal');
+    var bar=document.getElementById('cartBar');
+    if(!modal||!bar)return;
+    var open=!modal.classList.contains('hidden');
+    document.body.classList.toggle('history-detail-modal-open',open);
+    if(open){
+      bar.classList.add('hidden');
+    }else{
+      if(cartQty()>0){
+        if(typeof updateCartBar==='function'){try{updateCartBar();}catch(e){}}
+        bar.classList.remove('hidden');
+      }else{
+        bar.classList.add('hidden');
+      }
+    }
+  }
+
+  function install(){
+    var modal=document.getElementById('historyOrderDetailModal');
+    if(!modal)return;
+    new MutationObserver(function(mutations){
+      for(var i=0;i<mutations.length;i++){
+        if(mutations[i].attributeName==='class'){
+          syncHistoryDetailCart();
+          break;
+        }
+      }
+    }).observe(modal,{attributes:true,attributeFilter:['class']});
+    syncHistoryDetailCart();
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
+  else install();
+  window.addEventListener('pageshow',function(){setTimeout(syncHistoryDetailCart,0);});
+})();
+</script>
+
+<script id="customer-receipt-80mm-onepage-final">
+(function(){
+  'use strict';
+
+  window.downloadCustomerReceipt=async function(orderId){
+    var w=null;
+    try{
+      var bundle=await getCustomerOrderBundle(Number(orderId));
+      var order=bundle.order, items=bundle.items||[], invoice=bundle.invoice||null;
+      if(!isCompletedCustomerOrder(order)){
+        alert('Receipt is available only after the order is completed.');
+        return;
+      }
+
+      w=window.open('','_blank');
+      if(!w){
+        alert('Please allow pop-ups to download/print the receipt.');
+        return;
+      }
+
+      var subtotal=items.reduce(function(s,i){return s+Number(i.price||0)*Number(i.quantity||0);},0);
+      var savedSst=Number(order.sst_tax);
+      var sst=Number.isFinite(savedSst)?savedSst:Math.round(subtotal*0.06*100)/100;
+      var invoiceTotal=Number((invoice&&invoice.total_amount)!=null?invoice.total_amount:(order.total_amount!=null?order.total_amount:subtotal+sst));
+      var discount=Number((invoice&&invoice.discount_amount)||0);
+      var paymentMethod=(invoice&&invoice.payment_method)||'';
+      var date=new Date((invoice&&invoice.created_at)||order.created_at||Date.now()).toLocaleString();
+      var logoUrl='';
+      try{logoUrl=new URL('images/logo.png',window.location.href).href;}catch(e){logoUrl='images/logo.png';}
+
+      var rows=items.map(function(i){
+        var mods=(i.modifiers_normalized||[]).map(function(m){
+          return '<div class="mod">↳ '+escapeHtml(m.text||m)+'</div>';
+        }).join('');
+        return '<div class="item"><div class="item-name"><b>'+escapeHtml(i.display_name)+'</b> × '+Number(i.quantity||0)+mods+'</div><b class="item-amount">RM'+(Number(i.price||0)*Number(i.quantity||0)).toFixed(2)+'</b></div>';
+      }).join('');
+
+      var safeTable=escapeHtml(order.table_id||order.table_no||'N/A');
+      var safeDate=escapeHtml(date);
+      var safePayment=escapeHtml(paymentMethod);
+      var receipt='<!doctype html><html><head><meta charset="utf-8">'+
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+        '<title>Hameeds_Bistro_Receipt_'+Number(order.id)+'</title>'+ 
+        '<style id="dynamic-page-size">@page{size:80mm 200mm;margin:0}</style>'+ 
+        '<style>'+ 
+        '*{box-sizing:border-box}'+
+        'html,body{margin:0!important;padding:0!important;width:80mm!important;min-width:80mm!important;background:#fff!important;background-image:none!important;color:#000!important;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+        'html::before,html::after,body::before,body::after{display:none!important;content:none!important;background:none!important}'+
+        '.receipt-sheet{width:80mm!important;min-width:80mm!important;margin:0!important;padding:3mm 3mm 2.5mm!important;background:#fff!important;background-image:none!important;overflow:visible!important}'+
+        '.header{text-align:center;border-bottom:.35mm dashed #333;padding-bottom:2.2mm;margin-bottom:2mm}'+
+        '.brand{display:flex;align-items:center;justify-content:center;gap:2mm}'+
+        '.logo{width:11mm;height:11mm;object-fit:contain;background:#fff}'+
+        'h1{font-family:"Times New Roman",serif;font-size:6mm;line-height:1;margin:0;font-weight:900}'+
+        '.title{font-size:2.7mm;font-weight:900;letter-spacing:.25mm;margin-top:.7mm}'+
+        '.small{font-size:2.6mm;line-height:1.45;font-weight:700}'+
+        '.meta{margin-top:1.6mm}'+
+        '.item{display:flex;justify-content:space-between;align-items:flex-start;gap:2mm;padding:1.8mm 0;border-bottom:.25mm dashed #aaa;font-size:3mm;line-height:1.3;break-inside:avoid}'+
+        '.item-name{flex:1;min-width:0;overflow-wrap:anywhere}'+
+        '.item-amount{flex:0 0 auto;white-space:nowrap}'+
+        '.mod{font-size:2.45mm;margin:.6mm 0 0 2.5mm;font-weight:600}'+
+        '.totals{margin-top:2mm;font-size:3.1mm;font-weight:700}'+
+        '.row{display:flex;justify-content:space-between;gap:3mm;padding:.7mm 0}'+
+        '.total{font-size:4.5mm;font-weight:900;border-top:.4mm solid #222;margin-top:1mm;padding-top:1.4mm}'+
+        '.paid{text-align:center;font-size:3.5mm;font-weight:900;margin-top:2.5mm;letter-spacing:.35mm}'+
+        '.actions{margin:4mm 0 1mm;text-align:center}'+
+        '.actions button{padding:2.4mm 4mm;font-size:3mm;font-weight:800}'+
+        '@media print{html,body,.receipt-sheet{background:#fff!important;background-image:none!important}.actions{display:none!important}.receipt-sheet{padding:3mm 3mm 2.5mm!important;margin:0!important}*{box-shadow:none!important;text-shadow:none!important}}'+
+        '</style></head><body><div id="receiptSheet" class="receipt-sheet">'+
+        '<div class="header"><div class="brand"><img src="'+logoUrl+'" class="logo" onerror="this.style.display=\'none\'"><div><h1>HAMEEDS BISTRO</h1><div class="title">CUSTOMER FINAL RECEIPT</div></div></div>'+ 
+        '<div class="small meta">No.-11, Jalan KLIA Avenue, Pusat Perdagangan KLIA Avenue, Sepang, 43900<br>Tel: +60 387059807 | Email: prokashlaptop@gmail.com<br>Order: #'+Number(order.id)+' | Table: '+safeTable+'<br>Date: '+safeDate+(paymentMethod?'<br>Payment: '+safePayment:'')+'</div></div>'+ 
+        '<div>'+rows+'</div>'+ 
+        '<div class="totals"><div class="row"><span>Subtotal:</span><b>RM'+subtotal.toFixed(2)+'</b></div><div class="row"><span>SST (6%):</span><b>RM'+sst.toFixed(2)+'</b></div>'+ 
+        (discount>0?'<div class="row"><span>Discount:</span><b>- RM'+discount.toFixed(2)+'</b></div>':'')+
+        '<div class="row total"><span>TOTAL PAID:</span><span>RM'+invoiceTotal.toFixed(2)+'</span></div></div><div class="paid">PAID</div>'+ 
+        '<div class="actions"><button onclick="window.print()">Download / Save as PDF</button></div></div>'+ 
+        '<script>(function(){function makeOnePage(){var sheet=document.getElementById("receiptSheet");var style=document.getElementById("dynamic-page-size");if(!sheet||!style)return;var pxPerMm=96/25.4;var hPx=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,document.body.scrollHeight,document.documentElement.scrollHeight);var hMm=Math.max(40,Math.ceil(hPx/pxPerMm)+2);style.textContent="@page{size:80mm "+hMm+"mm;margin:0} html,body{width:80mm!important;height:"+hMm+"mm!important;min-height:"+hMm+"mm!important;background:#fff!important;background-image:none!important}";setTimeout(function(){window.print()},220)}window.addEventListener("load",function(){var imgs=Array.prototype.slice.call(document.images||[]);if(!imgs.length){requestAnimationFrame(function(){requestAnimationFrame(makeOnePage)});return}Promise.all(imgs.map(function(img){if(img.complete)return Promise.resolve();return new Promise(function(r){img.addEventListener("load",r,{once:true});img.addEventListener("error",r,{once:true})})})).then(function(){requestAnimationFrame(function(){requestAnimationFrame(makeOnePage)})})})})();<\/script>'+ 
+        '</body></html>';
+
+      w.document.open();
+      w.document.write(receipt);
+      w.document.close();
+    }catch(error){
+      try{if(w)w.close();}catch(_){ }
+      alert('Unable to prepare receipt: '+(error&&error.message?error.message:error));
+    }
+  };
+})();
+</script>
 </body>
 </html>
