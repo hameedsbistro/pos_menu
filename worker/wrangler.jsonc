@@ -1,0 +1,13 @@
+{
+  "name": "rmp-pos-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-19",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rmp_soloutions",
+      "database_id": "PASTE_DATABASE_ID_HERE"
+    }
+  ]
+}
