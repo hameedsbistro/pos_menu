@@ -1,493 +1,263 @@
-      // ==================================================
-      // CUSTOMER ORDER CREATION
-      // POST /api/customer/orders
-      // ==================================================
+// ============================================================
+// RMP POS API
+// Cloudflare Worker + Cloudflare D1
+// Database: rmp_soloutions
+// ============================================================
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-RMP-API-Key",
+};
+
+
+// ============================================================
+// RESPONSE HELPER
+// ============================================================
+
+function json(data, status = 200) {
+  return Response.json(data, {
+    status,
+    headers: corsHeaders,
+  });
+}
+
+
+// ============================================================
+// ADMIN / POS AUTHORIZATION
+// ============================================================
+
+function isAuthorized(request, env) {
+  const key = request.headers.get("X-RMP-API-Key");
+
+  return Boolean(
+    env.RMP_API_SECRET &&
+    key &&
+    key === env.RMP_API_SECRET
+  );
+}
+
+
+// ============================================================
+// MAIN WORKER
+// ============================================================
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // --------------------------------------------------------
+    // CORS PREFLIGHT
+    // --------------------------------------------------------
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
+    }
+
+    try {
+
+      // ======================================================
+      // HEALTH CHECK
+      // GET /
+      // GET /health
+      // ======================================================
 
       if (
-        url.pathname === "/api/customer/orders" &&
-        request.method === "POST"
+        url.pathname === "/" ||
+        url.pathname === "/health"
       ) {
-        const body = await request.json();
-
-        const customerId = Number(body.customer_id);
-        const customerName = String(body.customer_name || "").trim();
-        const customerPhone = String(body.customer_phone || "").trim();
-        const orderType = String(body.order_type || "").trim();
-        const section = body.section == null
-          ? null
-          : String(body.section).trim();
-
-        const tableId = body.table_id == null
-          ? null
-          : String(body.table_id).trim();
-
-        const tableNo = body.table_no == null
-          ? null
-          : String(body.table_no).trim();
-
-        const subtotal = String(body.subtotal ?? "0");
-        const sstTax = String(body.sst_tax ?? "0");
-        const totalAmount = Number(body.total_amount);
-
-        const orderNote = body.order_note == null
-          ? null
-          : String(body.order_note);
-
-        const items = Array.isArray(body.items)
-          ? body.items
-          : [];
-
-        if (!Number.isInteger(customerId) || customerId <= 0) {
-          return json({
-            ok: false,
-            error: "Customer login is required."
-          }, 400);
-        }
-
-        if (!customerName) {
-          return json({
-            ok: false,
-            error: "Customer name is required."
-          }, 400);
-        }
-
-        if (!orderType) {
-          return json({
-            ok: false,
-            error: "Order type is required."
-          }, 400);
-        }
-
-        if (!Number.isFinite(totalAmount) || totalAmount < 0) {
-          return json({
-            ok: false,
-            error: "Invalid total amount."
-          }, 400);
-        }
-
-        if (items.length === 0) {
-          return json({
-            ok: false,
-            error: "Order cart is empty."
-          }, 400);
-        }
-
-        // Make sure customer exists.
-        const customer = await env.DB
-          .prepare(`
-            SELECT id
-            FROM customers
-            WHERE id = ?
-            LIMIT 1
-          `)
-          .bind(customerId)
-          .first();
-
-        if (!customer) {
-          return json({
-            ok: false,
-            error: "Customer not found."
-          }, 404);
-        }
-
-        // Basic item validation before writing anything.
-        for (const item of items) {
-          const menuItemId = Number(item.menu_item_id);
-          const quantity = Number(item.quantity ?? 1);
-          const price = Number(item.price);
-
-          if (
-            !Number.isInteger(menuItemId) ||
-            menuItemId <= 0 ||
-            !Number.isInteger(quantity) ||
-            quantity <= 0 ||
-            !Number.isFinite(price) ||
-            price < 0
-          ) {
-            return json({
-              ok: false,
-              error: "Invalid order item."
-            }, 400);
-          }
-        }
-
-        /*
-          Two statements are executed as one D1 batch:
-
-          1. Create orders row.
-          2. Expand the JSON cart and create all order_items.
-
-          The second statement gets the ID generated by the
-          orders AUTOINCREMENT sequence.
-        */
-
-        const itemsJson = JSON.stringify(items);
-
-        const statements = [
-          env.DB.prepare(`
-            INSERT INTO orders (
-              customer_id,
-              customer_name,
-              customer_phone,
-              order_type,
-              section,
-              table_id,
-              table_no,
-              status,
-              payment_status,
-              subtotal,
-              sst_tax,
-              total_amount,
-              order_note
-            )
-            VALUES (
-              ?, ?, ?, ?, ?, ?, ?,
-              'pending',
-              'unpaid',
-              ?, ?, ?, ?
-            )
-          `).bind(
-            customerId,
-            customerName,
-            customerPhone || null,
-            orderType,
-            section,
-            tableId,
-            tableNo,
-            subtotal,
-            sstTax,
-            totalAmount,
-            orderNote
-          ),
-
-          env.DB.prepare(`
-            INSERT INTO order_items (
-              order_id,
-              menu_item_id,
-              price,
-              quantity,
-              modifiers
-            )
-            SELECT
-              (
-                SELECT seq
-                FROM sqlite_sequence
-                WHERE name = 'orders'
-              ),
-              CAST(
-                json_extract(value, '$.menu_item_id')
-                AS INTEGER
-              ),
-              CAST(
-                json_extract(value, '$.price')
-                AS NUMERIC
-              ),
-              COALESCE(
-                CAST(
-                  json_extract(value, '$.quantity')
-                  AS INTEGER
-                ),
-                1
-              ),
-              COALESCE(
-                json_extract(value, '$.modifiers'),
-                '[]'
-              )
-            FROM json_each(?)
-          `).bind(itemsJson)
-        ];
-
-        const batchResult = await env.DB.batch(statements);
-
-        const orderId =
-          batchResult?.[0]?.meta?.last_row_id;
-
-        if (!orderId) {
-          throw new Error(
-            "Order was created but order ID could not be returned."
-          );
-        }
-
         return json({
           ok: true,
-          order_id: orderId,
-          status: "pending",
-          payment_status: "unpaid"
-        }, 201);
+          service: "RMP POS API",
+          status: "running",
+        });
       }
 
 
-      // ==================================================
-      // PROTECTED ORDERS LIST
-      // GET /api/orders
-      // ==================================================
+      // ======================================================
+      // DATABASE TEST
+      // GET /api/db-test
+      // ======================================================
 
       if (
-        url.pathname === "/api/orders" &&
+        url.pathname === "/api/db-test" &&
         request.method === "GET"
       ) {
-        if (!isAuthorized(request, env)) {
-          return json({
-            ok: false,
-            error: "Unauthorized"
-          }, 401);
-        }
+        const result = await env.DB
+          .prepare(`
+            SELECT
+              COUNT(*) AS total_menu_items,
 
-        const status = url.searchParams.get("status");
-        const paymentStatus =
-          url.searchParams.get("payment_status");
+              SUM(
+                CASE
+                  WHEN image_url IS NOT NULL
+                   AND TRIM(image_url) <> ''
+                  THEN 1
+                  ELSE 0
+                END
+              ) AS items_with_images
 
-        const tableId =
-          url.searchParams.get("table_id");
+            FROM menu_items
+          `)
+          .first();
+
+        return json({
+          ok: true,
+          database: "rmp_soloutions",
+          total_menu_items:
+            result?.total_menu_items ?? 0,
+          items_with_images:
+            result?.items_with_images ?? 0,
+        });
+      }
+
+
+      // ======================================================
+      // PUBLIC MENU LIST
+      // GET /api/menu
+      //
+      // Optional:
+      // ?category=AIR
+      // ?available=1
+      // ======================================================
+
+      if (
+        url.pathname === "/api/menu" &&
+        request.method === "GET"
+      ) {
+        const category =
+          url.searchParams.get("category");
+
+        const available =
+          url.searchParams.get("available");
 
         let sql = `
           SELECT *
-          FROM orders
+          FROM menu_items
           WHERE 1 = 1
         `;
 
         const params = [];
 
-        if (status) {
-          sql += ` AND status = ?`;
-          params.push(status);
+        if (category) {
+          sql += ` AND category = ?`;
+          params.push(category);
         }
 
-        if (paymentStatus) {
-          sql += ` AND payment_status = ?`;
-          params.push(paymentStatus);
-        }
-
-        if (tableId) {
-          sql += ` AND table_id = ?`;
-          params.push(tableId);
+        if (
+          available === "1" ||
+          available === "true"
+        ) {
+          sql += ` AND is_available = 1`;
         }
 
         sql += `
-          ORDER BY created_at DESC, id DESC
-          LIMIT 500
+          ORDER BY
+            COALESCE(category_sort_order, 999999),
+            category,
+            COALESCE(item_sort_order, 999999),
+            id
         `;
 
-        const stmt = env.DB.prepare(sql);
+        const statement = env.DB.prepare(sql);
 
         const result = params.length
-          ? await stmt.bind(...params).all()
-          : await stmt.all();
+          ? await statement.bind(...params).all()
+          : await statement.all();
 
         return json({
           ok: true,
           count: result.results?.length ?? 0,
-          orders: result.results ?? []
+          items: result.results ?? [],
         });
       }
 
 
-      // ==================================================
-      // PROTECTED SINGLE ORDER
-      // GET /api/orders/:id
-      // ==================================================
+      // ======================================================
+      // PUBLIC SINGLE MENU ITEM
+      // GET /api/menu/:id
+      // ======================================================
 
       if (
-        /^\/api\/orders\/\d+$/.test(url.pathname) &&
+        /^\/api\/menu\/\d+$/.test(url.pathname) &&
         request.method === "GET"
       ) {
-        if (!isAuthorized(request, env)) {
-          return json({
-            ok: false,
-            error: "Unauthorized"
-          }, 401);
-        }
-
-        const orderId =
+        const id =
           Number(url.pathname.split("/").pop());
 
-        const order = await env.DB
+        if (
+          !Number.isInteger(id) ||
+          id <= 0
+        ) {
+          return json({
+            ok: false,
+            error: "Invalid menu item ID",
+          }, 400);
+        }
+
+        const item = await env.DB
           .prepare(`
             SELECT *
-            FROM orders
+            FROM menu_items
             WHERE id = ?
             LIMIT 1
           `)
-          .bind(orderId)
+          .bind(id)
           .first();
 
-        if (!order) {
+        if (!item) {
           return json({
             ok: false,
-            error: "Order not found"
+            error: "Menu item not found",
           }, 404);
         }
 
-        const items = await env.DB
-          .prepare(`
-            SELECT
-              oi.*,
-              mi.name_en,
-              mi.category,
-              mi.image_url
-            FROM order_items oi
-            LEFT JOIN menu_items mi
-              ON mi.id = oi.menu_item_id
-            WHERE oi.order_id = ?
-            ORDER BY oi.id
-          `)
-          .bind(orderId)
-          .all();
-
         return json({
           ok: true,
-          order,
-          items: items.results ?? []
+          item,
         });
       }
 
 
-      // ==================================================
-      // PROTECTED ORDER ITEMS
-      // GET /api/orders/:id/items
-      // ==================================================
+      // ======================================================
+      // PROTECTED MENU UPDATE
+      // PATCH /api/admin/menu/:id
+      // ======================================================
 
       if (
-        /^\/api\/orders\/\d+\/items$/.test(url.pathname) &&
-        request.method === "GET"
-      ) {
-        if (!isAuthorized(request, env)) {
-          return json({
-            ok: false,
-            error: "Unauthorized"
-          }, 401);
-        }
-
-        const parts = url.pathname.split("/");
-        const orderId = Number(parts[3]);
-
-        const result = await env.DB
-          .prepare(`
-            SELECT
-              oi.*,
-              mi.name_en,
-              mi.category,
-              mi.image_url
-            FROM order_items oi
-            LEFT JOIN menu_items mi
-              ON mi.id = oi.menu_item_id
-            WHERE oi.order_id = ?
-            ORDER BY oi.id
-          `)
-          .bind(orderId)
-          .all();
-
-        return json({
-          ok: true,
-          count: result.results?.length ?? 0,
-          items: result.results ?? []
-        });
-      }
-
-
-      // ==================================================
-      // PROTECTED ORDER UPDATE
-      // PATCH /api/orders/:id
-      // ==================================================
-
-      if (
-        /^\/api\/orders\/\d+$/.test(url.pathname) &&
+        /^\/api\/admin\/menu\/\d+$/.test(
+          url.pathname
+        ) &&
         request.method === "PATCH"
       ) {
         if (!isAuthorized(request, env)) {
           return json({
             ok: false,
-            error: "Unauthorized"
+            error: "Unauthorized",
           }, 401);
         }
 
-        const orderId =
+        const id =
           Number(url.pathname.split("/").pop());
+
+        if (
+          !Number.isInteger(id) ||
+          id <= 0
+        ) {
+          return json({
+            ok: false,
+            error: "Invalid menu item ID",
+          }, 400);
+        }
 
         const body = await request.json();
 
         const allowedFields = [
-          "status",
-          "payment_status",
-          "customer_name",
-          "customer_phone",
-          "section",
-          "table_id",
-          "table_no",
-          "subtotal",
-          "sst_tax",
-          "total_amount",
-          "decline_reason",
-          "order_note",
-          "accepted_by_id",
-          "accepted_by_name",
-          "accepted_by_email",
-          "accepted_by_role",
-          "accepted_at",
-          "declined_by_id",
-          "declined_by_name",
-          "declined_by_email",
-          "declined_by_role",
-          "declined_at",
-          "cancelled_by_id",
-          "cancelled_by_name",
-          "cancelled_by_email",
-          "cancelled_by_role",
-          "cancelled_at",
-          "cancel_reason"
-        ];
-
-        const updates = [];
-        const values = [];
-
-        for (const field of allowedFields) {
-          if (
-            Object.prototype.hasOwnProperty.call(
-              body,
-              field
-            )
-          ) {
-            updates.push(`${field} = ?`);
-            values.push(body[field]);
-          }
-        }
-
-        if (updates.length === 0) {
-          return json({
-            ok: false,
-            error: "No valid fields supplied"
-          }, 400);
-        }
-
-        values.push(orderId);
-
-        const result = await env.DB
-          .prepare(`
-            UPDATE orders
-            SET ${updates.join(", ")}
-            WHERE id = ?
-          `)
-          .bind(...values)
-          .run();
-
-        if (!result.meta?.changes) {
-          return json({
-            ok: false,
-            error: "Order not found or not updated"
-          }, 404);
-        }
-
-        const order = await env.DB
-          .prepare(`
-            SELECT *
-            FROM orders
-            WHERE id = ?
-          `)
-          .bind(orderId)
-          .first();
-
-        return json({
-          ok: true,
-          order
-        });
-      }
+          "name_en",
+          "name_ms",
+          "name_en_us",
+         
