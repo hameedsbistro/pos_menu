@@ -192,8 +192,8 @@ export default {
         if (!isAuthorized(request, env)) return json({ ok: false, error: "Unauthorized" }, 401);
         const status = await env.DB.prepare(`
           SELECT COUNT(*) AS total_items,
-          SUM(CASE WHEN image_url LIKE '%supabase.co/storage/%' THEN 1 ELSE 0 END) AS remaining_supabase,
-          SUM(CASE WHEN image_url LIKE 'https://pub-404ee6980d804bcbba9aafdaf936ccb6.r2.dev/%' THEN 1 ELSE 0 END) AS migrated_r2
+          SUM(CASE WHEN INSTR(image_url, 'supabase.co/storage/') > 0 THEN 1 ELSE 0 END) AS remaining_supabase,
+          SUM(CASE WHEN INSTR(image_url, 'https://pub-404ee6980d804bcbba9aafdaf936ccb6.r2.dev/') = 1 THEN 1 ELSE 0 END) AS migrated_r2
           FROM menu_items
           WHERE image_url IS NOT NULL AND TRIM(image_url) <> ''
         `).first();
@@ -212,7 +212,7 @@ export default {
           SELECT id, name_en, image_url
           FROM menu_items
           WHERE image_url IS NOT NULL AND TRIM(image_url) <> ''
-            AND image_url LIKE '%supabase.co/storage/%'
+            AND INSTR(image_url, 'supabase.co/storage/') > 0
           ORDER BY id LIMIT ?
         `).bind(limit).all();
 
@@ -258,7 +258,7 @@ export default {
         const remaining = await env.DB.prepare(`
           SELECT COUNT(*) AS count FROM menu_items
           WHERE image_url IS NOT NULL AND TRIM(image_url) <> ''
-            AND image_url LIKE '%supabase.co/storage/%'
+            AND INSTR(image_url, 'supabase.co/storage/') > 0
         `).first();
 
         return json({
