@@ -187,6 +187,90 @@ export default {
         return json({ ok: true, item });
       }
 
+      // Protected Supabase Storage -> R2 image migration
+      if (url.pathname === "/api/admin/migrate-images/status" && request.method === "GET") {
+        if (!isAuthorized(request, env)) return json({ ok: false, error: "Unauthorized" }, 401);
+        const status = await env.DB.prepare(`
+          SELECT COUNT(*) AS total_items,
+          SUM(CASE WHEN image_url LIKE '%supabase.co/storage/%' THEN 1 ELSE 0 END) AS remaining_supabase,
+          SUM(CASE WHEN image_url LIKE 'https://pub-404ee6980d804bcbba9aafdaf936ccb6.r2.dev/%' THEN 1 ELSE 0 END) AS migrated_r2
+          FROM menu_items
+          WHERE image_url IS NOT NULL AND TRIM(image_url) <> ''
+        `).first();
+        return json({ ok: true, ...status });
+      }
+
+      if (url.pathname === "/api/admin/migrate-images" && request.method === "POST") {
+        if (!isAuthorized(request, env)) return json({ ok: false, error: "Unauthorized" }, 401);
+        if (!env.MENU_IMAGES) return json({ ok: false, error: "R2 binding MENU_IMAGES is missing" }, 500);
+
+        const requestedLimit = Number(url.searchParams.get("limit") || 20);
+        const limit = Math.max(1, Math.min(Number.isInteger(requestedLimit) ? requestedLimit : 20, 20));
+        const R2_PUBLIC_BASE = "https://pub-404ee6980d804bcbba9aafdaf936ccb6.r2.dev";
+
+        const rows = await env.DB.prepare(`
+          SELECT id, name_en, image_url
+          FROM menu_items
+          WHERE image_url IS NOT NULL AND TRIM(image_url) <> ''
+            AND image_url LIKE '%supabase.co/storage/%'
+          ORDER BY id LIMIT ?
+        `).bind(limit).all();
+
+        const migrated = [];
+        const failed = [];
+
+        for (const row of (rows.results || [])) {
+          const oldUrl = String(row.image_url || "").trim();
+          try {
+            const source = new URL(oldUrl);
+            const rawName = decodeURIComponent(source.pathname.split("/").pop() || `image-${row.id}.jpg`);
+            const safeName = rawName.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || `image-${row.id}.jpg`;
+            const key = `menu/${row.id}-${safeName}`;
+
+            const imageResponse = await fetch(oldUrl, {
+              headers: { "User-Agent": "RMP-POS-R2-Migration/1.0" },
+              redirect: "follow"
+            });
+            if (!imageResponse.ok || !imageResponse.body) throw new Error(`Source HTTP ${imageResponse.status}`);
+
+            const contentType = imageResponse.headers.get("content-type") || "application/octet-stream";
+            await env.MENU_IMAGES.put(key, imageResponse.body, {
+              httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
+              customMetadata: { menu_item_id: String(row.id), source_url: oldUrl }
+            });
+
+            const newUrl = `${R2_PUBLIC_BASE}/${key}`;
+            const update = await env.DB.prepare(`
+              UPDATE menu_items SET image_url = ?
+              WHERE id = ? AND image_url = ?
+            `).bind(newUrl, row.id, oldUrl).run();
+
+            if (!update.meta?.changes) throw new Error("D1 image_url changed before migration update");
+            migrated.push({ id: row.id, name_en: row.name_en, old_url: oldUrl, new_url: newUrl });
+          } catch (error) {
+            failed.push({
+              id: row.id, name_en: row.name_en, image_url: oldUrl,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+
+        const remaining = await env.DB.prepare(`
+          SELECT COUNT(*) AS count FROM menu_items
+          WHERE image_url IS NOT NULL AND TRIM(image_url) <> ''
+            AND image_url LIKE '%supabase.co/storage/%'
+        `).first();
+
+        return json({
+          ok: failed.length === 0,
+          attempted: (rows.results || []).length,
+          migrated_count: migrated.length,
+          failed_count: failed.length,
+          remaining_supabase: Number(remaining?.count || 0),
+          migrated, failed
+        }, failed.length ? 207 : 200);
+      }
+
       // Customer order creation
       if (url.pathname === "/api/customer/orders" && request.method === "POST") {
         const body = await request.json();
