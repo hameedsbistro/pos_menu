@@ -1,13 +1,14 @@
 {
-  "name": "rmp-pos-api",
+  "name": "pos-menu",
   "main": "src/index.js",
   "compatibility_date": "2026-09-19",
-
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "rmp_soloutions",
-      "database_id": "5db54158-ddfd-4422-a3c6-edcddbdd537f"
-    }
-  ]
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "rmp_soloutions",
+    "database_id": "5db54158-ddfd-4422-a3c6-edcddbdd537f"
+  }],
+  "r2_buckets": [{
+    "binding": "MENU_IMAGES",
+    "bucket_name": "rmp-menu-images"
+  }]
 }
