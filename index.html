@@ -4,15 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restoran Hameeds Bistro</title>
-    <link rel="icon" type="image/png" href="images/logo.png">
-    <link rel="shortcut icon" href="images/logo.png">
-    <link rel="apple-touch-icon" href="images/logo.png">
+    <link rel="icon" type="image/png" href="images/logo.jpg">
+    <link rel="shortcut icon" href="images/logo.jpg">
+    <link rel="apple-touch-icon" href="images/logo.jpg">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Library CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <style>
+    <!-- Cloudflare D1 JS Library CDN -->
+<style>
       html,body{max-width:100%;overflow-x:hidden}
       img,video,canvas,svg{max-width:100%}
       #categoryContainer{-webkit-overflow-scrolling:touch;scrollbar-width:thin}
@@ -545,7 +543,7 @@ body.customer-menu-only #menuContainer .out-of-schedule-action {
 html{background:#fff8ee!important;}
 body{
   background-color:#fff8ee!important;
-  background-image:url("images/logo.png")!important;
+  background-image:url("images/logo.jpg")!important;
   background-repeat:repeat!important;
   background-size:56px 56px!important;
   background-position:0 0!important;
@@ -556,6 +554,29 @@ body::before,body::after{display:none!important;content:none!important;}
 main{background:transparent!important;}
 #orderView,#historyView{background:transparent!important;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* RMP POS Customer: native Supabase connection */
+const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
+
+const cloudDB = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
+});
+</script>
+</script>
+
+<style id="checkout-hide-category-panel-fix">
+/* During checkout, keep the blue menu header but hide only the category strip. */
+body.checkout-active #categoryContainer {
+  display: none !important;
+}
+</style>
+
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col justify-between font-sans customer-home-screen">
 
@@ -563,7 +584,7 @@ main{background:transparent!important;}
     <header class="bg-blue-900 text-white p-4 shadow-lg flex justify-between items-center relative">
         <div class="flex items-center gap-3">
 
-            <img src="images/logo.png" alt="Logo" onclick="showHome()" title="Home" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover cursor-pointer" onerror="this.onerror=null;this.src='images/logo.png'">
+            <img src="images/logo.jpg" alt="Logo" onclick="showHome()" title="Home" class="h-12 w-12 rounded-full border-2 border-yellow-400 object-cover cursor-pointer" onerror="this.onerror=null;this.src='images/logo.jpg'">
             <div onclick="showHome()" title="Home" class="cursor-pointer select-none">
                 <h1 class="text-lg font-bold uppercase tracking-wider">Restoran Hameeds Bistro</h1>
                 <p class="text-xs text-yellow-300" data-i18n="subtitle">Good Food Brings People Together</p>
@@ -665,9 +686,9 @@ main{background:transparent!important;}
                     <div id="homeTop15Counter" class="text-xs font-bold text-gray-500"></div>
                 </div>
                 <div id="homeTop15SlideStage" class="relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 shadow-sm">
-                    <img id="homeTop15SlideImage" src="images/logo.png" alt="Top popular item"
+                    <img id="homeTop15SlideImage" src="images/logo.jpg" alt="Top popular item"
                          class="w-full h-full object-cover block cursor-pointer"
-                         onerror="this.onerror=null;this.src='images/logo.png'">
+                         onerror="this.onerror=null;this.src='images/logo.jpg'">
                     <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pt-12 pb-4">
                         <div id="homeTop15SlideName" class="text-white text-lg md:text-xl font-black text-left drop-shadow"></div>
                     </div>
@@ -909,9 +930,31 @@ main{background:transparent!important;}
     </footer>
 
     <script>
-        const SUPABASE_URL = 'https://tbvcaolnufayuvrqicpd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidmNhb2xudWZheXV2cnFpY3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMTI4MzYsImV4cCI6MjEwMTc4ODgzNn0.Cn2L569yd9qG8t1fXWN9rnwZ03Yott5P-doedUv1ItU';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// MENU AVAILABILITY RULES: an item whose name ends with @# is permanently unavailable.
+// Database values are stored as 1/0; this helper treats only true/1 as available.
+function menuItemHasUnavailableMarker(item){
+  const name=String(item?.name_en ?? item?.name ?? item?.item_name ?? '').trimEnd();
+  return name.endsWith('@#');
+}
+function menuItemIsAvailable(item){
+  const v=item?.is_available;
+  return v===true || v===1 || v==='1' || v==='true';
+}
+async function enforceMenuAvailabilityMarkers(items, client){
+  const rows=Array.isArray(items)?items:[];
+  const marked=rows.filter(menuItemHasUnavailableMarker);
+  const ids=marked.filter(menuItemIsAvailable).map(x=>x.id).filter(x=>x!==undefined&&x!==null);
+  if(ids.length && client){
+    try{
+      const r=await client.from('menu_items').update({is_available:false}).in('id',ids);
+      if(r?.error) console.warn('Could not mark @# menu items unavailable:',r.error);
+    }catch(e){ console.warn('Could not mark @# menu items unavailable:',e); }
+  }
+  marked.forEach(x=>{x.is_available=false;});
+  return rows;
+}
+
 
         let currentOrderType = 'dine_in';
         let menuItems = [];
@@ -924,7 +967,7 @@ main{background:transparent!important;}
         let appendToExistingOrderId = null;
         let historyOrderCache = new Map();
 
-        // Automatic menu translation system. Supabase database menu text is treated as Malay source and is never modified.
+        // Automatic menu translation system. Cloudflare D1 database menu text is treated as Malay source and is never modified.
         const menuTranslationCache = JSON.parse(localStorage.getItem('hameeds_menu_translation_cache') || '{}');
         let translationRequestVersion = 0;
 
@@ -1957,7 +2000,7 @@ function startOrder(type) {
                 return;
             }
             if(historyInput)historyInput.value=phone;
-            const { data, error } = await _supabase
+            const { data, error } = await cloudDB
                 .from('orders')
                 .select('*')
                 .eq('customer_phone', phone)
@@ -2026,7 +2069,7 @@ function startOrder(type) {
             if (direct.name && direct.role) return direct;
 
             try {
-                let q = _supabase.from('profiles').select('*');
+                let q = cloudDB.from('profiles').select('*');
                 if (direct.id != null) q = q.eq('id', direct.id);
                 else if (direct.email) q = q.eq('email', direct.email);
                 else return direct;
@@ -2047,13 +2090,13 @@ function startOrder(type) {
         }
 
         async function getCustomerOrderBundle(orderId) {
-            const orderResult = await _supabase.from('orders').select('*').eq('id', orderId).maybeSingle();
+            const orderResult = await cloudDB.from('orders').select('*').eq('id', orderId).maybeSingle();
             if (orderResult.error || !orderResult.data) throw orderResult.error || new Error('Order not found.');
 
             const [itemsResult, menuResult, invoiceResult] = await Promise.all([
-                _supabase.from('order_items').select('*').eq('order_id', orderId),
-                _supabase.from('menu_items').select('*'),
-                _supabase.from('invoices').select('*').eq('order_id', orderId).order('created_at', {ascending:false}).limit(1).maybeSingle()
+                cloudDB.from('order_items').select('*').eq('order_id', orderId),
+                cloudDB.from('menu_items').select('*'),
+                cloudDB.from('invoices').select('*').eq('order_id', orderId).order('created_at', {ascending:false}).limit(1).maybeSingle()
             ]);
 
             if (itemsResult.error) throw itemsResult.error;
@@ -2162,7 +2205,7 @@ function startOrder(type) {
 
         async function addMoreItemsToCustomerOrder(orderId) {
             try {
-                const { data: order, error } = await _supabase.from('orders').select('*').eq('id', orderId).maybeSingle();
+                const { data: order, error } = await cloudDB.from('orders').select('*').eq('id', orderId).maybeSingle();
                 if (error || !order) throw error || new Error('Order not found.');
                 if (!isAcceptedCustomerOrder(order)) {
                     alert('Add More Item is available only while the order is accepted and not completed.');
@@ -2270,7 +2313,7 @@ h1{font-family:"Times New Roman",serif;font-size:25px;margin:0;font-weight:900}
 html{background:#fff8ee!important;}
 body{
   background-color:#fff8ee!important;
-  background-image:url("images/logo.png")!important;
+  background-image:url("images/logo.jpg")!important;
   background-repeat:repeat!important;
   background-size:56px 56px!important;
   background-position:0 0!important;
@@ -2283,7 +2326,7 @@ main{background:transparent!important;}
 </style>
 </head><body><div class="page">
 <div class="header">
-  <div class="brand"><img src="images/logo.png" class="logo" onerror="this.style.display='none'"><div><h1>HAMEEDS BISTRO</h1><div class="title">CUSTOMER FINAL RECEIPT</div></div></div>
+  <div class="brand"><img src="images/logo.jpg" class="logo" onerror="this.style.display='none'"><div><h1>HAMEEDS BISTRO</h1><div class="title">CUSTOMER FINAL RECEIPT</div></div></div>
   <div class="small" style="margin-top:8px">
     No.-11, Jalan KLIA Avenue, Pusat Perdagangan KLIA Avenue, Sepang, 43900<br>
     Tel: +60 387059807 | Email: prokashlaptop@gmail.com<br>
@@ -2354,23 +2397,23 @@ main{background:transparent!important;}
         }
 
         async function fetchMenu() {
-            console.log("Fetching menu from Supabase...");
+            console.log("Fetching menu from Cloudflare D1...");
             const [{ data, error }, scheduleResult] = await Promise.all([
-                _supabase.from('menu_items').select('*'),
-                _supabase.from('menu_schedules').select('*').eq('enabled', true)
+                cloudDB.from('menu_items').select('*'),
+                cloudDB.from('menu_schedules').select('*').eq('enabled', true)
             ]);
             const activeMenuSchedules = scheduleResult?.error ? [] : (scheduleResult?.data || []);
             if (scheduleResult?.error) console.warn('Menu schedule load skipped:', scheduleResult.error.message);
             
             if (error) {
-                console.error('Supabase Fetch Error Details:', error);
+                console.error('Cloudflare D1 Fetch Error Details:', error);
                 alert('Menu load failed! Error: ' + error.message);
                 return;
             }
             
             console.log('Fetched Menu Data:', data);
             menuItems = (data || [])
-                .filter(item => item.is_available !== false && isMenuItemVisibleBySchedule(item, activeMenuSchedules))
+                .filter(item => menuItemIsAvailable(item) && !menuItemHasUnavailableMarker(item) && isMenuItemVisibleBySchedule(item, activeMenuSchedules))
                 .sort((a, b) =>
                     (Number(a.category_sort_order)||999999)-(Number(b.category_sort_order)||999999) ||
                     String(a.category || '').localeCompare(String(b.category || ''), undefined, { numeric: true, sensitivity: 'base' }) ||
@@ -2396,7 +2439,7 @@ main{background:transparent!important;}
             try {
                 // Only paid/confirmed/completed-style orders count as actual sales.
                 // Pending/unpaid orders are not counted.
-                const { data: orderRows, error: ordersError } = await _supabase
+                const { data: orderRows, error: ordersError } = await cloudDB
                     .from('orders')
                     .select('id,status,payment_status');
 
@@ -2428,7 +2471,7 @@ main{background:transparent!important;}
                     return;
                 }
 
-                const { data: salesRows, error: itemsError } = await _supabase
+                const { data: salesRows, error: itemsError } = await cloudDB
                     .from('order_items')
                     .select('order_id,menu_item_id,quantity');
 
@@ -2888,7 +2931,7 @@ main{background:transparent!important;}
                     ? Number(item.takeaway_price)
                     : Number(item.dine_in_price || 0);
                 const itemName = getMenuDisplayName(item);
-                const imgSrc = item.image_url || 'images/logo.png';
+                const imgSrc = item.image_url || 'images/logo.jpg';
                 const safeItemName = escapeHtml(itemName);
                 const safeImgSrc = escapeHtml(imgSrc);
                 const soldText = item.sold_quantity
@@ -2907,7 +2950,7 @@ main{background:transparent!important;}
                             <button data-add-id="${Number(item.id)}" data-add-price="${price}" class="add-cart-btn bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium w-full shadow-sm transition">${addText}</button>
                         </div>
                         <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center image-open-btn" data-image-src="${safeImgSrc}" data-image-name="${escapeHtml(itemName)}">
-                            <img src="${safeImgSrc}" alt="${safeItemName}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='images/logo.png'">
+                            <img src="${safeImgSrc}" alt="${safeItemName}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='images/logo.jpg'">
                         </div>
                     </div>`;
             }).join('');
@@ -3184,8 +3227,15 @@ main{background:transparent!important;}
             }
         }
 
+        function setCheckoutCategoryVisibility(hidden) {
+            const container = document.getElementById('categoryContainer');
+            if (container) container.style.display = hidden ? 'none' : '';
+            document.body.classList.toggle('checkout-active', !!hidden);
+        }
+
         function proceedToCheckout() {
             closeCartModal();
+            setCheckoutCategoryVisibility(true);
             openCheckoutModal();
         }
 
@@ -3368,14 +3418,14 @@ main{background:transparent!important;}
 
         }
 
-        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); }
+        function closeCheckoutModal() { document.getElementById('checkoutModal').classList.add('hidden'); setCheckoutCategoryVisibility(false); }
 
         let customerPermanentModifiers=[];
         let customerPermanentModifiersLoaded=false;
 
         async function loadCustomerPermanentModifiers(){
             if(customerPermanentModifiersLoaded)return customerPermanentModifiers;
-            const {data,error}=await _supabase.from('modifiers')
+            const {data,error}=await cloudDB.from('modifiers')
                 .select('id,modifier_name,price')
                 .order('modifier_name',{ascending:true});
             if(error){
@@ -3528,7 +3578,7 @@ main{background:transparent!important;}
 
             // First verify that the customer saved in this browser still exists.
             if (loggedInCustomer.id != null) {
-                const { data: byId, error: idError } = await _supabase
+                const { data: byId, error: idError } = await cloudDB
                     .from('customers')
                     .select('*')
                     .eq('id', loggedInCustomer.id)
@@ -3544,7 +3594,7 @@ main{background:transparent!important;}
             // If the database/customer IDs were recreated, recover the current row
             // using the customer's email, then refresh the browser's saved customer ID.
             if (loggedInCustomer.email) {
-                const { data: byEmail, error: emailError } = await _supabase
+                const { data: byEmail, error: emailError } = await cloudDB
                     .from('customers')
                     .select('*')
                     .eq('email', loggedInCustomer.email)
@@ -3560,7 +3610,7 @@ main{background:transparent!important;}
 
             // Final fallback by phone, if available.
             if (loggedInCustomer.phone) {
-                const { data: byPhone, error: phoneError } = await _supabase
+                const { data: byPhone, error: phoneError } = await cloudDB
                     .from('customers')
                     .select('*')
                     .eq('phone', loggedInCustomer.phone)
@@ -3585,19 +3635,19 @@ main{background:transparent!important;}
             const cleanName=String(fullName||'').trim();
             const cleanPhone=normalizeCustomerPhone(phone);
             if(!cleanName||!cleanPhone)return null;
-            let q=await _supabase.from('customers').select('*').eq('phone',cleanPhone).limit(1);
+            let q=await cloudDB.from('customers').select('*').eq('phone',cleanPhone).limit(1);
             let row=(q.data||[])[0]||null;
             if(row){
                 if(String(row.full_name||'')!==cleanName){
-                    const u=await _supabase.from('customers').update({full_name:cleanName}).eq('id',row.id).select().maybeSingle();
+                    const u=await cloudDB.from('customers').update({full_name:cleanName}).eq('id',row.id).select().maybeSingle();
                     if(!u.error&&u.data)row=u.data;
                 }
             }else{
-                let ins=await _supabase.from('customers').insert([{full_name:cleanName,phone:cleanPhone}]).select().single();
+                let ins=await cloudDB.from('customers').insert([{full_name:cleanName,phone:cleanPhone}]).select().single();
                 if(ins.error){
                     // Compatibility fallback if this older customers table requires email/password.
                     const digits=cleanPhone.replace(/\D/g,'')||Date.now();
-                    ins=await _supabase.from('customers').insert([{full_name:cleanName,phone:cleanPhone,email:`guest_${digits}@hameeds.local`,password:`guest-${digits}`}]).select().single();
+                    ins=await cloudDB.from('customers').insert([{full_name:cleanName,phone:cleanPhone,email:`guest_${digits}@hameeds.local`,password:`guest-${digits}`}]).select().single();
                 }
                 if(ins.error)throw ins.error;
                 row=ins.data;
@@ -3654,7 +3704,7 @@ main{background:transparent!important;}
             if(btn?.dataset.sending==='1')return;
             if(btn)btn.dataset.sending='1';
             try{
-                const {error}=await _supabase.from('customer_calls').insert([{
+                const {error}=await cloudDB.from('customer_calls').insert([{
                     table_id:table,section:section,
                     customer_name:saved?.full_name||null,
                     customer_phone:saved?.phone||null,status:'pending'
@@ -3683,7 +3733,7 @@ main{background:transparent!important;}
 
             // Fetch the customer's recent dine-in orders and decide locally.
             // "completed" and cancelled/rejected/paid-final states are no longer active.
-            const {data,error}=await _supabase
+            const {data,error}=await cloudDB
                 .from('orders')
                 .select('id,table_id,section,status,payment_status,created_at,customer_phone,order_type')
                 .eq('customer_phone',phone)
@@ -3775,7 +3825,7 @@ main{background:transparent!important;}
                 }
 
                 const targetId = Number(appendToExistingOrderId);
-                const { data: existingOrder, error: existingOrderError } = await _supabase
+                const { data: existingOrder, error: existingOrderError } = await cloudDB
                     .from('orders').select('*').eq('id', targetId).maybeSingle();
 
                 if (existingOrderError || !existingOrder) {
@@ -3803,7 +3853,7 @@ main{background:transparent!important;}
                     ]
                 }));
 
-                let { error: addError } = await _supabase.from('order_items').insert(newRows);
+                let { error: addError } = await cloudDB.from('order_items').insert(newRows);
                 if (addError) {
                     const fallbackRows = cart.map(i => ({
                         order_id: targetId,
@@ -3814,7 +3864,7 @@ main{background:transparent!important;}
                         added_at: new Date().toISOString(),
                         modifier_notes: [...(i.modifiers || []), i.modifierNote || ''].filter(Boolean).join(', ') || null
                     }));
-                    const retry = await _supabase.from('order_items').insert(fallbackRows);
+                    const retry = await cloudDB.from('order_items').insert(fallbackRows);
                     addError = retry.error;
                 }
                 if (addError) {
@@ -3822,14 +3872,14 @@ main{background:transparent!important;}
                     return;
                 }
 
-                const { data: allItems, error: totalsError } = await _supabase
+                const { data: allItems, error: totalsError } = await cloudDB
                     .from('order_items').select('price,quantity').eq('order_id', targetId);
 
                 if (!totalsError) {
                     const newSubtotal = (allItems || []).reduce((s,i)=>s + Number(i.price || 0)*Number(i.quantity || 0), 0);
                     const newTax = Math.round(newSubtotal * 0.06 * 100) / 100;
                     const newTotal = Math.round((newSubtotal + newTax) * 100) / 100;
-                    await _supabase.from('orders').update({
+                    await cloudDB.from('orders').update({
                         subtotal: newSubtotal,
                         sst_tax: newTax,
                         total_amount: newTotal,
@@ -3879,10 +3929,10 @@ main{background:transparent!important;}
                 payment_status: 'unpaid'
             };
 
-            const { data: orderData, error } = await _supabase.from('orders').insert([orderPayload]).select().single();
+            const { data: orderData, error } = await cloudDB.from('orders').insert([orderPayload]).select().single();
 
             if(error) { 
-                console.error('Supabase Error Details:', error);
+                console.error('Cloudflare D1 Error Details:', error);
                 alert('Order failed! Error: ' + error.message); 
                 return; 
             }
@@ -3902,7 +3952,7 @@ main{background:transparent!important;}
                 ]
             }));
 
-            let { error: itemsError } = await _supabase.from('order_items').insert(orderItems);
+            let { error: itemsError } = await cloudDB.from('order_items').insert(orderItems);
             if(itemsError) {
                 // Compatibility fallback for databases that use modifier_notes instead.
                 const fallbackItems = cart.map(i => ({
@@ -3914,7 +3964,7 @@ main{background:transparent!important;}
                     added_at: orderData.created_at || new Date().toISOString(),
                     modifier_notes: [...(i.modifiers || []), i.modifierNote || ''].filter(Boolean).join(', ') || null
                 }));
-                const retry = await _supabase.from('order_items').insert(fallbackItems);
+                const retry = await cloudDB.from('order_items').insert(fallbackItems);
                 itemsError = retry.error;
             }
             if(itemsError) {
@@ -3957,8 +4007,8 @@ main{background:transparent!important;}
     const email = document.getElementById('regEmail').value;
     const password = document.getElementById('regPassword').value;
 
-    // ১. প্রথমে Supabase Auth-এ ইউজার রেজিস্টার করুন
-    const { data: authData, error: authError } = await _supabase.auth.signUp({
+    // ১. প্রথমে Cloudflare D1 Auth-এ ইউজার রেজিস্টার করুন
+    const { data: authData, error: authError } = await cloudDB.auth.signUp({
         email: email,
         password: password
     });
@@ -3969,7 +4019,7 @@ main{background:transparent!important;}
     }
 
     // ২. সফলভাবে Auth-এ তৈরি হলে আপনার custom 'customers' টেবিলে সেভ করুন
-    const { error: dbError } = await _supabase.from('customers').insert([{ 
+    const { error: dbError } = await cloudDB.from('customers').insert([{ 
         full_name, 
         phone, 
         email, 
@@ -3992,7 +4042,7 @@ main{background:transparent!important;}
     const password = document.getElementById('loginPassword').value;
 
     // সরাসরি customers টেবিল থেকে ইমেল ও পাসওয়ার্ড চেক করুন
-    const { data, error } = await _supabase
+    const { data, error } = await cloudDB
         .from('customers')
         .select('*')
         .eq('email', email)
@@ -4043,7 +4093,7 @@ main{background:transparent!important;}
     if(!cart.length){alert('Please add at least one new item.');return;}
 
     const targetId=Number(appendToExistingOrderId);
-    const {data:order,error}=await _supabase.from('orders').select('*').eq('id',targetId).maybeSingle();
+    const {data:order,error}=await cloudDB.from('orders').select('*').eq('id',targetId).maybeSingle();
     if(error||!order){alert('Existing order could not be found.');return;}
     if(!isAcceptedCustomerOrder(order)){
       alert('This order is no longer open for Add More Item.');
@@ -4066,7 +4116,7 @@ main{background:transparent!important;}
       items:requestItems,
       status:'pending'
     };
-    const {error:reqError}=await _supabase.from('order_item_add_requests').insert([payload]);
+    const {error:reqError}=await cloudDB.from('order_item_add_requests').insert([payload]);
     if(reqError){
       alert('Could not send Add More Item request: '+reqError.message);
       return;
@@ -4081,7 +4131,7 @@ main{background:transparent!important;}
   window.getCustomerOrderBundle=async function(orderId){
     const b=await oldBundle(orderId);
     try{
-      const r=await _supabase.from('order_item_add_requests').select('*')
+      const r=await cloudDB.from('order_item_add_requests').select('*')
         .eq('order_id',orderId).eq('status','accepted')
         .order('accepted_at',{ascending:false}).limit(1).maybeSingle();
       b.latestAddApproval=r.data||null;
@@ -4127,7 +4177,7 @@ main{background:transparent!important;}
 window.itemDescriptionMap = window.itemDescriptionMap || {};
 
 async function loadCustomerDescriptions(){
-  const r=await _supabase.from('item_description').select('menu_item_id,description');
+  const r=await cloudDB.from('item_description').select('menu_item_id,description');
   if(r.error){console.warn('item_description:',r.error.message);window.itemDescriptionMap={};return;}
   window.itemDescriptionMap={};
   (r.data||[]).forEach(x=>window.itemDescriptionMap[String(x.menu_item_id)]=x.description||'');
@@ -4152,7 +4202,7 @@ window.renderMenu = function(items){
   container.innerHTML=items.map(item=>{
     const price=currentOrderType==='takeaway'&&item.takeaway_price!=null?Number(item.takeaway_price):Number(item.dine_in_price||0);
     const itemName=getMenuDisplayName(item);
-    const imgSrc=item.image_url||'images/logo.png';
+    const imgSrc=item.image_url||'images/logo.jpg';
     const soldText=item.sold_quantity?`<p class="text-xs text-gray-500 mb-1">Sold: ${Number(item.sold_quantity)}</p>`:'';
     const desc=item.item_description||window.itemDescriptionMap[String(item.id)]||'';
     const addText=escapeHtml(currentLang==='en'?'Add to Cart':({ms:'Tambah ke Troli',bn:'কার্টে যোগ করুন',hi:'कार्ट में जोड़ें',ta:'கார்ட்டில் சேர்',ar:'أضف إلى السلة',zh:'加入购物车'}[currentLang]||'Add to Cart'));
@@ -4165,7 +4215,7 @@ window.renderMenu = function(items){
         <button data-add-id="${Number(item.id)}" data-add-price="${price}" class="add-cart-btn bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium w-full shadow-sm transition">${addText}</button>
       </div>
       <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center image-open-btn" data-image-src="${escapeHtml(imgSrc)}" data-image-name="${escapeHtml(itemName)}">
-        <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(itemName)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='images/logo.png'">
+        <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(itemName)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='images/logo.jpg'">
       </div>
     </div>`;
   }).join('');
@@ -4390,7 +4440,7 @@ window.submitOrder = async function(){
     <button onclick="closeDescriptionDetail()" class="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-black/65 hover:bg-black/80 text-white font-black text-xl shadow-lg">×</button>
 
     <div id="descriptionDetailImageWrap" role="button" tabindex="0" title="Click to zoom and pan">
-      <img id="descriptionDetailImage" src="images/logo.png" alt="Menu item image" onerror="this.onerror=null;this.src='images/logo.png'">
+      <img id="descriptionDetailImage" src="images/logo.jpg" alt="Menu item image" onerror="this.onerror=null;this.src='images/logo.jpg'">
       <div id="descriptionDetailImageHint">🔍 Tap image to Zoom & Pan</div>
     </div>
 
@@ -4465,7 +4515,7 @@ window.submitOrder = async function(){
     const priceEl=document.getElementById('descriptionDetailPrice');
     const displayName=getMenuDisplayName(item);
     const originalName=getOriginalItemName(item);
-    const imageSrc=item.image_url||'images/logo.png';
+    const imageSrc=item.image_url||'images/logo.jpg';
 
     title.textContent=displayName;
 
@@ -4567,7 +4617,7 @@ window.submitOrder = async function(){
     container.innerHTML=items.map(item=>{
       const price=currentOrderType==='takeaway'&&item.takeaway_price!=null?Number(item.takeaway_price):Number(item.dine_in_price||0);
       const itemName=getMenuDisplayName(item);
-      const imgSrc=item.image_url||'images/logo.png';
+      const imgSrc=item.image_url||'images/logo.jpg';
       const soldText=item.sold_quantity?`<p class="text-xs text-gray-500 mb-1">Sold: ${Number(item.sold_quantity)}</p>`:'';
       const desc=window.getDescriptionDisplayText(item);
       const addText=escapeHtml(currentLang==='en'?'Add to Cart':({ms:'Tambah ke Troli',bn:'কার্টে যোগ করুন',hi:'कार्ट में जोड़ें',ta:'கார்ட்டில் சேர்',ar:'أضف إلى السلة',zh:'加入购物车'}[currentLang]||'Add to Cart'));
@@ -4580,7 +4630,7 @@ window.submitOrder = async function(){
           <button data-add-id="${Number(item.id)}" data-add-price="${price}" class="add-cart-btn bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm font-medium w-full shadow-sm transition">${addText}</button>
         </div>
         <div class="w-20 h-20 flex-shrink-0 cursor-pointer bg-gray-50 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center image-open-btn" data-image-src="${escapeHtml(imgSrc)}" data-image-name="${escapeHtml(itemName)}">
-          <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(itemName)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='images/logo.png'">
+          <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(itemName)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='images/logo.jpg'">
         </div>
       </div>`;
     }).join('');
@@ -4880,7 +4930,7 @@ function getMalaysiaSqlTimestamp(){
       ? `<button type="button" class="out-of-schedule-action" disabled aria-disabled="true" title="Out of Schedule">⏰ Out of Schedule</button>`
       : quantityHtml(item.id,price);
     const itemName=getMenuDisplayName(item);
-    const imgSrc=item.image_url||'images/logo.png';
+    const imgSrc=item.image_url||'images/logo.jpg';
     const soldText=item.sold_quantity
       ?`<p class="text-xs text-gray-500 mb-1">Sold: ${Number(item.sold_quantity)}</p>`:'';
     const desc=(typeof window.getDescriptionDisplayText==='function')
@@ -4909,7 +4959,7 @@ function getMalaysiaSqlTimestamp(){
         data-image-src="${escapeHtml(imgSrc)}" data-image-name="${escapeHtml(itemName)}" data-item-id="${Number(item.id)}">
         <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(itemName)}"
           class="w-full h-full object-cover" loading="lazy" decoding="async"
-          onerror="this.onerror=null;this.src='images/logo.png'">
+          onerror="this.onerror=null;this.src='images/logo.jpg'">
       </div>
     </div>`;
   }
@@ -5680,7 +5730,7 @@ function getMalaysiaSqlTimestamp(){
 
   async function loadCustomerOrderingMode(){
     try{
-      const {data,error}=await _supabase.from('app_settings')
+      const {data,error}=await cloudDB.from('app_settings')
         .select('setting_key,setting_value')
         .eq('setting_key','customer_ordering_enabled')
         .maybeSingle();
@@ -5865,7 +5915,7 @@ function getMalaysiaSqlTimestamp(){
 
     homeSlides=getTop15Slides();
     if(!homeSlides.length){
-      img.src='images/logo.png';
+      img.src='images/logo.jpg';
       name.textContent='Hameeds Bistro';
       if(counter)counter.textContent='';
       return;
@@ -5875,7 +5925,7 @@ function getMalaysiaSqlTimestamp(){
     if(homeSlideIndex<0)homeSlideIndex=homeSlides.length-1;
     const item=homeSlides[homeSlideIndex];
 
-    const nextSrc=item.image_url||'images/logo.png';
+    const nextSrc=item.image_url||'images/logo.jpg';
     const nextName=(typeof getMenuDisplayName==='function'
       ? getMenuDisplayName(item)
       : (item.name_en||item.name||''));
@@ -6108,19 +6158,21 @@ function scheduleGroupVisibleForItem(item, groups, categoryTags, itemTags, group
 fetchMenu=async function(){
   console.log("Fetching menu with named scheduling...");
   const [menuResult,directResult,groupResult,catTagResult,itemTagResult,slotResult]=await Promise.all([
-    _supabase.from('menu_items').select('*'),
-    _supabase.from('menu_schedules').select('*').eq('enabled',true),
-    _supabase.from('menu_schedule_groups').select('*'),
-    _supabase.from('menu_schedule_category_tags').select('*'),
-    _supabase.from('menu_schedule_item_tags').select('*'),
-    _supabase.from('menu_schedule_group_time_slots').select('*').order('slot_order',{ascending:true})
+    cloudDB.from('menu_items').select('*'),
+    cloudDB.from('menu_schedules').select('*').eq('enabled',true),
+    cloudDB.from('menu_schedule_groups').select('*'),
+    cloudDB.from('menu_schedule_category_tags').select('*'),
+    cloudDB.from('menu_schedule_item_tags').select('*'),
+    cloudDB.from('menu_schedule_group_time_slots').select('*').order('slot_order',{ascending:true})
   ]);
 
   if(menuResult.error){
-    console.error('Supabase Fetch Error Details:',menuResult.error);
+    console.error('Cloudflare D1 Fetch Error Details:',menuResult.error);
     alert('Menu load failed! Error: '+menuResult.error.message);
     return;
   }
+
+  await enforceMenuAvailabilityMarkers(menuResult.data||[],cloudDB);
 
   const directSchedules=directResult.error?[]:(directResult.data||[]);
   const groups=groupResult.error?[]:(groupResult.data||[]);
@@ -6135,7 +6187,7 @@ fetchMenu=async function(){
   if(slotResult.error)console.warn('Schedule time windows load skipped:',slotResult.error.message);
 
   menuItems=(menuResult.data||[])
-    .filter(item=>item.is_available!==false)
+    .filter(item=>menuItemIsAvailable(item) && !menuItemHasUnavailableMarker(item))
     .map(item=>{
       // Manual Active/Inactive still controls whether an item exists on Customer page.
       // Scheduling no longer hides the item; it only controls whether the item can be ordered.
@@ -6250,7 +6302,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 :root{--hb-green:#07883f;--hb-green2:#04a84f;--hb-red:#e62932;--hb-blue:#075fc8;--hb-navy:#062f73;--hb-yellow:#ffd900;--hb-cream:#fff8ee}
 html{background:var(--hb-cream)}
 body{background:transparent!important;color:#10233f;position:relative}
-body::before{content:"";position:fixed;inset:0;z-index:-2;background-color:#fff8ee;background-image:url('images/logo.png');background-repeat:repeat;background-size:48px 48px;background-position:0 0;opacity:.10;pointer-events:none}
+body::before{content:"";position:fixed;inset:0;z-index:-2;background-color:#fff8ee;background-image:url('images/logo.jpg');background-repeat:repeat;background-size:48px 48px;background-position:0 0;opacity:.10;pointer-events:none}
 body::after{content:"";position:fixed;inset:0;z-index:-1;background:rgba(255,250,242,.60);pointer-events:none}
 header{max-width:1180px;margin:18px auto 0!important;border-radius:24px!important;background:rgba(255,255,255,.96)!important;color:#10233f!important;border:1px solid rgba(217,119,6,.12);box-shadow:0 12px 34px rgba(83,52,24,.14)!important;padding:16px 20px!important;gap:14px}
 header>div:first-child img{width:86px!important;height:86px!important;border:0!important;border-radius:18px!important;object-fit:contain!important;background:#fff}
@@ -6321,7 +6373,7 @@ footer{background:rgba(255,255,255,.88)!important;color:#526172!important;border
 
 
 <style id="final-logo-background-category-scroll-fix">
-html{background:#fff8ee!important}body{background:transparent!important;position:relative}body::before{content:""!important;position:fixed!important;inset:0!important;z-index:-1!important;background-color:#fff8ee!important;background-image:url('images/logo.png')!important;background-repeat:repeat!important;background-size:48px 48px!important;background-position:0 0!important;opacity:.18!important;pointer-events:none!important}main,#orderView,#homeView,#historyView{position:relative}#categoryContainer{display:flex!important;align-items:center!important;gap:10px!important;width:100%!important;max-width:100%!important;overflow:visible!important}#categoryContainer>div:first-child{flex:0 0 auto!important}#categoryGrid{display:flex!important;flex:1 1 0!important;min-width:0!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;gap:8px!important;padding:4px 3px 10px!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:auto!important;scrollbar-color:#2563eb #dbeafe!important}#categoryGrid::-webkit-scrollbar{height:8px!important;display:block!important}#categoryGrid::-webkit-scrollbar-track{background:#dbeafe!important;border-radius:999px!important}#categoryGrid::-webkit-scrollbar-thumb{background:#2563eb!important;border-radius:999px!important}#categoryGrid button{display:inline-flex!important;flex:0 0 auto!important;visibility:visible!important;white-space:nowrap!important}@media(max-width:640px){#categoryContainer{gap:6px!important}#categoryContainer>div:first-child{max-width:52vw!important}#categoryDropdownButton{min-width:150px!important;max-width:52vw!important}#categoryGrid{flex:1 1 0!important;min-width:80px!important;padding-bottom:9px!important}}
+html{background:#fff8ee!important}body{background:transparent!important;position:relative}body::before{content:""!important;position:fixed!important;inset:0!important;z-index:-1!important;background-color:#fff8ee!important;background-image:url('images/logo.jpg')!important;background-repeat:repeat!important;background-size:48px 48px!important;background-position:0 0!important;opacity:.18!important;pointer-events:none!important}main,#orderView,#homeView,#historyView{position:relative}#categoryContainer{display:flex!important;align-items:center!important;gap:10px!important;width:100%!important;max-width:100%!important;overflow:visible!important}#categoryContainer>div:first-child{flex:0 0 auto!important}#categoryGrid{display:flex!important;flex:1 1 0!important;min-width:0!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important;gap:8px!important;padding:4px 3px 10px!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:auto!important;scrollbar-color:#2563eb #dbeafe!important}#categoryGrid::-webkit-scrollbar{height:8px!important;display:block!important}#categoryGrid::-webkit-scrollbar-track{background:#dbeafe!important;border-radius:999px!important}#categoryGrid::-webkit-scrollbar-thumb{background:#2563eb!important;border-radius:999px!important}#categoryGrid button{display:inline-flex!important;flex:0 0 auto!important;visibility:visible!important;white-space:nowrap!important}@media(max-width:640px){#categoryContainer{gap:6px!important}#categoryContainer>div:first-child{max-width:52vw!important}#categoryDropdownButton{min-width:150px!important;max-width:52vw!important}#categoryGrid{flex:1 1 0!important;min-width:80px!important;padding-bottom:9px!important}}
 </style>
 <script id="database-only-refresh-fix">
 window.refreshDatabaseOnly=async function(button){const btn=button||null,oldHtml=btn?btn.innerHTML:'',oldDisabled=btn?btn.disabled:false;const orderVisible=!document.getElementById('orderView')?.classList.contains('hidden');const historyVisible=!document.getElementById('historyView')?.classList.contains('hidden');const savedCategory=(typeof activeCategory!=='undefined'?activeCategory:null);const savedScrollY=window.scrollY;const grid=document.getElementById('categoryGrid');const savedCategoryScroll=grid?grid.scrollLeft:0;try{if(btn){btn.disabled=true;btn.innerHTML='↻ <span>Loading…</span>'}await fetchMenu();if(savedCategory){activeCategory=savedCategory;filterCategory(savedCategory);renderCategories()}else if(orderVisible){activeCategory=null;renderTopPopular();renderCategories()}if(historyVisible&&typeof showOrderHistory==='function')await showOrderHistory();requestAnimationFrame(()=>{const g=document.getElementById('categoryGrid');if(g)g.scrollLeft=savedCategoryScroll;window.scrollTo(0,savedScrollY)});if(typeof showTranslationStatus==='function')showTranslationStatus('Menu database refreshed')}catch(err){console.error('Database refresh failed:',err);if(typeof showTranslationStatus==='function')showTranslationStatus('Database refresh failed',true);else alert('Database refresh failed: '+(err?.message||err))}finally{if(btn){btn.disabled=oldDisabled;btn.innerHTML=oldHtml}}};
@@ -6332,7 +6384,7 @@ window.refreshDatabaseOnly=async function(button){const btn=button||null,oldHtml
 html,body{
   min-height:100%!important;
   background-color:#fff8ee!important;
-  background-image:url('images/logo.png')!important;
+  background-image:url('images/logo.jpg')!important;
   background-repeat:repeat!important;
   background-position:0 0!important;
   background-size:52px 52px!important;
@@ -6405,7 +6457,7 @@ html,body{
   background-color:#fff8ee!important;
   background-image:
     linear-gradient(rgba(255,248,238,.82),rgba(255,248,238,.82)),
-    url('images/logo.png')!important;
+    url('images/logo.jpg')!important;
   background-repeat:repeat,repeat!important;
   background-position:0 0,0 0!important;
   background-size:auto,52px 52px!important;
@@ -8673,7 +8725,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
 <div id="restaurantOrderSuccessModal" class="hidden fixed inset-0 bg-black/55 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="restaurantOrderSuccessTitle">
   <div class="ros-card">
     <div class="ros-head">
-      <img src="images/logo.png" alt="Logo" class="ros-logo" onerror="this.style.display='none'">
+      <img src="images/logo.jpg" alt="Logo" class="ros-logo" onerror="this.style.display='none'">
       <h3 id="restaurantOrderSuccessTitle" class="ros-title">Restoran Hameeds Bistro</h3>
     </div>
     <div class="ros-body">
@@ -8858,7 +8910,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
      role="dialog" aria-modal="true" aria-labelledby="restaurantBellSuccessTitle">
   <div class="rbs-card">
     <div class="rbs-head">
-      <img src="images/logo.png" alt="Logo" class="rbs-logo" onerror="this.style.display='none'">
+      <img src="images/logo.jpg" alt="Logo" class="rbs-logo" onerror="this.style.display='none'">
       <h3 id="restaurantBellSuccessTitle" class="rbs-title">Restoran Hameeds Bistro</h3>
     </div>
     <div class="rbs-body">
@@ -9119,7 +9171,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
     }
     if(historyInput) historyInput.value=phone;
 
-    const {data,error}=await _supabase.from('orders').select('*').eq('customer_phone',phone).order('created_at',{ascending:false});
+    const {data,error}=await cloudDB.from('orders').select('*').eq('customer_phone',phone).order('created_at',{ascending:false});
     if(error){
       console.error('History Fetch Error:',error);
       container.innerHTML=`<p class="text-red-500">Error loading history: ${escapeHtml(error.message)}</p>`;
@@ -9160,7 +9212,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
     await previousViewCustomerOrder.apply(this,arguments);
     let order=historyOrderCache?.get?.(String(orderId))||null;
     if(!order){
-      const r=await _supabase.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
+      const r=await cloudDB.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
       order=r.data||null;
     }
     if(!order) return;
@@ -9177,7 +9229,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
   /* Add More can be opened for any order that is still open, unpaid and not cancelled. */
   window.addMoreItemsToCustomerOrder=async function(orderId){
     try{
-      const {data:order,error}=await _supabase.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
+      const {data:order,error}=await cloudDB.from('orders').select('*').eq('id',Number(orderId)).maybeSingle();
       if(error||!order) throw error||new Error('Order not found.');
       if(!window.isAddMoreEligibleCustomerOrder(order)){
         alert('Add More Item is not available after payment, cancellation or order completion.');
@@ -9219,7 +9271,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
     const normalizedName=normName(name);
     const normalizedPhone=normPhone(phone);
     if(!normalizedName||!normalizedPhone) return null;
-    const {data,error}=await _supabase.from('orders').select('*')
+    const {data,error}=await cloudDB.from('orders').select('*')
       .eq('customer_phone',normalizedPhone)
       .order('created_at',{ascending:false})
       .limit(30);
@@ -9240,23 +9292,23 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
         ...(i.modifierNote?[{text:i.modifierNote,price:0}]:[])
       ]
     }));
-    let {error}=await _supabase.from('order_items').insert(rows);
+    let {error}=await cloudDB.from('order_items').insert(rows);
     if(error){
       const fallback=cart.map(i=>({
         order_id:Number(order.id),menu_item_id:i.id,quantity:Number(i.quantity||1),price:Number(i.price||0),
         added_by_name:name||order.customer_name||'Customer',added_at:new Date().toISOString(),
         modifier_notes:[...(i.modifiers||[]),i.modifierNote||''].filter(Boolean).join(', ')||null
       }));
-      const retry=await _supabase.from('order_items').insert(fallback);
+      const retry=await cloudDB.from('order_items').insert(fallback);
       error=retry.error;
     }
     if(error) throw error;
-    const totals=await _supabase.from('order_items').select('price,quantity').eq('order_id',Number(order.id));
+    const totals=await cloudDB.from('order_items').select('price,quantity').eq('order_id',Number(order.id));
     if(!totals.error){
       const subtotal=(totals.data||[]).reduce((s,i)=>s+Number(i.price||0)*Number(i.quantity||0),0);
       const sst=Math.round(subtotal*.06*100)/100;
       const total=Math.round((subtotal+sst)*100)/100;
-      await _supabase.from('orders').update({subtotal:subtotal,sst_tax:sst,total_amount:total}).eq('id',Number(order.id));
+      await cloudDB.from('orders').update({subtotal:subtotal,sst_tax:sst,total_amount:total}).eq('id',Number(order.id));
     }
   }
 
@@ -9280,7 +9332,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
       items:requestItems,
       status:'pending'
     };
-    const {error}=await _supabase.from('order_item_add_requests').insert([payload]);
+    const {error}=await cloudDB.from('order_item_add_requests').insert([payload]);
     if(error) throw error;
   }
 
@@ -9307,7 +9359,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
 
     let target=null;
     if(appendToExistingOrderId){
-      const r=await _supabase.from('orders').select('*').eq('id',Number(appendToExistingOrderId)).maybeSingle();
+      const r=await cloudDB.from('orders').select('*').eq('id',Number(appendToExistingOrderId)).maybeSingle();
       if(r.data && window.isAddMoreEligibleCustomerOrder(r.data)) target=r.data;
     }else if(name && phone && cart.length){
       target=await findLatestMatchingOpenOrder(name,phone);
@@ -9397,12 +9449,65 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
 })();
 </script>
 
+<style id="checkout-hide-category-panel-final">
+/* During Checkout keep the blue/header area visible but hide only the category panel. */
+body.checkout-modal-open #categoryContainer{display:none!important;}
+</style>
+
 <script id="customer-receipt-80mm-onepage-final">
 (function(){
   'use strict';
 
+  var JSPDF_URL='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  var jsPdfPromise=null;
+
+  function loadJsPdf(){
+    if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+    if(jsPdfPromise) return jsPdfPromise;
+    jsPdfPromise=new Promise(function(resolve,reject){
+      var existing=document.querySelector('script[data-hameeds-jspdf="1"]');
+      if(existing){
+        existing.addEventListener('load',function(){
+          if(window.jspdf&&window.jspdf.jsPDF)resolve(window.jspdf.jsPDF);else reject(new Error('PDF library failed to load.'));
+        },{once:true});
+        existing.addEventListener('error',function(){reject(new Error('PDF library failed to load.'));},{once:true});
+        return;
+      }
+      var sc=document.createElement('script');
+      sc.src=JSPDF_URL; sc.async=true; sc.dataset.hameedsJspdf='1';
+      sc.onload=function(){
+        if(window.jspdf&&window.jspdf.jsPDF)resolve(window.jspdf.jsPDF);
+        else reject(new Error('PDF library failed to load.'));
+      };
+      sc.onerror=function(){reject(new Error('Unable to load PDF generator.'));};
+      document.head.appendChild(sc);
+    });
+    return jsPdfPromise;
+  }
+
+  function imageToDataUrl(url){
+    return new Promise(function(resolve){
+      var img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=function(){
+        try{
+          var c=document.createElement('canvas');
+          c.width=img.naturalWidth||200; c.height=img.naturalHeight||200;
+          var ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
+          resolve(c.toDataURL('image/jpeg',0.88));
+        }catch(e){resolve(null);}
+      };
+      img.onerror=function(){resolve(null);};
+      img.src=url;
+    });
+  }
+
+  function mmLines(doc,text,maxWidth,fontSize){
+    doc.setFontSize(fontSize);
+    return doc.splitTextToSize(String(text||''),maxWidth);
+  }
+
   window.downloadCustomerReceipt=async function(orderId){
-    var w=null;
     try{
       var bundle=await getCustomerOrderBundle(Number(orderId));
       var order=bundle.order, items=bundle.items||[], invoice=bundle.invoice||null;
@@ -9411,12 +9516,7 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
         return;
       }
 
-      w=window.open('','_blank');
-      if(!w){
-        alert('Please allow pop-ups to download/print the receipt.');
-        return;
-      }
-
+      var jsPDF=await loadJsPdf();
       var subtotal=items.reduce(function(s,i){return s+Number(i.price||0)*Number(i.quantity||0);},0);
       var savedSst=Number(order.sst_tax);
       var sst=Number.isFinite(savedSst)?savedSst:Math.round(subtotal*0.06*100)/100;
@@ -9424,63 +9524,87 @@ body.hameeds-search-keyboard-open #categoryStickySearchPanel{
       var discount=Number((invoice&&invoice.discount_amount)||0);
       var paymentMethod=(invoice&&invoice.payment_method)||'';
       var date=new Date((invoice&&invoice.created_at)||order.created_at||Date.now()).toLocaleString();
-      var logoUrl='';
-      try{logoUrl=new URL('images/logo.png',window.location.href).href;}catch(e){logoUrl='images/logo.png';}
+      var table=String(order.table_id||order.table_no||'N/A');
 
-      var rows=items.map(function(i){
-        var mods=(i.modifiers_normalized||[]).map(function(m){
-          return '<div class="mod">↳ '+escapeHtml(m.text||m)+'</div>';
-        }).join('');
-        return '<div class="item"><div class="item-name"><b>'+escapeHtml(i.display_name)+'</b> × '+Number(i.quantity||0)+mods+'</div><b class="item-amount">RM'+(Number(i.price||0)*Number(i.quantity||0)).toFixed(2)+'</b></div>';
-      }).join('');
+      /* Calculate a receipt-specific height from the actual item count/text. */
+      var height=55;
+      height += 12; // header/meta
+      items.forEach(function(i){
+        var name=String(i.display_name||'Unknown Item');
+        var qty=Number(i.quantity||0);
+        var mods=(i.modifiers_normalized||[]).map(function(m){return String(m.text||m);});
+        var nameLines=Math.max(1,Math.ceil(name.length/29));
+        height += 8 + (nameLines-1)*3.4;
+        height += mods.length*3.2;
+      });
+      height += 27; // totals/footer
+      height=Math.max(60,Math.ceil(height));
 
-      var safeTable=escapeHtml(order.table_id||order.table_no||'N/A');
-      var safeDate=escapeHtml(date);
-      var safePayment=escapeHtml(paymentMethod);
-      var receipt='<!doctype html><html><head><meta charset="utf-8">'+
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-        '<title>Hameeds_Bistro_Receipt_'+Number(order.id)+'</title>'+ 
-        '<style id="dynamic-page-size">@page{size:80mm 200mm;margin:0}</style>'+ 
-        '<style>'+ 
-        '*{box-sizing:border-box}'+
-        'html,body{margin:0!important;padding:0!important;width:80mm!important;min-width:80mm!important;background:#fff!important;background-image:none!important;color:#000!important;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-        'html::before,html::after,body::before,body::after{display:none!important;content:none!important;background:none!important}'+
-        '.receipt-sheet{width:80mm!important;min-width:80mm!important;margin:0!important;padding:3mm 3mm 2.5mm!important;background:#fff!important;background-image:none!important;overflow:visible!important}'+
-        '.header{text-align:center;border-bottom:.35mm dashed #333;padding-bottom:2.2mm;margin-bottom:2mm}'+
-        '.brand{display:flex;align-items:center;justify-content:center;gap:2mm}'+
-        '.logo{width:11mm;height:11mm;object-fit:contain;background:#fff}'+
-        'h1{font-family:"Times New Roman",serif;font-size:6mm;line-height:1;margin:0;font-weight:900}'+
-        '.title{font-size:2.7mm;font-weight:900;letter-spacing:.25mm;margin-top:.7mm}'+
-        '.small{font-size:2.6mm;line-height:1.45;font-weight:700}'+
-        '.meta{margin-top:1.6mm}'+
-        '.item{display:flex;justify-content:space-between;align-items:flex-start;gap:2mm;padding:1.8mm 0;border-bottom:.25mm dashed #aaa;font-size:3mm;line-height:1.3;break-inside:avoid}'+
-        '.item-name{flex:1;min-width:0;overflow-wrap:anywhere}'+
-        '.item-amount{flex:0 0 auto;white-space:nowrap}'+
-        '.mod{font-size:2.45mm;margin:.6mm 0 0 2.5mm;font-weight:600}'+
-        '.totals{margin-top:2mm;font-size:3.1mm;font-weight:700}'+
-        '.row{display:flex;justify-content:space-between;gap:3mm;padding:.7mm 0}'+
-        '.total{font-size:4.5mm;font-weight:900;border-top:.4mm solid #222;margin-top:1mm;padding-top:1.4mm}'+
-        '.paid{text-align:center;font-size:3.5mm;font-weight:900;margin-top:2.5mm;letter-spacing:.35mm}'+
-        '.actions{margin:4mm 0 1mm;text-align:center}'+
-        '.actions button{padding:2.4mm 4mm;font-size:3mm;font-weight:800}'+
-        '@media print{html,body,.receipt-sheet{background:#fff!important;background-image:none!important}.actions{display:none!important}.receipt-sheet{padding:3mm 3mm 2.5mm!important;margin:0!important}*{box-shadow:none!important;text-shadow:none!important}}'+
-        '</style></head><body><div id="receiptSheet" class="receipt-sheet">'+
-        '<div class="header"><div class="brand"><img src="'+logoUrl+'" class="logo" onerror="this.style.display=\'none\'"><div><h1>HAMEEDS BISTRO</h1><div class="title">CUSTOMER FINAL RECEIPT</div></div></div>'+ 
-        '<div class="small meta">No.-11, Jalan KLIA Avenue, Pusat Perdagangan KLIA Avenue, Sepang, 43900<br>Tel: +60 387059807 | Email: prokashlaptop@gmail.com<br>Order: #'+Number(order.id)+' | Table: '+safeTable+'<br>Date: '+safeDate+(paymentMethod?'<br>Payment: '+safePayment:'')+'</div></div>'+ 
-        '<div>'+rows+'</div>'+ 
-        '<div class="totals"><div class="row"><span>Subtotal:</span><b>RM'+subtotal.toFixed(2)+'</b></div><div class="row"><span>SST (6%):</span><b>RM'+sst.toFixed(2)+'</b></div>'+ 
-        (discount>0?'<div class="row"><span>Discount:</span><b>- RM'+discount.toFixed(2)+'</b></div>':'')+
-        '<div class="row total"><span>TOTAL PAID:</span><span>RM'+invoiceTotal.toFixed(2)+'</span></div></div><div class="paid">PAID</div>'+ 
-        '<div class="actions"><button onclick="window.print()">Download / Save as PDF</button></div></div>'+ 
-        '<script>(function(){function makeOnePage(){var sheet=document.getElementById("receiptSheet");var style=document.getElementById("dynamic-page-size");if(!sheet||!style)return;var pxPerMm=96/25.4;var hPx=Math.max(sheet.scrollHeight,sheet.getBoundingClientRect().height,document.body.scrollHeight,document.documentElement.scrollHeight);var hMm=Math.max(40,Math.ceil(hPx/pxPerMm)+2);style.textContent="@page{size:80mm "+hMm+"mm;margin:0} html,body{width:80mm!important;height:"+hMm+"mm!important;min-height:"+hMm+"mm!important;background:#fff!important;background-image:none!important}";setTimeout(function(){window.print()},220)}window.addEventListener("load",function(){var imgs=Array.prototype.slice.call(document.images||[]);if(!imgs.length){requestAnimationFrame(function(){requestAnimationFrame(makeOnePage)});return}Promise.all(imgs.map(function(img){if(img.complete)return Promise.resolve();return new Promise(function(r){img.addEventListener("load",r,{once:true});img.addEventListener("error",r,{once:true})})})).then(function(){requestAnimationFrame(function(){requestAnimationFrame(makeOnePage)})})})})();<\/script>'+ 
-        '</body></html>';
+      var doc=new jsPDF({orientation:'portrait',unit:'mm',format:[80,height],compress:true});
+      var margin=4, contentW=80-margin*2, y=5;
+      doc.setTextColor(0,0,0);
 
-      w.document.open();
-      w.document.write(receipt);
-      w.document.close();
+      var logoUrl='images/logo.jpg';
+      var logoData=null;
+      try{logoData=await imageToDataUrl(new URL(logoUrl,window.location.href).href);}catch(e){}
+      if(logoData){
+        try{doc.addImage(logoData,'JPEG',margin,y,11,11);}catch(e){}
+      }
+      doc.setFont('times','bold'); doc.setFontSize(16);
+      doc.text('HAMEEDS BISTRO',40,y+5,{align:'center'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+      doc.text('CUSTOMER FINAL RECEIPT',40,y+9,{align:'center'});
+      y+=13;
+      doc.setDrawColor(80); doc.setLineDashPattern([1,1],0); doc.line(margin,y,80-margin,y); y+=3;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      var meta=[
+        'No.-11, Jalan KLIA Avenue, Pusat Perdagangan KLIA Avenue, Sepang, 43900',
+        'Tel: +60 387059807 | Email: prokashlaptop@gmail.com',
+        'Order: #'+Number(order.id)+' | Table: '+table,
+        'Date: '+date
+      ];
+      if(paymentMethod)meta.push('Payment: '+paymentMethod);
+      meta.forEach(function(line){
+        var lines=mmLines(doc,line,contentW,7);
+        lines.forEach(function(t){doc.text(t,40,y,{align:'center'});y+=3.2;});
+      });
+      y+=1.5;
+      doc.line(margin,y,80-margin,y); y+=3;
+
+      items.forEach(function(i){
+        var name=String(i.display_name||'Unknown Item');
+        var qty=Number(i.quantity||0), amount=Number(i.price||0)*qty;
+        var mods=(i.modifiers_normalized||[]);
+        doc.setFont('helvetica','bold'); doc.setFontSize(8);
+        var nameLines=mmLines(doc,name+' x '+qty,contentW-20,8);
+        var first=true;
+        nameLines.forEach(function(line){
+          doc.text(line,margin,y);
+          if(first){doc.text('RM'+amount.toFixed(2),80-margin,y,{align:'right'});first=false;}
+          y+=3.5;
+        });
+        doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+        mods.forEach(function(m){
+          var ml='↳ '+String(m.text||m)+(Number(m.price||0)!==0?' '+(Number(m.price)>0?'+':'-')+'RM'+Math.abs(Number(m.price)).toFixed(2):'');
+          mmLines(doc,ml,contentW-5,6.5).forEach(function(line){doc.text(line,margin+3,y);y+=2.8;});
+        });
+        doc.setDrawColor(170); doc.setLineDashPattern([0.7,0.7],0); doc.line(margin,y,80-margin,y); y+=2.5;
+      });
+
+      doc.setLineDashPattern([],0);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      [['Subtotal:','RM'+subtotal.toFixed(2)],['SST (6%):','RM'+sst.toFixed(2)]].forEach(function(r){doc.text(r[0],margin,y);doc.text(r[1],80-margin,y,{align:'right'});y+=4;});
+      if(discount>0){doc.text('Discount:',margin,y);doc.text('- RM'+discount.toFixed(2),80-margin,y,{align:'right'});y+=4;}
+      doc.setDrawColor(0);doc.line(margin,y,80-margin,y);y+=4;
+      doc.setFontSize(11);doc.setFont('helvetica','bold');
+      doc.text('TOTAL PAID:',margin,y);doc.text('RM'+invoiceTotal.toFixed(2),80-margin,y,{align:'right'});y+=5;
+      doc.setFontSize(8);doc.text('PAID',40,y,{align:'center'});
+
+      var filename='Hameeds_Bistro_Receipt_'+Number(order.id)+'.pdf';
+      doc.save(filename);
     }catch(error){
-      try{if(w)w.close();}catch(_){ }
-      alert('Unable to prepare receipt: '+(error&&error.message?error.message:error));
+      alert('Unable to download receipt: '+(error&&error.message?error.message:error));
     }
   };
 })();
